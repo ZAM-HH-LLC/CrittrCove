@@ -3,6 +3,9 @@
 # dependencies
 node_modules/
 
+# Randon files
+stuffleft to do.txt
+
 # Expo
 .expo/
 dist/
