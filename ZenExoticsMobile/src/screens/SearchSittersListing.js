@@ -286,6 +286,7 @@ const SearchSittersListing = ({ navigation }) => {
   const [sitters, setSitters] = useState(() => {
     if (Platform.OS === 'web') {
       const storedSitters = sessionStorage.getItem('sittersList');
+      console.log('storedSitters', storedSitters);
       return storedSitters ? JSON.parse(storedSitters) : [];
     }
     return [];
