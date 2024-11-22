@@ -27,14 +27,20 @@ const Clients = ({ navigation }) => {
         console.error('No token found');
         return;
       }
+      console.log('Token:', token);
+      
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      console.log('Token payload:', payload);
+      
       const response = await axios.get(`${API_BASE_URL}/api/clients/`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
+      console.log('Clients response:', response.data);
       setClients(response.data);
     } catch (error) {
-      console.error('Error fetching clients:', error);
+      console.error('Error fetching clients:', error.response?.data || error);
     }
   };
 

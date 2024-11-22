@@ -18,7 +18,6 @@ export const AuthProvider = ({ children }) => {
         const response = await axios.get(`${API_BASE_URL}/api/users/sitter-status/`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        console.log('Sitter status response:', response.data);
         
         const { 
           is_sitter, 
