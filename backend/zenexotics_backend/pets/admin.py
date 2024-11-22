@@ -1,3 +1,55 @@
 from django.contrib import admin
+from .models import Pet
 
-# Register your models here.
+@admin.register(Pet)
+class PetAdmin(admin.ModelAdmin):
+    list_display = ('name', 'species', 'breed', 'owner', 'age_years', 'sex')
+    list_filter = ('species', 'created_at', 'sex', 'spayed_neutered')
+    search_fields = ('name', 'owner__email', 'breed')
+    readonly_fields = ('created_at',)
+    
+    fieldsets = (
+        ('Basic Information', {
+            'fields': (
+                'owner', 'name', 'species', 'breed', 'pet_type', 
+                'profile_photo', 'photo_gallery'
+            )
+        }),
+        ('Physical Details', {
+            'fields': (
+                'age_years', 'age_months', 'weight', 'birthday', 'sex'
+            )
+        }),
+        ('Dates', {
+            'fields': ('adoption_date', 'created_at')
+        }),
+        ('Description', {
+            'fields': ('pet_description',)
+        }),
+        ('Pet Characteristics', {
+            'fields': (
+                'friendly_with_children', 'friendly_with_cats', 
+                'friendly_with_dogs', 'spayed_neutered', 
+                'house_trained', 'microchipped'
+            )
+        }),
+        ('Care Information', {
+            'fields': (
+                'feeding_schedule', 'potty_break_schedule', 
+                'energy_level', 'can_be_left_alone', 
+                'medications', 'medication_notes', 
+                'special_care_instructions'
+            )
+        }),
+        ('Veterinary Information', {
+            'fields': (
+                'vet_name', 'vet_address', 'vet_phone',
+                'insurance_provider', 'vet_documents'
+            )
+        }),
+    )
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj:  # editing an existing object
+            return self.readonly_fields + ('created_at',)
+        return self.readonly_fields
