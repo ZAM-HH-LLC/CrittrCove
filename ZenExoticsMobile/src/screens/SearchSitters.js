@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Platform, SafeAreaView, StatusBar, Dimensions, KeyboardAvoidingView, ActivityIndicator, Alert } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -146,6 +146,120 @@ const SearchSitters = ({ navigation }) => {
   const [showAnimalTypePicker, setShowAnimalTypePicker] = useState(false);
   const [showRepeatServicePicker, setShowRepeatServicePicker] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [windowWidth, setWindowWidth] = useState(Dimensions.get('window').width);
+
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+      paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+      width: Platform.OS === 'web' && windowWidth > 600 ? '600px' : '100%',
+      alignSelf: 'center',
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.border,
+    },
+    backButton: {
+      marginRight: 16,
+    },
+    title: {
+      fontSize: theme.fontSizes.large,
+      color: theme.colors.text,
+    },
+    scrollContent: {
+      flexGrow: 1,
+      padding: 20,
+    },
+    filtersContainer: {
+      padding: 16,
+    },
+    picker: {
+      marginBottom: 10,
+      borderColor: theme.colors.border,
+      borderWidth: 1,
+      borderRadius: 5,
+      backgroundColor: theme.colors.inputBackground,
+    },
+    filterInput: {
+      borderColor: theme.colors.border,
+      borderWidth: 1,
+      borderRadius: 5,
+      padding: 10,
+      marginBottom: 10,
+      backgroundColor: theme.colors.inputBackground,
+    },
+    filterButton: {
+      marginBottom: 10,
+      padding: 10,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      borderRadius: 5,
+      backgroundColor: theme.colors.inputBackground,
+    },
+    filterText: {
+      color: theme.colors.text,
+    },
+    petCountContainer: {
+      marginBottom: 20,
+    },
+    petCounter: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 10,
+    },
+    petType: {
+      fontSize: theme.fontSizes.medium,
+      color: theme.colors.text,
+    },
+    counterControls: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    petCount: {
+      marginHorizontal: 10,
+      fontSize: theme.fontSizes.medium,
+      color: theme.colors.text,
+    },
+    searchButton: {
+      backgroundColor: theme.colors.primary,
+      padding: 12,
+      borderRadius: 5,
+      alignItems: 'center',
+      marginTop: 20,
+    },
+    searchButtonText: {
+      color: '#fff',
+      fontSize: theme.fontSizes.medium,
+    },
+    datePickerContainer: {
+      marginBottom: 10,
+    },
+    webDatePicker: {
+      padding: 5,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      borderRadius: 5,
+      width: '100%',
+    },
+  });
+
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      const updateDimensions = () => {
+        setWindowWidth(Dimensions.get('window').width);
+      };
+
+      window.addEventListener('resize', updateDimensions);
+      return () => {
+        window.removeEventListener('resize', updateDimensions);
+      };
+    }
+  }, []);
 
   const handleSearch = async () => {
     setIsLoading(true);
@@ -339,105 +453,5 @@ const SearchSitters = ({ navigation }) => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
-    width: Platform.OS === 'web' && Dimensions.get('window').width > 600 ? '40%' : '90%',
-    alignSelf: 'center',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-  },
-  backButton: {
-    marginRight: 16,
-  },
-  title: {
-    fontSize: theme.fontSizes.large,
-    color: theme.colors.text,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    padding: 20,
-  },
-  filtersContainer: {
-    padding: 16,
-  },
-  picker: {
-    marginBottom: 10,
-    borderColor: theme.colors.border,
-    borderWidth: 1,
-    borderRadius: 5,
-    backgroundColor: theme.colors.inputBackground,
-  },
-  filterInput: {
-    borderColor: theme.colors.border,
-    borderWidth: 1,
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 10,
-    backgroundColor: theme.colors.inputBackground,
-  },
-  filterButton: {
-    marginBottom: 10,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: 5,
-    backgroundColor: theme.colors.inputBackground,
-  },
-  filterText: {
-    color: theme.colors.text,
-  },
-  petCountContainer: {
-    marginBottom: 20,
-  },
-  petCounter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
-  petType: {
-    fontSize: theme.fontSizes.medium,
-    color: theme.colors.text,
-  },
-  counterControls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  petCount: {
-    marginHorizontal: 10,
-    fontSize: theme.fontSizes.medium,
-    color: theme.colors.text,
-  },
-  searchButton: {
-    backgroundColor: theme.colors.primary,
-    padding: 12,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  searchButtonText: {
-    color: '#fff',
-    fontSize: theme.fontSizes.medium,
-  },
-  datePickerContainer: {
-    marginBottom: 10,
-  },
-  webDatePicker: {
-    padding: 5,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: 5,
-    width: '100%',
-  },
-});
 
 export default SearchSitters;
