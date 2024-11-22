@@ -24,19 +24,28 @@ class UserManager(BaseUserManager):
 class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
     full_name = models.CharField(max_length=255)
+    profile_picture = models.URLField(max_length=255, blank=True)
+    phone_number = models.CharField(max_length=20, blank=True)
+    
+    # Role flags
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
+    is_client = models.BooleanField(default=True)
     is_sitter = models.BooleanField(default=False)
+    
+    # Sitter approval flags
     approved_dog_sitting = models.BooleanField(default=False)
     approved_cat_sitting = models.BooleanField(default=False)
     approved_exotics_sitting = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
     approved_at = models.DateTimeField(null=True, blank=True)
+    
+    # Application flags
     wants_to_be_sitter = models.BooleanField(default=False)
-    sitter_description = models.TextField(null=True, blank=True)
     wants_dog_sitting_approval = models.BooleanField(default=False)
     wants_cat_sitting_approval = models.BooleanField(default=False)
     wants_exotics_sitting_approval = models.BooleanField(default=False)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
     user_id = models.CharField(max_length=50, unique=True, blank=True)
 
     USERNAME_FIELD = 'email'

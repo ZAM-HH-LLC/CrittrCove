@@ -11,9 +11,13 @@ class RegisterSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'email', 'first_name', 'last_name', 'password',
-            'user_id', 'created_at', 'approved_at'
+            'user_id', 'created_at', 'approved_at', 'is_sitter',
+            'approved_dog_sitting', 'approved_cat_sitting', 'approved_exotics_sitting'
         ]
-        read_only_fields = ['user_id', 'created_at', 'approved_at']
+        read_only_fields = [
+            'user_id', 'created_at', 'approved_at', 'is_sitter',
+            'approved_dog_sitting', 'approved_cat_sitting', 'approved_exotics_sitting'
+        ]
 
     def create(self, validated_data):
         full_name = f"{validated_data['first_name']} {validated_data['last_name']}"
@@ -24,3 +28,11 @@ class RegisterSerializer(serializers.ModelSerializer):
             user_id='user_' + BaseUserManager().make_random_password(length=9)
         )
         return user
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            'email', 'full_name', 'is_sitter', 'is_client',
+            'approved_dog_sitting', 'approved_cat_sitting', 'approved_exotics_sitting'
+        ]

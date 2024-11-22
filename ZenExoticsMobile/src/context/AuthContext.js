@@ -18,31 +18,46 @@ export const AuthProvider = ({ children }) => {
         const response = await axios.get(`${API_BASE_URL}/api/users/sitter-status/`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        const { is_sitter, is_approved_sitter } = response.data;
+        console.log('Sitter status response:', response.data);
+        
+        const { 
+          is_sitter, 
+          is_approved_sitter,
+          approved_dog_sitting,
+          approved_cat_sitting,
+          approved_exotics_sitting 
+        } = response.data;
+        
         setIsSignedIn(true);
         setUserRole(is_sitter ? 'sitter' : 'petOwner');
         setIsApprovedSitter(is_approved_sitter);
-        return { isSignedIn: true, userRole: is_sitter ? 'sitter' : 'petOwner', isApprovedSitter: is_approved_sitter };
+        
+        return { 
+          isSignedIn: true, 
+          userRole: is_sitter ? 'sitter' : 'petOwner', 
+          isApprovedSitter: is_approved_sitter 
+        };
       }
     } catch (error) {
-      console.error('Error checking auth status:', error);
+      console.error('Error checking auth status:', error.response?.data || error.message);
     }
     return { isSignedIn: false, userRole: null, isApprovedSitter: false };
   };
 
   const checkSitterStatus = async (token) => {
-    setIsApprovedSitter(true);
-    // try {
-    //   const response = await axios.get(`${API_BASE_URL}/api/user/sitter-status/`, {
-    //     headers: { Authorization: `Bearer ${token}` }
-    //   });
-    //   setIsApprovedSitter(response.data.is_approved_sitter);
-    //   setUserRole(response.data.is_approved_sitter ? 'sitter' : 'petOwner');
-    // } catch (error) {
-    //   console.error('Error checking sitter status:', error);
-    //   setIsApprovedSitter(false);
-    //   setUserRole('petOwner');
-    // }
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/users/sitter-status/`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      console.log('Sitter status check response:', response.data);  // Debug log
+      
+      setIsApprovedSitter(response.data.is_approved_sitter);
+      setUserRole(response.data.is_sitter ? 'sitter' : 'petOwner');
+    } catch (error) {
+      console.error('Error checking sitter status:', error.response?.data || error.message);
+      setIsApprovedSitter(false);
+      setUserRole('petOwner');
+    }
   };
 
   useEffect(() => {

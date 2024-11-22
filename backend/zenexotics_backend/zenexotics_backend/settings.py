@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'corsheaders',  # Add CORS headers
     'contracts',
     'clients',
+    'sitters',
 ]
 
 MIDDLEWARE = [

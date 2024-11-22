@@ -84,10 +84,20 @@ class SitterStatusView(APIView):
 
     def get(self, request):
         user = request.user
-        is_approved_sitter = user.is_sitter and (user.approved_dog_sitting or user.approved_cat_sitting or user.approved_exotics_sitting)
+        is_approved_sitter = (
+            user.is_sitter and 
+            (user.approved_dog_sitting or 
+             user.approved_cat_sitting or 
+             user.approved_exotics_sitting)
+        )
+        
         return Response({
             'is_sitter': user.is_sitter,
-            'is_approved_sitter': is_approved_sitter
+            'is_approved_sitter': is_approved_sitter,
+            'approved_dog_sitting': user.approved_dog_sitting,
+            'approved_cat_sitting': user.approved_cat_sitting,
+            'approved_exotics_sitting': user.approved_exotics_sitting,
+            'wants_to_be_sitter': user.wants_to_be_sitter
         })
 
 @api_view(['GET'])
