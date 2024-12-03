@@ -11,21 +11,20 @@ class RegisterSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'email', 'first_name', 'last_name', 'password',
-            'user_id', 'created_at', 'approved_at', 'is_sitter',
-            'approved_dog_sitting', 'approved_cat_sitting', 'approved_exotics_sitting'
+            'user_id', 'date_joined', 'approved_at', 'is_sitter',
+            'approved_for_dogs', 'approved_for_cats', 'approved_for_exotics'
         ]
         read_only_fields = [
-            'user_id', 'created_at', 'approved_at', 'is_sitter',
-            'approved_dog_sitting', 'approved_cat_sitting', 'approved_exotics_sitting'
+            'user_id', 'date_joined', 'approved_at', 'is_sitter',
+            'approved_for_dogs', 'approved_for_cats', 'approved_for_exotics'
         ]
 
     def create(self, validated_data):
-        full_name = f"{validated_data['first_name']} {validated_data['last_name']}"
+        name = f"{validated_data['first_name']} {validated_data['last_name']}"
         user = User.objects.create_user(
             email=validated_data['email'],
-            full_name=full_name,
-            password=validated_data['password'],
-            user_id='user_' + BaseUserManager().make_random_password(length=9)
+            name=name,
+            password=validated_data['password']
         )
         return user
 
@@ -33,6 +32,6 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'email', 'full_name', 'is_sitter', 'is_client',
-            'approved_dog_sitting', 'approved_cat_sitting', 'approved_exotics_sitting'
+            'email', 'name', 'is_sitter', 'is_client',
+            'approved_for_dogs', 'approved_for_cats', 'approved_for_exotics'
         ]

@@ -3,14 +3,14 @@ from .models import Client
 
 @admin.register(Client)
 class ClientAdmin(admin.ModelAdmin):
-    list_display = ('get_full_name', 'get_email', 'last_booking', 'created_at')
+    list_display = ('get_name', 'get_email', 'last_booking', 'created_at')
     list_filter = ('last_booking', 'created_at')
-    search_fields = ('user__email', 'user__full_name', 'address')
+    search_fields = ('user__email', 'user__name')
     readonly_fields = ('created_at', 'updated_at')
 
-    def get_full_name(self, obj):
-        return obj.user.full_name
-    get_full_name.short_description = 'Name'
+    def get_name(self, obj):
+        return obj.user.name
+    get_name.short_description = 'Name'
 
     def get_email(self, obj):
         return obj.user.email
@@ -21,8 +21,8 @@ class ClientAdmin(admin.ModelAdmin):
             'fields': ('user',)
         }),
         ('Client Details', {
-            'fields': ('address', 'about_me', 'emergency_contact_name', 
-                      'emergency_contact_phone', 'authorized_household_members', 'pet_types')
+            'fields': ('about_me', 'emergency_contact_name', 
+                      'emergency_contact_phone', 'authorized_household_members')
         }),
         ('Booking Information', {
             'fields': ('last_booking',)
