@@ -8,7 +8,7 @@ import { theme } from '../styles/theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthContext } from '../context/AuthContext';
 import FloatingSaveButton from '../components/FloatingSaveButton';
-import RateSetter from '../components/RateSetter'; // Import the RateSetter component
+import ServiceManager from '../components/ServiceManager';
 
 const MyProfile = () => {
   const navigation = useNavigation();
@@ -30,8 +30,31 @@ const MyProfile = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [editMode, setEditMode] = useState({
     sitter: false, // Initialize edit mode for sitter
+    services: false,
     // other sections if needed
   });
+
+  const [services, setServices] = useState([
+    {
+      serviceName: 'Dog Walking',
+      animalTypes: 'Dogs',
+      rates: { puppies: '20', adults: '15' },
+      additionalAnimalRate: '10',
+    },
+    {
+      serviceName: 'Cat Sitting',
+      animalTypes: 'Cats',
+      rates: { puppies: '', adults: '25' }, // No puppy rates for cats
+      additionalAnimalRate: '5',
+    },
+    {
+      serviceName: 'Exotic Pet Care',
+      animalTypes: 'Lizards, Birds',
+      rates: { puppies: '', adults: '50' }, // Single adult rate
+      additionalAnimalRate: '15',
+    },
+  ]);
+  
   const [activeTab, setActiveTab] = useState('client');
   const [rates, setRates] = useState({
     inHouse: '',
@@ -356,17 +379,17 @@ const MyProfile = () => {
         )}
         {activeTab === 'sitter' && (
           <View style={styles.centeredContent}>
-            <View style={styles.sectionHeader}>
+            {/* <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Set Rates</Text>
               <TouchableOpacity onPress={() => toggleEditMode('sitter')}>
                 <MaterialCommunityIcons name="pencil" size={20} color={theme.colors.primary} />
               </TouchableOpacity>
-            </View>
-            <RateSetter 
-              rates={rates} 
-              setRates={setRates} 
-              setHasUnsavedChanges={setHasUnsavedChanges} 
-              editMode={editMode.sitter} // Pass the edit mode state
+            </View> */}
+            <ServiceManager
+              services={services}
+              setServices={setServices}
+              setHasUnsavedChanges={setHasUnsavedChanges}
+              editMode={editMode.services}
             />
           </View>
         )}
