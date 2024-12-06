@@ -11,12 +11,42 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
 
+const SERVICE_TYPE_SUGGESTIONS = [
+  "Overnight Cat Sitting (Client's Home)",
+  "Dog Walking",
+  "Pet Boarding",
+  "Exotic Pet Care",
+  "Daytime Pet Sitting",
+];
+
+const ANIMAL_TYPE_SUGGESTIONS = [
+  'Dog',
+  'Cat',
+  'Cow',
+  'Calf',
+  'Lizard',
+  'Bird',
+  'Rabbit',
+  'Fish',
+];
+
 const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
   const [modalVisible, setModalVisible] = useState(false);
-  const [currentService, setCurrentService] = useState(null); // Tracks add/edit mode
-  const [collapsedServices, setCollapsedServices] = useState([]); // Tracks collapsed service indices
-  const [allCollapsed, setAllCollapsed] = useState(false); // Tracks if all services are collapsed
-  const [additionalRates, setAdditionalRates] = useState([]); // Tracks additional rate types
+  const [currentService, setCurrentService] = useState(null);
+  const [collapsedServices, setCollapsedServices] = useState([]);
+  const [allCollapsed, setAllCollapsed] = useState(false);
+  const [additionalRates, setAdditionalRates] = useState([]);
+  const [serviceTypeSuggestions, setServiceTypeSuggestions] = useState([]);
+  const [animalTypeSuggestions, setAnimalTypeSuggestions] = useState([]);
+
+  const toggleCollapseAll = () => {
+    if (allCollapsed) {
+      setCollapsedServices([]); // Expand all
+    } else {
+      setCollapsedServices(services.map((_, index) => index)); // Collapse all
+    }
+    setAllCollapsed(!allCollapsed);
+  };
 
   const handleAddService = () => {
     if (
@@ -30,14 +60,12 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
       };
 
       if (currentService.index !== undefined) {
-        // Editing an existing service
         setServices((prevServices) =>
           prevServices.map((service, index) =>
             index === currentService.index ? updatedService : service
           )
         );
       } else {
-        // Adding a new service
         setServices((prevServices) => [...prevServices, updatedService]);
       }
 
@@ -49,9 +77,9 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
   };
 
   const handleEditService = (index) => {
-    const serviceToEdit = { ...services[index], index }; // Include index for editing
+    const serviceToEdit = { ...services[index], index };
     setCurrentService(serviceToEdit);
-    setAdditionalRates(serviceToEdit.additionalRates || []); // Load additional rates
+    setAdditionalRates(serviceToEdit.additionalRates || []);
     setModalVisible(true);
   };
 
@@ -60,21 +88,28 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
     setHasUnsavedChanges(true);
   };
 
-  const toggleCollapse = (index) => {
-    if (collapsedServices.includes(index)) {
-      setCollapsedServices(collapsedServices.filter((i) => i !== index));
+  const handleServiceTypeChange = (text) => {
+    setCurrentService((prev) => ({ ...prev, serviceName: text }));
+    if (text.trim()) {
+      const filteredSuggestions = SERVICE_TYPE_SUGGESTIONS.filter((suggestion) =>
+        suggestion.toLowerCase().includes(text.toLowerCase())
+      ).slice(0, 5);
+      setServiceTypeSuggestions(filteredSuggestions);
     } else {
-      setCollapsedServices([...collapsedServices, index]);
+      setServiceTypeSuggestions([]);
     }
   };
 
-  const toggleCollapseAll = () => {
-    if (allCollapsed) {
-      setCollapsedServices([]); // Expand all
+  const handleAnimalTypeChange = (text) => {
+    setCurrentService((prev) => ({ ...prev, animalTypes: text }));
+    if (text.trim()) {
+      const filteredSuggestions = ANIMAL_TYPE_SUGGESTIONS.filter((suggestion) =>
+        suggestion.toLowerCase().startsWith(text.toLowerCase())
+      ).slice(0, 5);
+      setAnimalTypeSuggestions(filteredSuggestions);
     } else {
-      setCollapsedServices(services.map((_, index) => index)); // Collapse all
+      setAnimalTypeSuggestions([]);
     }
-    setAllCollapsed(!allCollapsed);
   };
 
   const addAdditionalRate = () => {
@@ -83,9 +118,7 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
 
   const updateAdditionalRate = (index, key, value) => {
     setAdditionalRates((prevRates) =>
-      prevRates.map((rate, i) =>
-        i === index ? { ...rate, [key]: value } : rate
-      )
+      prevRates.map((rate, i) => (i === index ? { ...rate, [key]: value } : rate))
     );
   };
 
@@ -176,22 +209,52 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
               <Text style={styles.modalTitle}>
                 {currentService?.index !== undefined ? 'Edit Service' : 'Add New Service'}
               </Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Service Name"
-                value={currentService?.serviceName}
-                onChangeText={(text) =>
-                  setCurrentService((prev) => ({ ...prev, serviceName: text }))
-                }
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="Animal Types (comma-separated)"
-                value={currentService?.animalTypes}
-                onChangeText={(text) =>
-                  setCurrentService((prev) => ({ ...prev, animalTypes: text }))
-                }
-              />
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Service Name"
+                  value={currentService?.serviceName}
+                  onChangeText={handleServiceTypeChange}
+                />
+                {serviceTypeSuggestions.length > 0 && (
+                  <View style={styles.suggestionsContainer}>
+                    {serviceTypeSuggestions.map((suggestion, index) => (
+                      <TouchableOpacity
+                        key={index}
+                        onPress={() => {
+                          setCurrentService((prev) => ({ ...prev, serviceName: suggestion }));
+                          setServiceTypeSuggestions([]);
+                        }}
+                      >
+                        <Text style={styles.suggestionText}>{suggestion}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+              </View>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Animal Types (comma-separated)"
+                  value={currentService?.animalTypes}
+                  onChangeText={handleAnimalTypeChange}
+                />
+                {animalTypeSuggestions.length > 0 && (
+                  <View style={styles.suggestionsContainer}>
+                    {animalTypeSuggestions.map((suggestion, index) => (
+                      <TouchableOpacity
+                        key={index}
+                        onPress={() => {
+                          setCurrentService((prev) => ({ ...prev, animalTypes: suggestion }));
+                          setAnimalTypeSuggestions([]);
+                        }}
+                      >
+                        <Text style={styles.suggestionText}>{suggestion}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+              </View>
               <TextInput
                 style={styles.input}
                 placeholder="Puppy Rate"
@@ -217,7 +280,7 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
                 }
               />
               <TextInput
-                style={[styles.input, styles.additionalAnimalRate]} // Add border below
+                style={[styles.input, styles.additionalAnimalRate]}
                 placeholder="Additional Animal Rate"
                 keyboardType="numeric"
                 value={currentService?.additionalAnimalRate}
@@ -253,29 +316,21 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
               </TouchableOpacity>
             </View>
             <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={styles.saveButton}
-                onPress={handleAddService}
-              >
+              <TouchableOpacity style={styles.saveButton} onPress={handleAddService}>
                 <Text style={styles.saveButtonText}>
                   {currentService?.index !== undefined ? 'Save Changes' : 'Add Service'}
                 </Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={() => setModalVisible(false)}
-              >
+              <TouchableOpacity style={styles.cancelButton} onPress={() => setModalVisible(false)}>
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
-
     </View>
   );
 };
-
 
 const styles = StyleSheet.create({
   container: {
@@ -339,11 +394,11 @@ const styles = StyleSheet.create({
     padding: 20,
     width: '90%',
     maxWidth: 400,
-    maxHeight: '40%', // Limit modal height to 80% of the viewport
+    maxHeight: '40%',
   },
   modalScroll: {
     flex: 1,
-    overflow: 'scroll', // Enable scrolling inside the modal
+    overflow: 'scroll',
   },
   modalTitle: {
     fontSize: theme.fontSizes.large,
@@ -360,9 +415,27 @@ const styles = StyleSheet.create({
   },
   additionalAnimalRate: {
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border, // Adds a border below Additional Animal Rate
+    borderBottomColor: theme.colors.border,
     paddingBottom: 10,
     marginBottom: 10,
+  },
+  suggestionsContainer: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    backgroundColor: theme.colors.cardBackground,
+    borderColor: theme.colors.border,
+    borderWidth: 1,
+    borderRadius: 5,
+    zIndex: 10,
+    maxHeight: 150,
+    overflow: 'scroll',
+  },
+  suggestionText: {
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
   },
   modalButtons: {
     flexDirection: 'row',
@@ -414,6 +487,5 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
 });
-
 
 export default ServiceManager;
