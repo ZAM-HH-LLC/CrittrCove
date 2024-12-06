@@ -16,6 +16,7 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
   const [currentService, setCurrentService] = useState(null); // Tracks add/edit mode
   const [collapsedServices, setCollapsedServices] = useState([]); // Tracks collapsed service indices
   const [allCollapsed, setAllCollapsed] = useState(false); // Tracks if all services are collapsed
+  const [additionalRates, setAdditionalRates] = useState([]); // Tracks additional rate types
 
   const handleAddService = () => {
     if (
@@ -23,18 +24,25 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
       currentService.animalTypes.trim() &&
       (currentService.rates.puppies || currentService.rates.adults)
     ) {
+      const updatedService = {
+        ...currentService,
+        additionalRates,
+      };
+
       if (currentService.index !== undefined) {
-        // Editing existing service
+        // Editing an existing service
         setServices((prevServices) =>
           prevServices.map((service, index) =>
-            index === currentService.index ? { ...currentService } : service
+            index === currentService.index ? updatedService : service
           )
         );
       } else {
         // Adding a new service
-        setServices((prevServices) => [...prevServices, { ...currentService }]);
+        setServices((prevServices) => [...prevServices, updatedService]);
       }
+
       setCurrentService(null); // Reset the form
+      setAdditionalRates([]); // Reset additional rates
       setModalVisible(false);
       setHasUnsavedChanges(true);
     }
@@ -43,6 +51,7 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
   const handleEditService = (index) => {
     const serviceToEdit = { ...services[index], index }; // Include index for editing
     setCurrentService(serviceToEdit);
+    setAdditionalRates(serviceToEdit.additionalRates || []); // Load additional rates
     setModalVisible(true);
   };
 
@@ -66,6 +75,18 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
       setCollapsedServices(services.map((_, index) => index)); // Collapse all
     }
     setAllCollapsed(!allCollapsed);
+  };
+
+  const addAdditionalRate = () => {
+    setAdditionalRates((prevRates) => [...prevRates, { label: '', value: '', description: '' }]);
+  };
+
+  const updateAdditionalRate = (index, key, value) => {
+    setAdditionalRates((prevRates) =>
+      prevRates.map((rate, i) =>
+        i === index ? { ...rate, [key]: value } : rate
+      )
+    );
   };
 
   const renderServiceCard = ({ item, index }) => {
@@ -97,6 +118,11 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
               <Text style={styles.rateText}>
                 Add’l Animal: ${item.additionalAnimalRate || 'N/A'}
               </Text>
+              {item.additionalRates?.map((rate, idx) => (
+                <Text key={idx} style={styles.rateText}>
+                  {rate.label}: ${rate.value} {rate.description && `(${rate.description})`}
+                </Text>
+              ))}
             </View>
             <View style={styles.bottomRow}>
               <TouchableOpacity onPress={() => handleEditService(index)}>
@@ -198,6 +224,32 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
                 setCurrentService((prev) => ({ ...prev, additionalAnimalRate: value }))
               }
             />
+            {additionalRates.map((rate, idx) => (
+              <View key={idx} style={styles.additionalRateRow}>
+                <TextInput
+                  style={[styles.input, styles.additionalRateInput]}
+                  placeholder="Rate Title"
+                  value={rate.label}
+                  onChangeText={(text) => updateAdditionalRate(idx, 'label', text)}
+                />
+                <TextInput
+                  style={[styles.input, styles.additionalRateInput]}
+                  placeholder="Rate Amount"
+                  keyboardType="numeric"
+                  value={rate.value}
+                  onChangeText={(value) => updateAdditionalRate(idx, 'value', value)}
+                />
+                <TextInput
+                  style={[styles.input, styles.additionalRateInput]}
+                  placeholder="Rate Description"
+                  value={rate.description}
+                  onChangeText={(text) => updateAdditionalRate(idx, 'description', text)}
+                />
+              </View>
+            ))}
+            <TouchableOpacity onPress={addAdditionalRate} style={styles.addRateButton}>
+              <Text style={styles.addRateText}>+ Add Additional Rate</Text>
+            </TouchableOpacity>
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={styles.saveButton}
@@ -220,6 +272,7 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
     </View>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {
