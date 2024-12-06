@@ -32,7 +32,12 @@ const ANIMAL_TYPE_SUGGESTIONS = [
 
 const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
   const [modalVisible, setModalVisible] = useState(false);
-  const [currentService, setCurrentService] = useState(null);
+  const [currentService, setCurrentService] = useState({
+    serviceName: '',
+    animalTypes: '',
+    rates: { puppies: '', adults: '' },
+    additionalAnimalRate: '',
+  });
   const [collapsedServices, setCollapsedServices] = useState([]);
   const [allCollapsed, setAllCollapsed] = useState(false);
   const [additionalRates, setAdditionalRates] = useState([]);
@@ -69,7 +74,12 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
         setServices((prevServices) => [...prevServices, updatedService]);
       }
 
-      setCurrentService(null); // Reset the form
+      setCurrentService({
+        serviceName: '',
+        animalTypes: '',
+        rates: { puppies: '', adults: '' },
+        additionalAnimalRate: '',
+      }); // Reset the form
       setAdditionalRates([]); // Reset additional rates
       setModalVisible(false);
       setHasUnsavedChanges(true);
@@ -81,6 +91,14 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
     setCurrentService(serviceToEdit);
     setAdditionalRates(serviceToEdit.additionalRates || []);
     setModalVisible(true);
+  };
+
+  const toggleCollapse = (index) => {
+    if (collapsedServices.includes(index)) {
+      setCollapsedServices(collapsedServices.filter((i) => i !== index));
+    } else {
+      setCollapsedServices([...collapsedServices, index]);
+    }
   };
 
   const handleDeleteService = (index) => {
@@ -259,7 +277,7 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
                 style={styles.input}
                 placeholder="Puppy Rate"
                 keyboardType="numeric"
-                value={currentService?.rates?.puppies}
+                value={currentService?.rates?.puppies || ''}
                 onChangeText={(value) =>
                   setCurrentService((prev) => ({
                     ...prev,
@@ -271,7 +289,7 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
                 style={styles.input}
                 placeholder="Adult Rate"
                 keyboardType="numeric"
-                value={currentService?.rates?.adults}
+                value={currentService?.rates?.adults || ''}
                 onChangeText={(value) =>
                   setCurrentService((prev) => ({
                     ...prev,
@@ -283,7 +301,7 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
                 style={[styles.input, styles.additionalAnimalRate]}
                 placeholder="Additional Animal Rate"
                 keyboardType="numeric"
-                value={currentService?.additionalAnimalRate}
+                value={currentService?.additionalAnimalRate || ''}
                 onChangeText={(value) =>
                   setCurrentService((prev) => ({ ...prev, additionalAnimalRate: value }))
                 }
@@ -293,20 +311,20 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
                   <TextInput
                     style={[styles.input, styles.additionalRateInput]}
                     placeholder="Rate Title"
-                    value={rate.label}
+                    value={rate.label || ''}
                     onChangeText={(text) => updateAdditionalRate(idx, 'label', text)}
                   />
                   <TextInput
                     style={[styles.input, styles.additionalRateInput]}
                     placeholder="Rate Amount"
                     keyboardType="numeric"
-                    value={rate.value}
+                    value={rate.value || ''}
                     onChangeText={(value) => updateAdditionalRate(idx, 'value', value)}
                   />
                   <TextInput
                     style={[styles.input, styles.additionalRateInput]}
                     placeholder="Rate Description"
-                    value={rate.description}
+                    value={rate.description || ''}
                     onChangeText={(text) => updateAdditionalRate(idx, 'description', text)}
                   />
                 </View>
@@ -394,7 +412,7 @@ const styles = StyleSheet.create({
     padding: 20,
     width: '90%',
     maxWidth: 400,
-    maxHeight: '40%',
+    maxHeight: '50%',
   },
   modalScroll: {
     flex: 1,
@@ -421,16 +439,17 @@ const styles = StyleSheet.create({
   },
   suggestionsContainer: {
     position: 'absolute',
-    top: '100%',
+    top: 45,
     left: 0,
     right: 0,
     backgroundColor: theme.colors.cardBackground,
     borderColor: theme.colors.border,
     borderWidth: 1,
     borderRadius: 5,
-    zIndex: 10,
+    zIndex: 1000,
     maxHeight: 150,
     overflow: 'scroll',
+    elevation: 10, // Ensures it stays above everything.
   },
   suggestionText: {
     padding: 10,
