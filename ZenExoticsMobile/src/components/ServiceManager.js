@@ -172,84 +172,86 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>
-              {currentService?.index !== undefined ? 'Edit Service' : 'Add New Service'}
-            </Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Service Name"
-              value={currentService?.serviceName}
-              onChangeText={(text) =>
-                setCurrentService((prev) => ({ ...prev, serviceName: text }))
-              }
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Animal Types (comma-separated)"
-              value={currentService?.animalTypes}
-              onChangeText={(text) =>
-                setCurrentService((prev) => ({ ...prev, animalTypes: text }))
-              }
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Puppy Rate"
-              keyboardType="numeric"
-              value={currentService?.rates?.puppies}
-              onChangeText={(value) =>
-                setCurrentService((prev) => ({
-                  ...prev,
-                  rates: { ...prev.rates, puppies: value },
-                }))
-              }
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Adult Rate"
-              keyboardType="numeric"
-              value={currentService?.rates?.adults}
-              onChangeText={(value) =>
-                setCurrentService((prev) => ({
-                  ...prev,
-                  rates: { ...prev.rates, adults: value },
-                }))
-              }
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Additional Animal Rate"
-              keyboardType="numeric"
-              value={currentService?.additionalAnimalRate}
-              onChangeText={(value) =>
-                setCurrentService((prev) => ({ ...prev, additionalAnimalRate: value }))
-              }
-            />
-            {additionalRates.map((rate, idx) => (
-              <View key={idx} style={styles.additionalRateRow}>
-                <TextInput
-                  style={[styles.input, styles.additionalRateInput]}
-                  placeholder="Rate Title"
-                  value={rate.label}
-                  onChangeText={(text) => updateAdditionalRate(idx, 'label', text)}
-                />
-                <TextInput
-                  style={[styles.input, styles.additionalRateInput]}
-                  placeholder="Rate Amount"
-                  keyboardType="numeric"
-                  value={rate.value}
-                  onChangeText={(value) => updateAdditionalRate(idx, 'value', value)}
-                />
-                <TextInput
-                  style={[styles.input, styles.additionalRateInput]}
-                  placeholder="Rate Description"
-                  value={rate.description}
-                  onChangeText={(text) => updateAdditionalRate(idx, 'description', text)}
-                />
-              </View>
-            ))}
-            <TouchableOpacity onPress={addAdditionalRate} style={styles.addRateButton}>
-              <Text style={styles.addRateText}>+ Add Additional Rate</Text>
-            </TouchableOpacity>
+            <View style={styles.modalScroll}>
+              <Text style={styles.modalTitle}>
+                {currentService?.index !== undefined ? 'Edit Service' : 'Add New Service'}
+              </Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Service Name"
+                value={currentService?.serviceName}
+                onChangeText={(text) =>
+                  setCurrentService((prev) => ({ ...prev, serviceName: text }))
+                }
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Animal Types (comma-separated)"
+                value={currentService?.animalTypes}
+                onChangeText={(text) =>
+                  setCurrentService((prev) => ({ ...prev, animalTypes: text }))
+                }
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Puppy Rate"
+                keyboardType="numeric"
+                value={currentService?.rates?.puppies}
+                onChangeText={(value) =>
+                  setCurrentService((prev) => ({
+                    ...prev,
+                    rates: { ...prev.rates, puppies: value },
+                  }))
+                }
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Adult Rate"
+                keyboardType="numeric"
+                value={currentService?.rates?.adults}
+                onChangeText={(value) =>
+                  setCurrentService((prev) => ({
+                    ...prev,
+                    rates: { ...prev.rates, adults: value },
+                  }))
+                }
+              />
+              <TextInput
+                style={[styles.input, styles.additionalAnimalRate]} // Add border below
+                placeholder="Additional Animal Rate"
+                keyboardType="numeric"
+                value={currentService?.additionalAnimalRate}
+                onChangeText={(value) =>
+                  setCurrentService((prev) => ({ ...prev, additionalAnimalRate: value }))
+                }
+              />
+              {additionalRates.map((rate, idx) => (
+                <View key={idx} style={styles.additionalRateRow}>
+                  <TextInput
+                    style={[styles.input, styles.additionalRateInput]}
+                    placeholder="Rate Title"
+                    value={rate.label}
+                    onChangeText={(text) => updateAdditionalRate(idx, 'label', text)}
+                  />
+                  <TextInput
+                    style={[styles.input, styles.additionalRateInput]}
+                    placeholder="Rate Amount"
+                    keyboardType="numeric"
+                    value={rate.value}
+                    onChangeText={(value) => updateAdditionalRate(idx, 'value', value)}
+                  />
+                  <TextInput
+                    style={[styles.input, styles.additionalRateInput]}
+                    placeholder="Rate Description"
+                    value={rate.description}
+                    onChangeText={(text) => updateAdditionalRate(idx, 'description', text)}
+                  />
+                </View>
+              ))}
+              <TouchableOpacity onPress={addAdditionalRate} style={styles.addRateButton}>
+                <Text style={styles.addRateText}>+ Add Additional Rate</Text>
+              </TouchableOpacity>
+            </View>
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={styles.saveButton}
@@ -269,6 +271,7 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
           </View>
         </View>
       </Modal>
+
     </View>
   );
 };
@@ -336,6 +339,11 @@ const styles = StyleSheet.create({
     padding: 20,
     width: '90%',
     maxWidth: 400,
+    maxHeight: '40%', // Limit modal height to 80% of the viewport
+  },
+  modalScroll: {
+    flex: 1,
+    overflow: 'scroll', // Enable scrolling inside the modal
   },
   modalTitle: {
     fontSize: theme.fontSizes.large,
@@ -349,6 +357,12 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 10,
     backgroundColor: theme.colors.inputBackground,
+  },
+  additionalAnimalRate: {
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border, // Adds a border below Additional Animal Rate
+    paddingBottom: 10,
+    marginBottom: 10,
   },
   modalButtons: {
     flexDirection: 'row',
@@ -386,6 +400,20 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  additionalRateRow: {
+    marginTop: 10,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+  },
+  additionalRateInput: {
+    marginBottom: 5,
+  },
+  addRateText: {
+    paddingTop: 20,
+    paddingBottom: 20,
+  },
 });
+
 
 export default ServiceManager;
