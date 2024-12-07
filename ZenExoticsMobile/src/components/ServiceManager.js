@@ -130,13 +130,13 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
         console.log('x: ', x, 'y: ', y, 'width: ', width, 'height: ', height, 'pageX: ', pageX, 'pageY: ', pageY);
         if (inputType === 'animal') {
           setPosition({ 
-            top: y + height + 90, // Offset for animal dropdown
+            top: y + height + 87, // Offset for animal dropdown
             left: x, 
             width: '100%',
           });
         } else {
           setPosition({ 
-            top: y + height, // Normal positioning for service dropdown
+            top: y + height - 6, // Normal positioning for service dropdown
             left: x, 
             width: '100%',
           });
@@ -463,6 +463,7 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
     borderWidth: 1,
     borderRadius: 5,
+    width: '100%',
     padding: 10,
     marginBottom: 10,
     backgroundColor: theme.colors.inputBackground,
