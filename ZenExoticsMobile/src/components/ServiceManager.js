@@ -43,7 +43,8 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
   const [additionalRates, setAdditionalRates] = useState([]);
   const [serviceTypeSuggestions, setServiceTypeSuggestions] = useState([]);
   const [animalTypeSuggestions, setAnimalTypeSuggestions] = useState([]);
-  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+  const [serviceDropdownPosition, setServiceDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+  const [animalDropdownPosition, setAnimalDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
   const [showServiceDropdown, setShowServiceDropdown] = useState(false);
   const [showAnimalDropdown, setShowAnimalDropdown] = useState(false);
 
@@ -85,14 +86,14 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
         animalTypes: '',
         rates: { puppies: '', adults: '' },
         additionalAnimalRate: '',
-      }); // Reset the form
-      setAdditionalRates([]); // Reset additional rates
+      });
+      setAdditionalRates([]);
       setModalVisible(false);
       setHasUnsavedChanges(true);
     }
   };
 
-  // Inside handleServiceTypeChange
+
   const handleServiceTypeChange = (text) => {
     setCurrentService((prev) => ({ ...prev, serviceName: text }));
     if (text.trim()) {
@@ -100,7 +101,7 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
         suggestion.toLowerCase().includes(text.toLowerCase())
       ).slice(0, 5);
       setServiceTypeSuggestions(filteredSuggestions);
-      measureDropdown(serviceInputRef, setDropdownPosition);
+      measureDropdown(serviceInputRef, setServiceDropdownPosition);
       setShowServiceDropdown(true);
     } else {
       setServiceTypeSuggestions([]);
@@ -108,7 +109,6 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
     }
   };
 
-  // Inside handleAnimalTypeChange
   const handleAnimalTypeChange = (text) => {
     setCurrentService((prev) => ({ ...prev, animalTypes: text }));
     if (text.trim()) {
@@ -116,7 +116,7 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
         suggestion.toLowerCase().startsWith(text.toLowerCase())
       ).slice(0, 5);
       setAnimalTypeSuggestions(filteredSuggestions);
-      measureDropdown(animalInputRef, setDropdownPosition);
+      measureDropdown(animalInputRef, setAnimalDropdownPosition);
       setShowAnimalDropdown(true);
     } else {
       setAnimalTypeSuggestions([]);
@@ -126,11 +126,16 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
 
   const measureDropdown = (inputRef, setPosition) => {
     if (inputRef.current) {
-      inputRef.current.measureInWindow((x, y, width, height) => {
-        setPosition({ top: y + height, left: x, width });
+      inputRef.current.measure((x, y, width, height, pageX, pageY) => {
+        setPosition({ 
+          top: y + height, // Dropdown below the input
+          left: x, 
+          width 
+        });
       });
     }
   };
+  
 
   const addAdditionalRate = () => {
     setAdditionalRates((prevRates) => [...prevRates, { label: '', value: '', description: '' }]);
@@ -231,8 +236,8 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
               </Text>
               <View style={styles.inputWrapper}>
                 <TextInput
-                  style={styles.input}
                   ref={serviceInputRef}
+                  style={styles.input}
                   placeholder="Service Name"
                   value={currentService?.serviceName}
                   onChangeText={handleServiceTypeChange}
@@ -241,7 +246,11 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
                   <View
                     style={[
                       styles.suggestionsContainer,
-                      { top: dropdownPosition.top, left: dropdownPosition.left, width: dropdownPosition.width },
+                      {
+                        top: serviceDropdownPosition.top,
+                        left: serviceDropdownPosition.left,
+                        width: serviceDropdownPosition.width,
+                      },
                     ]}
                   >
                     {serviceTypeSuggestions.map((suggestion, index) => (
@@ -258,12 +267,11 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
                     ))}
                   </View>
                 )}
-
               </View>
               <View style={styles.inputWrapper}>
                 <TextInput
-                  style={styles.input}
                   ref={animalInputRef}
+                  style={styles.input}
                   placeholder="Animal Types (comma-separated)"
                   value={currentService?.animalTypes}
                   onChangeText={handleAnimalTypeChange}
@@ -272,7 +280,11 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
                   <View
                     style={[
                       styles.suggestionsContainer,
-                      { top: dropdownPosition.top, left: dropdownPosition.left, width: dropdownPosition.width },
+                      {
+                        top: animalDropdownPosition.top,
+                        left: animalDropdownPosition.left,
+                        width: animalDropdownPosition.width,
+                      },
                     ]}
                   >
                     {animalTypeSuggestions.map((suggestion, index) => (
@@ -356,7 +368,10 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
                   {currentService?.index !== undefined ? 'Save Changes' : 'Add Service'}
                 </Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.cancelButton} onPress={() => setModalVisible(false)}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setModalVisible(false)}
+              >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
             </View>
@@ -365,6 +380,7 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
       </Modal>
     </View>
   );
+
 };
 
 const styles = StyleSheet.create({
@@ -464,7 +480,7 @@ const styles = StyleSheet.create({
     maxHeight: 150,
     overflow: 'scroll',
     elevation: 10,
-  },
+  },  
   suggestionText: {
     padding: 10,
     borderBottomWidth: 1,
@@ -491,11 +507,10 @@ const styles = StyleSheet.create({
     color: theme.colors.buttonText,
   },
   collapseAllButton: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: 5,
-    padding: 10,
-    alignItems: 'center',
     marginBottom: 20,
+    padding: 10,
+    backgroundColor: theme.colors.primary,
+    alignItems: 'center',
   },
   collapseAllText: {
     color: theme.colors.buttonText,
