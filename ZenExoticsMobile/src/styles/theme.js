@@ -14,6 +14,7 @@ export const theme = {
     whiteText: 'white', // Text color for headers and buttons
     accent: '#03dac4', // Accent color if needed
     error: '#B00020',
+    danger: '#A52A2A',
   },
   fontSizes: {
     small: 12,

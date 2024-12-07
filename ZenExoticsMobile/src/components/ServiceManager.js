@@ -7,13 +7,18 @@ import {
   TouchableOpacity,
   FlatList,
   Modal,
+  Alert,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
 
 const SERVICE_TYPE_SUGGESTIONS = [
   "Overnight Cat Sitting (Client's Home)",
+  "Cat Boarding",
+  "Drop-In Visits (30 min)",
+  "Drop-In Visits (60 min)",
   "Dog Walking",
+  "Doggy Day Care",
   "Pet Boarding",
   "Exotic Pet Care",
   "Daytime Pet Sitting",
@@ -47,6 +52,7 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
   const [animalDropdownPosition, setAnimalDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
   const [showServiceDropdown, setShowServiceDropdown] = useState(false);
   const [showAnimalDropdown, setShowAnimalDropdown] = useState(false);
+  const [showValidationErrors, setShowValidationErrors] = useState(false);
 
   const serviceInputRef = useRef(null);
   const animalInputRef = useRef(null);
@@ -61,10 +67,19 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
   };
 
   const handleAddService = () => {
+    setShowValidationErrors(true);
+    
+    const areAdditionalRatesValid = additionalRates.every(rate => 
+      rate.label?.trim() && 
+      rate.value?.trim() && 
+      rate.description?.trim()
+    );
+
     if (
       currentService.serviceName.trim() &&
       currentService.animalTypes.trim() &&
-      (currentService.rates.puppies || currentService.rates.adults)
+      (currentService.rates.puppies || currentService.rates.adults) &&
+      (additionalRates.length === 0 || areAdditionalRatesValid)
     ) {
       const updatedService = {
         ...currentService,
@@ -90,9 +105,16 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
       setAdditionalRates([]);
       setModalVisible(false);
       setHasUnsavedChanges(true);
+      setShowValidationErrors(false);
     }
   };
 
+  const handleEditService = (index) => {
+    const serviceToEdit = { ...services[index], index }; // Include index for editing
+    setCurrentService(serviceToEdit);
+    setAdditionalRates(serviceToEdit.additionalRates || []); // Load additional rates
+    setModalVisible(true);
+  };
 
   const handleServiceTypeChange = (text) => {
     setCurrentService((prev) => ({ ...prev, serviceName: text }));
@@ -343,24 +365,44 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
               {additionalRates.map((rate, idx) => (
                 <View key={idx} style={styles.additionalRateRow}>
                   <TextInput
-                    style={[styles.input, styles.additionalRateInput]}
+                    style={[
+                      styles.input, 
+                      styles.additionalRateInput,
+                      showValidationErrors && !rate.label?.trim() && styles.inputError
+                    ]}
                     placeholder="Rate Title"
                     value={rate.label || ''}
                     onChangeText={(text) => updateAdditionalRate(idx, 'label', text)}
                   />
                   <TextInput
-                    style={[styles.input, styles.additionalRateInput]}
+                    style={[
+                      styles.input, 
+                      styles.additionalRateInput,
+                      showValidationErrors && !rate.value?.trim() && styles.inputError
+                    ]}
                     placeholder="Rate Amount"
                     keyboardType="decimal-pad"
                     value={rate.value || ''}
                     onChangeText={(value) => updateAdditionalRate(idx, 'value', value.replace(/[^0-9.]/g, ''))}
                   />
                   <TextInput
-                    style={[styles.input, styles.additionalRateInput]}
+                    style={[
+                      styles.input, 
+                      styles.additionalRateInput,
+                      showValidationErrors && !rate.description?.trim() && styles.inputError
+                    ]}
                     placeholder="Rate Description"
                     value={rate.description || ''}
                     onChangeText={(text) => updateAdditionalRate(idx, 'description', text)}
                   />
+                  <TouchableOpacity 
+                    onPress={() => {
+                      setAdditionalRates(prevRates => prevRates.filter((_, i) => i !== idx));
+                    }}
+                    style={styles.deleteRateButton}
+                  >
+                    <Text style={styles.deleteRateButtonText}>Delete Additional Rate</Text>
+                  </TouchableOpacity>
                 </View>
               ))}
               <TouchableOpacity onPress={addAdditionalRate} style={styles.addRateButton}>
@@ -510,7 +552,7 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   saveButtonText: {
-    color: theme.colors.buttonText,
+    color: theme.colors.whiteText,
   },
   cancelButton: {
     backgroundColor: theme.colors.danger,
@@ -518,7 +560,7 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   cancelButtonText: {
-    color: theme.colors.buttonText,
+    color: theme.colors.whiteText,
   },
   collapseAllButton: {
     marginBottom: 20,
@@ -547,6 +589,24 @@ const styles = StyleSheet.create({
   addRateText: {
     paddingTop: 20,
     paddingBottom: 20,
+  },
+  deleteRateButton: {
+    borderWidth: 1,
+    borderColor: theme.colors.danger,
+    borderRadius: 5,
+    padding: 8,
+    marginTop: 5,
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+    width: '100%',
+  },
+  deleteRateButtonText: {
+    color: theme.colors.danger,
+    fontSize: theme.fontSizes.small,
+    textAlign: 'center',
+  },
+  inputError: {
+    borderColor: theme.colors.danger,
   },
 });
 
