@@ -200,26 +200,16 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
           <Text style={styles.serviceName}>{item.serviceName}</Text>
           <View style={styles.topRowIcons}>
             <TouchableOpacity 
-              onPress={() => handleEditService(index)} 
-              style={styles.iconButton}
-            >
-              <MaterialCommunityIcons name="pencil" size={24} color={theme.colors.primary} />
-            </TouchableOpacity>
-            <TouchableOpacity 
-              onPress={() => toggleCollapse(index)} 
-              style={styles.iconButton}
-            >
-              <MaterialCommunityIcons 
-                name={isCollapsed ? "chevron-down" : "chevron-up"} 
-                size={24} 
-                color={theme.colors.primary} 
-              />
-            </TouchableOpacity>
-            <TouchableOpacity 
               onPress={() => handleDeleteService(index)} 
               style={styles.iconButton}
             >
               <MaterialCommunityIcons name="delete" size={24} color={theme.colors.danger} />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              onPress={() => handleEditService(index)} 
+              style={styles.iconButton}
+            >
+              <MaterialCommunityIcons name="pencil" size={24} color={theme.colors.primary} />
             </TouchableOpacity>
           </View>
         </View>
@@ -237,6 +227,16 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
             ))}
           </View>
         )}
+        <TouchableOpacity 
+          onPress={() => toggleCollapse(index)} 
+          style={styles.collapseButton}
+        >
+          <MaterialCommunityIcons 
+            name={isCollapsed ? "chevron-down" : "chevron-up"} 
+            size={24} 
+            color={theme.colors.primary} 
+          />
+        </TouchableOpacity>
       </View>
     );
   };
@@ -491,6 +491,7 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
     padding: 10,
     marginVertical: 10,
+    position: 'relative',
   },
   collapsedCard: {
     borderWidth: 2,
@@ -500,7 +501,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 5,
+    // paddingVertical: ,
   },
   middleRow: {
     marginVertical: 5,
@@ -663,7 +664,7 @@ const styles = StyleSheet.create({
   topRowIcons: {
     flexDirection: 'row',
     alignItems: 'center',
-    minWidth: 120, // Ensure enough space for icons
+    // minWidth: 120, // Ensure enough space for icons
   },
   iconButton: {
     padding: 8,
@@ -689,6 +690,16 @@ const styles = StyleSheet.create({
   },
   deleteButtonText: {
     color: theme.colors.whiteText,
+  },
+  collapseButton: {
+    position: 'absolute',
+    bottom: 5,
+    right: 5,
+    padding: 8,
+    minWidth: 40,
+    minHeight: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 
