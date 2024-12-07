@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -43,6 +43,12 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
   const [additionalRates, setAdditionalRates] = useState([]);
   const [serviceTypeSuggestions, setServiceTypeSuggestions] = useState([]);
   const [animalTypeSuggestions, setAnimalTypeSuggestions] = useState([]);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+  const [showServiceDropdown, setShowServiceDropdown] = useState(false);
+  const [showAnimalDropdown, setShowAnimalDropdown] = useState(false);
+
+  const serviceInputRef = useRef(null);
+  const animalInputRef = useRef(null);
 
   const toggleCollapseAll = () => {
     if (allCollapsed) {
@@ -86,26 +92,7 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
     }
   };
 
-  const handleEditService = (index) => {
-    const serviceToEdit = { ...services[index], index };
-    setCurrentService(serviceToEdit);
-    setAdditionalRates(serviceToEdit.additionalRates || []);
-    setModalVisible(true);
-  };
-
-  const toggleCollapse = (index) => {
-    if (collapsedServices.includes(index)) {
-      setCollapsedServices(collapsedServices.filter((i) => i !== index));
-    } else {
-      setCollapsedServices([...collapsedServices, index]);
-    }
-  };
-
-  const handleDeleteService = (index) => {
-    setServices((prevServices) => prevServices.filter((_, i) => i !== index));
-    setHasUnsavedChanges(true);
-  };
-
+  // Inside handleServiceTypeChange
   const handleServiceTypeChange = (text) => {
     setCurrentService((prev) => ({ ...prev, serviceName: text }));
     if (text.trim()) {
@@ -113,11 +100,15 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
         suggestion.toLowerCase().includes(text.toLowerCase())
       ).slice(0, 5);
       setServiceTypeSuggestions(filteredSuggestions);
+      measureDropdown(serviceInputRef, setDropdownPosition);
+      setShowServiceDropdown(true);
     } else {
       setServiceTypeSuggestions([]);
+      setShowServiceDropdown(false);
     }
   };
 
+  // Inside handleAnimalTypeChange
   const handleAnimalTypeChange = (text) => {
     setCurrentService((prev) => ({ ...prev, animalTypes: text }));
     if (text.trim()) {
@@ -125,8 +116,19 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
         suggestion.toLowerCase().startsWith(text.toLowerCase())
       ).slice(0, 5);
       setAnimalTypeSuggestions(filteredSuggestions);
+      measureDropdown(animalInputRef, setDropdownPosition);
+      setShowAnimalDropdown(true);
     } else {
       setAnimalTypeSuggestions([]);
+      setShowAnimalDropdown(false);
+    }
+  };
+
+  const measureDropdown = (inputRef, setPosition) => {
+    if (inputRef.current) {
+      inputRef.current.measureInWindow((x, y, width, height) => {
+        setPosition({ top: y + height, left: x, width });
+      });
     }
   };
 
@@ -230,18 +232,25 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
               <View style={styles.inputWrapper}>
                 <TextInput
                   style={styles.input}
+                  ref={serviceInputRef}
                   placeholder="Service Name"
                   value={currentService?.serviceName}
                   onChangeText={handleServiceTypeChange}
                 />
-                {serviceTypeSuggestions.length > 0 && (
-                  <View style={styles.suggestionsContainer}>
+                {showServiceDropdown && serviceTypeSuggestions.length > 0 && (
+                  <View
+                    style={[
+                      styles.suggestionsContainer,
+                      { top: dropdownPosition.top, left: dropdownPosition.left, width: dropdownPosition.width },
+                    ]}
+                  >
                     {serviceTypeSuggestions.map((suggestion, index) => (
                       <TouchableOpacity
                         key={index}
                         onPress={() => {
                           setCurrentService((prev) => ({ ...prev, serviceName: suggestion }));
                           setServiceTypeSuggestions([]);
+                          setShowServiceDropdown(false);
                         }}
                       >
                         <Text style={styles.suggestionText}>{suggestion}</Text>
@@ -249,22 +258,30 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
                     ))}
                   </View>
                 )}
+
               </View>
               <View style={styles.inputWrapper}>
                 <TextInput
                   style={styles.input}
+                  ref={animalInputRef}
                   placeholder="Animal Types (comma-separated)"
                   value={currentService?.animalTypes}
                   onChangeText={handleAnimalTypeChange}
                 />
-                {animalTypeSuggestions.length > 0 && (
-                  <View style={styles.suggestionsContainer}>
+                {showAnimalDropdown && animalTypeSuggestions.length > 0 && (
+                  <View
+                    style={[
+                      styles.suggestionsContainer,
+                      { top: dropdownPosition.top, left: dropdownPosition.left, width: dropdownPosition.width },
+                    ]}
+                  >
                     {animalTypeSuggestions.map((suggestion, index) => (
                       <TouchableOpacity
                         key={index}
                         onPress={() => {
                           setCurrentService((prev) => ({ ...prev, animalTypes: suggestion }));
                           setAnimalTypeSuggestions([]);
+                          setShowAnimalDropdown(false);
                         }}
                       >
                         <Text style={styles.suggestionText}>{suggestion}</Text>
@@ -439,9 +456,6 @@ const styles = StyleSheet.create({
   },
   suggestionsContainer: {
     position: 'absolute',
-    top: 45,
-    left: 0,
-    right: 0,
     backgroundColor: theme.colors.cardBackground,
     borderColor: theme.colors.border,
     borderWidth: 1,
@@ -449,7 +463,7 @@ const styles = StyleSheet.create({
     zIndex: 1000,
     maxHeight: 150,
     overflow: 'scroll',
-    elevation: 10, // Ensures it stays above everything.
+    elevation: 10,
   },
   suggestionText: {
     padding: 10,
