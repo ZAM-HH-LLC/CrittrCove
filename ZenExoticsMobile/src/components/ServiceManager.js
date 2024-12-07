@@ -277,7 +277,7 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
                 <TextInput
                   ref={animalInputRef}
                   style={styles.input}
-                  placeholder="Animal Types (comma-separated)"
+                  placeholder="Animal Type"
                   value={currentService?.animalTypes}
                   onChangeText={handleAnimalTypeChange}
                 />
@@ -306,35 +306,38 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
               </div>
               <TextInput
                 style={styles.input}
-                placeholder="Puppy Rate"
-                keyboardType="numeric"
+                placeholder="Constant Care Rate"
+                keyboardType="decimal-pad"
                 value={currentService?.rates?.puppies || ''}
                 onChangeText={(value) =>
                   setCurrentService((prev) => ({
                     ...prev,
-                    rates: { ...prev.rates, puppies: value },
+                    rates: { ...prev.rates, puppies: value.replace(/[^0-9.]/g, '') },
                   }))
                 }
               />
               <TextInput
                 style={styles.input}
                 placeholder="Adult Rate"
-                keyboardType="numeric"
+                keyboardType="decimal-pad"
                 value={currentService?.rates?.adults || ''}
                 onChangeText={(value) =>
                   setCurrentService((prev) => ({
                     ...prev,
-                    rates: { ...prev.rates, adults: value },
+                    rates: { ...prev.rates, adults: value.replace(/[^0-9.]/g, '') },
                   }))
                 }
               />
               <TextInput
                 style={[styles.input, styles.additionalAnimalRate]}
                 placeholder="Additional Animal Rate"
-                keyboardType="numeric"
+                keyboardType="decimal-pad"
                 value={currentService?.additionalAnimalRate || ''}
                 onChangeText={(value) =>
-                  setCurrentService((prev) => ({ ...prev, additionalAnimalRate: value }))
+                  setCurrentService((prev) => ({ 
+                    ...prev, 
+                    additionalAnimalRate: value.replace(/[^0-9.]/g, '') 
+                  }))
                 }
               />
               {additionalRates.map((rate, idx) => (
@@ -348,9 +351,9 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
                   <TextInput
                     style={[styles.input, styles.additionalRateInput]}
                     placeholder="Rate Amount"
-                    keyboardType="numeric"
+                    keyboardType="decimal-pad"
                     value={rate.value || ''}
-                    onChangeText={(value) => updateAdditionalRate(idx, 'value', value)}
+                    onChangeText={(value) => updateAdditionalRate(idx, 'value', value.replace(/[^0-9.]/g, ''))}
                   />
                   <TextInput
                     style={[styles.input, styles.additionalRateInput]}
