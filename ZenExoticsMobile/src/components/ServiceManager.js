@@ -101,7 +101,7 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
         suggestion.toLowerCase().includes(text.toLowerCase())
       ).slice(0, 5);
       setServiceTypeSuggestions(filteredSuggestions);
-      measureDropdown(serviceInputRef, setServiceDropdownPosition);
+      measureServiceDropdown(serviceInputRef, setServiceDropdownPosition);
       setShowServiceDropdown(true);
     } else {
       setServiceTypeSuggestions([]);
@@ -116,7 +116,7 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
         suggestion.toLowerCase().startsWith(text.toLowerCase())
       ).slice(0, 5);
       setAnimalTypeSuggestions(filteredSuggestions);
-      measureDropdown(animalInputRef, setAnimalDropdownPosition);
+      measureAnimalDropdown(animalInputRef, setAnimalDropdownPosition);
       setShowAnimalDropdown(true);
     } else {
       setAnimalTypeSuggestions([]);
@@ -124,13 +124,27 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
     }
   };
 
-  const measureDropdown = (inputRef, setPosition) => {
+  const measureServiceDropdown = (inputRef, setPosition) => {
     if (inputRef.current) {
       inputRef.current.measure((x, y, width, height, pageX, pageY) => {
+        console.log('x: ', x, 'y: ', y, 'width: ', width, 'height: ', height, 'pageX: ', pageX, 'pageY: ', pageY);
         setPosition({ 
           top: y + height, // Dropdown below the input
           left: x, 
-          width
+          width: '100%',
+        });
+      });
+    }
+  };
+
+  const measureAnimalDropdown = (inputRef, setPosition) => {
+    if (inputRef.current) {
+      inputRef.current.measure((x, y, width, height, pageX, pageY) => {
+        console.log('x: ', x, 'y: ', y, 'width: ', width, 'height: ', height, 'pageX: ', pageX, 'pageY: ', pageY);
+        setPosition({ 
+          top: y + height + 90, // Dropdown below the input
+          left: x, 
+          width: '100%',
         });
       });
     }
@@ -251,6 +265,7 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
                           setCurrentService((prev) => ({ ...prev, serviceName: suggestion }));
                           setShowServiceDropdown(false);
                         }}
+                        // style={{ zIndex: -1 }}
                       >
                         <Text style={styles.suggestionText}>{suggestion}</Text>
                       </TouchableOpacity>
@@ -258,7 +273,7 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
                   </View>
                 )}
               </View>
-              <View style={styles.inputWrapper}>
+              <div style={styles.inputWrapper}>
                 <TextInput
                   ref={animalInputRef}
                   style={styles.input}
@@ -281,7 +296,7 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
                     ))}
                   </View>
                 )}
-              </View>
+              </div>
               <TextInput
                 style={styles.input}
                 placeholder="Puppy Rate"
@@ -426,6 +441,7 @@ const styles = StyleSheet.create({
     width: '90%',
     maxWidth: 400,
     maxHeight: '50%',
+    overflow: 'visible',
   },
   modalScroll: {
     flex: 1,
@@ -454,12 +470,24 @@ const styles = StyleSheet.create({
     position: 'absolute',
     backgroundColor: theme.colors.surface,
     borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 5,
     zIndex: 1000,
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    paddingVertical: 8, // Add inner padding
+    marginTop: 5, // Add space between input and dropdown
+    maxHeight: 150,
+    overflow: 'hidden',
   },  
   suggestionText: {
     padding: 10,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
+    // zIndex: 0,
   },
   modalButtons: {
     flexDirection: 'row',
