@@ -101,7 +101,7 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
         suggestion.toLowerCase().includes(text.toLowerCase())
       ).slice(0, 5);
       setServiceTypeSuggestions(filteredSuggestions);
-      measureServiceDropdown(serviceInputRef, setServiceDropdownPosition);
+      measureDropdown(serviceInputRef, setServiceDropdownPosition, 'service');
       setShowServiceDropdown(true);
     } else {
       setServiceTypeSuggestions([]);
@@ -116,7 +116,7 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
         suggestion.toLowerCase().startsWith(text.toLowerCase())
       ).slice(0, 5);
       setAnimalTypeSuggestions(filteredSuggestions);
-      measureAnimalDropdown(animalInputRef, setAnimalDropdownPosition);
+      measureDropdown(animalInputRef, setAnimalDropdownPosition, 'animal');
       setShowAnimalDropdown(true);
     } else {
       setAnimalTypeSuggestions([]);
@@ -124,32 +124,26 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
     }
   };
 
-  const measureServiceDropdown = (inputRef, setPosition) => {
+  const measureDropdown = (inputRef, setPosition, inputType) => {
     if (inputRef.current) {
       inputRef.current.measure((x, y, width, height, pageX, pageY) => {
         console.log('x: ', x, 'y: ', y, 'width: ', width, 'height: ', height, 'pageX: ', pageX, 'pageY: ', pageY);
-        setPosition({ 
-          top: y + height, // Dropdown below the input
-          left: x, 
-          width: '100%',
-        });
+        if (inputType === 'animal') {
+          setPosition({ 
+            top: y + height + 90, // Offset for animal dropdown
+            left: x, 
+            width: '100%',
+          });
+        } else {
+          setPosition({ 
+            top: y + height, // Normal positioning for service dropdown
+            left: x, 
+            width: '100%',
+          });
+        }
       });
     }
   };
-
-  const measureAnimalDropdown = (inputRef, setPosition) => {
-    if (inputRef.current) {
-      inputRef.current.measure((x, y, width, height, pageX, pageY) => {
-        console.log('x: ', x, 'y: ', y, 'width: ', width, 'height: ', height, 'pageX: ', pageX, 'pageY: ', pageY);
-        setPosition({ 
-          top: y + height + 90, // Dropdown below the input
-          left: x, 
-          width: '100%',
-        });
-      });
-    }
-  };
-  
 
   const addAdditionalRate = () => {
     setAdditionalRates((prevRates) => [...prevRates, { label: '', value: '', description: '' }]);
@@ -265,9 +259,15 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
                           setCurrentService((prev) => ({ ...prev, serviceName: suggestion }));
                           setShowServiceDropdown(false);
                         }}
-                        // style={{ zIndex: -1 }}
                       >
-                        <Text style={styles.suggestionText}>{suggestion}</Text>
+                        <Text 
+                          style={[
+                            styles.suggestionText,
+                            index === serviceTypeSuggestions.length - 1 && { borderBottomWidth: 0 }
+                          ]}
+                        >
+                          {suggestion}
+                        </Text>
                       </TouchableOpacity>
                     ))}
                   </View>
@@ -291,7 +291,14 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
                           setShowAnimalDropdown(false);
                         }}
                       >
-                        <Text style={styles.suggestionText}>{suggestion}</Text>
+                        <Text 
+                          style={[
+                            styles.suggestionText,
+                            index === animalTypeSuggestions.length - 1 && { borderBottomWidth: 0 }
+                          ]}
+                        >
+                          {suggestion}
+                        </Text>
                       </TouchableOpacity>
                     ))}
                   </View>
@@ -478,7 +485,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 5,
-    paddingVertical: 8, // Add inner padding
+    // paddingVertical: 8, // Add inner padding
     marginTop: 5, // Add space between input and dropdown
     maxHeight: 150,
     overflow: 'hidden',
