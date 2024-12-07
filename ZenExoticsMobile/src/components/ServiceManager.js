@@ -53,6 +53,8 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
   const [showServiceDropdown, setShowServiceDropdown] = useState(false);
   const [showAnimalDropdown, setShowAnimalDropdown] = useState(false);
   const [showValidationErrors, setShowValidationErrors] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [serviceToDelete, setServiceToDelete] = useState(null);
 
   const serviceInputRef = useRef(null);
   const animalInputRef = useRef(null);
@@ -177,50 +179,63 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
     );
   };
 
+  const toggleCollapse = (index) => {
+    setCollapsedServices((prev) =>
+      prev.includes(index)
+        ? prev.filter((i) => i !== index)
+        : [...prev, index]
+    );
+  };
+
+  const handleDeleteService = (index) => {
+    setServiceToDelete(index);
+    setShowDeleteModal(true);
+  };
+
   const renderServiceCard = ({ item, index }) => {
     const isCollapsed = collapsedServices.includes(index);
     return (
       <View style={[styles.serviceCard, isCollapsed && styles.collapsedCard]}>
         <View style={styles.topRow}>
           <Text style={styles.serviceName}>{item.serviceName}</Text>
-          {!isCollapsed && (
-            <TouchableOpacity onPress={() => handleDeleteService(index)}>
-              <MaterialCommunityIcons name="delete" size={20} color={theme.colors.danger} />
+          <View style={styles.topRowIcons}>
+            <TouchableOpacity 
+              onPress={() => handleEditService(index)} 
+              style={styles.iconButton}
+            >
+              <MaterialCommunityIcons name="pencil" size={24} color={theme.colors.primary} />
             </TouchableOpacity>
-          )}
-        </View>
-        {isCollapsed ? (
-          <View style={styles.collapsedRow}>
-            <Text style={styles.rateText}>
-              Puppies: ${item.rates.puppies || 'N/A'}, Adults: ${item.rates.adults || 'N/A'}, Add’l Animal: ${item.additionalAnimalRate || 'N/A'}
-            </Text>
-            <TouchableOpacity onPress={() => toggleCollapse(index)}>
-              <MaterialCommunityIcons name="chevron-down" size={20} color={theme.colors.primary} />
+            <TouchableOpacity 
+              onPress={() => toggleCollapse(index)} 
+              style={styles.iconButton}
+            >
+              <MaterialCommunityIcons 
+                name={isCollapsed ? "chevron-down" : "chevron-up"} 
+                size={24} 
+                color={theme.colors.primary} 
+              />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              onPress={() => handleDeleteService(index)} 
+              style={styles.iconButton}
+            >
+              <MaterialCommunityIcons name="delete" size={24} color={theme.colors.danger} />
             </TouchableOpacity>
           </View>
-        ) : (
-          <>
-            <View style={styles.middleRow}>
-              <Text style={styles.rateText}>Puppies: ${item.rates.puppies || 'N/A'}</Text>
-              <Text style={styles.rateText}>Adults: ${item.rates.adults || 'N/A'}</Text>
-              <Text style={styles.rateText}>
-                Add’l Animal: ${item.additionalAnimalRate || 'N/A'}
+        </View>
+        {!isCollapsed && (
+          <View style={styles.middleRow}>
+            <Text style={styles.rateText}>Puppies: ${item.rates.puppies || 'N/A'}</Text>
+            <Text style={styles.rateText}>Adults: ${item.rates.adults || 'N/A'}</Text>
+            <Text style={styles.rateText}>
+              Add'l Animal: ${item.additionalAnimalRate || 'N/A'}
+            </Text>
+            {item.additionalRates?.map((rate, idx) => (
+              <Text key={idx} style={styles.rateText}>
+                {rate.label}: ${rate.value} {rate.description && `(${rate.description})`}
               </Text>
-              {item.additionalRates?.map((rate, idx) => (
-                <Text key={idx} style={styles.rateText}>
-                  {rate.label}: ${rate.value} {rate.description && `(${rate.description})`}
-                </Text>
-              ))}
-            </View>
-            <View style={styles.bottomRow}>
-              <TouchableOpacity onPress={() => handleEditService(index)}>
-                <MaterialCommunityIcons name="pencil" size={20} color={theme.colors.primary} />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => toggleCollapse(index)}>
-                <MaterialCommunityIcons name="chevron-up" size={20} color={theme.colors.primary} />
-              </TouchableOpacity>
-            </View>
-          </>
+            ))}
+          </View>
         )}
       </View>
     );
@@ -425,6 +440,39 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
           </View>
         </View>
       </Modal>
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={showDeleteModal}
+        onRequestClose={() => setShowDeleteModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, styles.deleteModalContent]}>
+            <Text style={styles.modalTitle}>Delete Service</Text>
+            <Text style={styles.deleteModalText}>Are you sure you want to delete this service?</Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setShowDeleteModal(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={() => {
+                  setServices(prevServices => 
+                    prevServices.filter((_, i) => i !== serviceToDelete)
+                  );
+                  setHasUnsavedChanges(true);
+                  setShowDeleteModal(false);
+                }}
+              >
+                <Text style={styles.deleteButtonText}>Delete</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 
@@ -451,6 +499,8 @@ const styles = StyleSheet.create({
   topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 5,
   },
   middleRow: {
     marginVertical: 5,
@@ -464,6 +514,8 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSizes.medium,
     color: theme.colors.text,
     fontWeight: 'bold',
+    flex: 1,
+    marginRight: 10,
   },
   rateText: {
     fontSize: theme.fontSizes.small,
@@ -607,6 +659,36 @@ const styles = StyleSheet.create({
   },
   inputError: {
     borderColor: theme.colors.danger,
+  },
+  topRowIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minWidth: 120, // Ensure enough space for icons
+  },
+  iconButton: {
+    padding: 8,
+    marginLeft: 10,
+    minWidth: 40,
+    minHeight: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteModalContent: {
+    maxWidth: 300,
+    padding: 20,
+  },
+  deleteModalText: {
+    fontSize: theme.fontSizes.medium,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  deleteButton: {
+    backgroundColor: theme.colors.danger,
+    borderRadius: 5,
+    padding: 10,
+  },
+  deleteButtonText: {
+    color: theme.colors.whiteText,
   },
 });
 
