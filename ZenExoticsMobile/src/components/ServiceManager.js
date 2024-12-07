@@ -130,7 +130,7 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
         setPosition({ 
           top: y + height, // Dropdown below the input
           left: x, 
-          width 
+          width
         });
       });
     }
@@ -242,23 +242,13 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
                   value={currentService?.serviceName}
                   onChangeText={handleServiceTypeChange}
                 />
-                {showServiceDropdown && serviceTypeSuggestions.length > 0 && (
-                  <View
-                    style={[
-                      styles.suggestionsContainer,
-                      {
-                        top: serviceDropdownPosition.top,
-                        left: serviceDropdownPosition.left,
-                        width: serviceDropdownPosition.width,
-                      },
-                    ]}
-                  >
+                {showServiceDropdown && (
+                  <View style={[styles.suggestionsContainer, serviceDropdownPosition]}>
                     {serviceTypeSuggestions.map((suggestion, index) => (
                       <TouchableOpacity
                         key={index}
                         onPress={() => {
                           setCurrentService((prev) => ({ ...prev, serviceName: suggestion }));
-                          setServiceTypeSuggestions([]);
                           setShowServiceDropdown(false);
                         }}
                       >
@@ -276,23 +266,13 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
                   value={currentService?.animalTypes}
                   onChangeText={handleAnimalTypeChange}
                 />
-                {showAnimalDropdown && animalTypeSuggestions.length > 0 && (
-                  <View
-                    style={[
-                      styles.suggestionsContainer,
-                      {
-                        top: animalDropdownPosition.top,
-                        left: animalDropdownPosition.left,
-                        width: animalDropdownPosition.width,
-                      },
-                    ]}
-                  >
+                {showAnimalDropdown && (
+                  <View style={[styles.suggestionsContainer, animalDropdownPosition]}>
                     {animalTypeSuggestions.map((suggestion, index) => (
                       <TouchableOpacity
                         key={index}
                         onPress={() => {
                           setCurrentService((prev) => ({ ...prev, animalTypes: suggestion }));
-                          setAnimalTypeSuggestions([]);
                           setShowAnimalDropdown(false);
                         }}
                       >
@@ -472,14 +452,9 @@ const styles = StyleSheet.create({
   },
   suggestionsContainer: {
     position: 'absolute',
-    backgroundColor: theme.colors.cardBackground,
-    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
-    borderRadius: 5,
     zIndex: 1000,
-    maxHeight: 150,
-    overflow: 'scroll',
-    elevation: 10,
   },  
   suggestionText: {
     padding: 10,
