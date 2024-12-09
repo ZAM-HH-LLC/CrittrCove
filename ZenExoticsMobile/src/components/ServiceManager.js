@@ -22,6 +22,7 @@ const SERVICE_TYPE_SUGGESTIONS = [
   "Pet Boarding",
   "Exotic Pet Care",
   "Daytime Pet Sitting",
+  "Ferrier", 
 ];
 
 const ANIMAL_TYPE_SUGGESTIONS = [
@@ -196,37 +197,37 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
     const isCollapsed = collapsedServices.includes(index);
     return (
       <View style={[styles.serviceCard, isCollapsed && styles.collapsedCard]}>
-        <View style={styles.topRow}>
+        <View style={[styles.topRow, isCollapsed && styles.collapsedTopRow]}>
           <Text style={styles.serviceName}>{item.serviceName}</Text>
-          <View style={styles.topRowIcons}>
-            <TouchableOpacity 
-              onPress={() => handleDeleteService(index)} 
-              style={styles.iconButton}
-            >
-              <MaterialCommunityIcons name="delete" size={24} color={theme.colors.danger} />
-            </TouchableOpacity>
-            <TouchableOpacity 
-              onPress={() => handleEditService(index)} 
-              style={styles.iconButton}
-            >
-              <MaterialCommunityIcons name="pencil" size={24} color={theme.colors.primary} />
-            </TouchableOpacity>
-          </View>
+          {!isCollapsed && (
+            <View style={styles.topRowIcons}>
+              <TouchableOpacity 
+                onPress={() => handleDeleteService(index)} 
+                style={styles.iconButton}
+              >
+                <MaterialCommunityIcons name="delete" size={24} color={theme.colors.danger} />
+              </TouchableOpacity>
+              <TouchableOpacity 
+                onPress={() => handleEditService(index)} 
+                style={styles.iconButton}
+              >
+                <MaterialCommunityIcons name="pencil" size={24} color={theme.colors.primary} />
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
-        {!isCollapsed && (
-          <View style={styles.middleRow}>
-            <Text style={styles.rateText}>Puppies: ${item.rates.puppies || 'N/A'}</Text>
-            <Text style={styles.rateText}>Adults: ${item.rates.adults || 'N/A'}</Text>
-            <Text style={styles.rateText}>
-              Add'l Animal: ${item.additionalAnimalRate || 'N/A'}
+        
+        <View style={[styles.middleRow, isCollapsed && styles.collapsedMiddleRow]}>
+          <Text style={styles.rateText}>Constant Care: ${item.rates.puppies || 'N/A'}</Text>
+          <Text style={styles.rateText}>Adults: ${item.rates.adults || 'N/A'}</Text>
+          <Text style={styles.rateText}>Additional Animal: ${item.additionalAnimalRate || 'N/A'}</Text>
+          {!isCollapsed && item.additionalRates?.map((rate, idx) => (
+            <Text key={idx} style={styles.rateText}>
+              {rate.label}: ${rate.value} {rate.description && `(${rate.description})`}
             </Text>
-            {item.additionalRates?.map((rate, idx) => (
-              <Text key={idx} style={styles.rateText}>
-                {rate.label}: ${rate.value} {rate.description && `(${rate.description})`}
-              </Text>
-            ))}
-          </View>
-        )}
+          ))}
+        </View>
+        
         <TouchableOpacity 
           onPress={() => toggleCollapse(index)} 
           style={styles.collapseButton}
@@ -343,7 +344,7 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
               </div>
               <TextInput
                 style={styles.input}
-                placeholder="Constant Care Rate"
+                placeholder="Base Rate"
                 keyboardType="decimal-pad"
                 value={currentService?.rates?.puppies || ''}
                 onChangeText={(value) =>
@@ -355,7 +356,7 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
               />
               <TextInput
                 style={styles.input}
-                placeholder="Adult Rate"
+                placeholder="Constant Care Rate"
                 keyboardType="decimal-pad"
                 value={currentService?.rates?.adults || ''}
                 onChangeText={(value) =>
@@ -452,10 +453,10 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
             <Text style={styles.deleteModalText}>Are you sure you want to delete this service?</Text>
             <View style={styles.modalButtons}>
               <TouchableOpacity
-                style={styles.cancelButton}
+                style={styles.cancelButton2}
                 onPress={() => setShowDeleteModal(false)}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text style={styles.cancelButtonText2}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.deleteButton}
@@ -615,6 +616,16 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     color: theme.colors.whiteText,
   },
+  cancelButton2: {
+    backgroundColor: theme.colors.surface, // or 'white'
+    borderRadius: 5,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  cancelButtonText2: {
+    color: theme.colors.text,
+  },
   collapseAllButton: {
     marginBottom: 20,
     padding: 10,
@@ -700,6 +711,22 @@ const styles = StyleSheet.create({
     minHeight: 40,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  collapsedTopRow: {
+    marginBottom: 0,
+  },
+  collapsedMiddleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginVertical: 0,
+    paddingRight: 40, // Make space for collapse button
+    paddingTop: 10,
+  },
+  rateText: {
+    fontSize: theme.fontSizes.small,
+    color: theme.colors.textSecondary,
+    flex: 1, // This helps with equal spacing in collapsed view
+    marginRight: 10,
   },
 });
 
