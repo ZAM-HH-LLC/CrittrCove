@@ -12,6 +12,7 @@ import ServiceManager from '../components/ServiceManager';
 import ProfessionalTab from '../components/ProfessionalTab';
 import RecordedPets from '../components/RecordedPets';
 import EditableSection from '../components/EditableSection';
+import DatePicker from '../components/DatePicker';
 
 const MyProfile = () => {
   const navigation = useNavigation();
@@ -78,6 +79,8 @@ const MyProfile = () => {
   const scrollViewRef = useRef(null);
   const [photoNeedsSaving, setPhotoNeedsSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [birthday, setBirthday] = useState('');
+  const [calculatedAge, setCalculatedAge] = useState(null);
 
   useEffect(() => {
     const fetchMyProfileData = async () => {
@@ -194,16 +197,32 @@ const MyProfile = () => {
     return windowWidth - 32; // 16px padding on each side
   };
 
-  const renderEditableField = (label, value, onChangeText, section) => {
+  const renderEditableField = (label, value, onChangeText, section, type = 'text') => {
     const isBio = label.toLowerCase() === 'bio';
+    
+    if (type === 'birthday') {
+      return editMode[section] ? (
+        <View style={[styles.input, { width: getContentWidth() }]}>
+          <DatePicker
+            value={birthday}
+            onChange={updateBirthday} // TODO: need to implement the backend call here
+            placeholder="Select Birthday"
+          />
+        </View>
+      ) : (
+        <Text style={[styles.fieldText, { width: getContentWidth() }]}>
+          {`Age: ${calculatedAge || age || 'Not specified'}`}
+        </Text>
+      );
+    }
+
     return editMode[section] ? (
       <TextInput
-        label={label}
         value={value}
         onChangeText={(text) => {
-            onChangeText(text);
-            setHasUnsavedChanges(true); // Set unsaved changes to true
-          }}
+          onChangeText(text);
+          setHasUnsavedChanges(true);
+        }}
         style={[
           styles.input,
           { width: getContentWidth() },
@@ -214,7 +233,7 @@ const MyProfile = () => {
       />
     ) : (
       <Text style={[styles.fieldText, { width: getContentWidth() }]}>
-        {isBio ? value : `${label}: ${value}`}
+        {isBio ? value : `${label}: ${value || 'Not specified'}`}
       </Text>
     );
   };
@@ -223,6 +242,27 @@ const MyProfile = () => {
     setHasUnsavedChanges(false);
     setEditMode({}); // Reset all edit modes to false
     Alert.alert('Success', 'Changes saved successfully');
+  };
+
+  const updateBirthday = async (date) => {
+    setBirthday(date);
+    setHasUnsavedChanges(true);
+    
+    try {
+      // Replace with your actual API endpoint
+      const response = await fetch('/api/calculate-age', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ birthday: date }),
+      });
+      
+      const data = await response.json();
+      setCalculatedAge(data.age);
+    } catch (error) {
+      console.error('Error calculating age:', error);
+    }
   };
 
   if (isLoading) {
@@ -286,8 +326,7 @@ const MyProfile = () => {
               {renderEditableField('Name', name, setName, 'personal')}
               {renderEditableField('Email', email, setEmail, 'personal')}
               {renderEditableField('Phone', phone, setPhone, 'personal')}
-              {renderEditableField('Age', age, setAge, 'personal')}
-              {/* {editMode.personal && <Button mode="contained" onPress={() => toggleEditMode('personal')} style={styles.saveButton}>Save</Button>} */}
+              {renderEditableField('Birthday', birthday, setBirthday, 'personal', 'birthday')}
             </View>
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
@@ -613,6 +652,23 @@ const styles = StyleSheet.create({
     maxWidth: 600,
     alignItems: 'center',
     alignSelf: 'center',
+  },
+  fieldContainer: {
+    marginBottom: 16,
+  },
+  fieldLabel: {
+    fontSize: theme.fontSizes.small,
+    color: theme.colors.text,
+    marginBottom: 4,
+  },
+  birthdayContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  ageText: {
+    fontSize: theme.fontSizes.medium,
+    color: theme.colors.text,
   },
 });
 

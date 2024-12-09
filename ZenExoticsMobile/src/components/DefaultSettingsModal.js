@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, Switch, ScrollView, Platform, Dimensions } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { theme } from '../styles/theme';
+import DatePicker from './DatePicker';
 
 const { width } = Dimensions.get('window');
 const modalWidth = Platform.OS === 'web' ? width * 0.4 : width * 0.9;
@@ -99,52 +100,14 @@ const DefaultSettingsModal = ({ isVisible, onClose, onSave, defaultSettings }) =
 
   const renderEndDatePicker = () => {
     const daySettings = settings[selectedDay];
-    const endDate = daySettings.endDate ? new Date(daySettings.endDate) : new Date();
-
-    if (Platform.OS === 'web') {
-      return (
-        <input
-          type="date"
-          value={daySettings.endDate || ''}
-          onChange={(e) => updateDaySettings(selectedDay, { endDate: e.target.value })}
-          style={styles.webDatePicker}
-        />
-      );
-    } else if (Platform.OS === 'ios') {
-        return (
-            <DateTimePicker
-          value={endDate}
-          mode="date"
-          display="default"
-          onChange={(event, selectedDate) => {
-            if (selectedDate) {
-              updateDaySettings(selectedDay, { endDate: selectedDate.toISOString().split('T')[0] });
-            }
-          }}
-        />
-        )
-     } else {
-      return (
-        <>
-          <TouchableOpacity onPress={() => setShowDatePicker(true)}>
-            <Text>{daySettings.endDate || 'Select Date'}</Text>
-          </TouchableOpacity>
-          {Platform.OS === 'android' && showDatePicker && (
-            <DateTimePicker
-              value={endDate}
-              mode="date"
-              display="default"
-              onChange={(event, selectedDate) => {
-                setShowDatePicker(false);
-                if (selectedDate) {
-                  updateDaySettings(selectedDay, { endDate: selectedDate.toISOString().split('T')[0] });
-                }
-              }}
-            />
-          )}
-        </>
-      );
-    }
+    
+    return (
+      <DatePicker
+        value={daySettings.endDate}
+        onChange={(date) => updateDaySettings(selectedDay, { endDate: date })}
+        placeholder="Select End Date"
+      />
+    );
   };
 
   const renderDaySettings = () => {
