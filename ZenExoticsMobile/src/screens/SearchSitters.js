@@ -1,11 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Platform, SafeAreaView, StatusBar, Dimensions, KeyboardAvoidingView, ActivityIndicator, Alert } from 'react-native';
+import { 
+  View, 
+  Text, 
+  ScrollView, 
+  TouchableOpacity, 
+  TextInput, 
+  KeyboardAvoidingView, 
+  Platform, 
+  Dimensions,
+  ActivityIndicator,
+  Alert,
+  StyleSheet
+} from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
-import { theme } from '../styles/theme';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { theme } from '../styles/theme';
+import CrossPlatformView from '../components/CrossPlatformView';
+import BackHeader from '../components/BackHeader';
 
 const mockSitters = [
   {
@@ -149,26 +163,11 @@ const SearchSitters = ({ navigation }) => {
   const [windowWidth, setWindowWidth] = useState(Dimensions.get('window').width);
 
   const styles = StyleSheet.create({
-    container: {
+    contentContainer: {
       flex: 1,
-      backgroundColor: theme.colors.background,
-      paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
-      width: Platform.OS === 'web' && windowWidth > 600 ? '600px' : '100%',
+      width: '100%',
+      maxWidth: 600,
       alignSelf: 'center',
-    },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      padding: 16,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.colors.border,
-    },
-    backButton: {
-      marginRight: 16,
-    },
-    title: {
-      fontSize: theme.fontSizes.large,
-      color: theme.colors.text,
     },
     scrollContent: {
       flexGrow: 1,
@@ -245,6 +244,13 @@ const SearchSitters = ({ navigation }) => {
       borderColor: theme.colors.border,
       borderRadius: 5,
       width: '100%',
+    },
+    webHeader: {
+      maxWidth: 1200,
+      width: '100%',
+      alignSelf: 'center',
+      marginLeft: 'auto',
+      marginRight: 'auto',
     },
   });
 
@@ -380,14 +386,15 @@ const SearchSitters = ({ navigation }) => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <MaterialCommunityIcons name="arrow-left" size={24} color={theme.colors.primary} />
-          </TouchableOpacity>
-          <Text style={styles.title}>Search Sitters</Text>
-        </View>
+    <CrossPlatformView fullWidthHeader={true}>
+      <BackHeader 
+        title="Search Sitters" 
+        onBackPress={() => navigation.goBack()}
+      />
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+        style={styles.contentContainer}
+      >        
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.filtersContainer}>
             {renderPicker(serviceType, setServiceType, showServicePicker, setShowServicePicker, 'Service Type', [
@@ -450,7 +457,7 @@ const SearchSitters = ({ navigation }) => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </CrossPlatformView>
   );
 };
 

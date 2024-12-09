@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
-import { View, ScrollView, StyleSheet, SafeAreaView, Text, TextInput, TouchableOpacity, Image, Platform, StatusBar, Alert, useWindowDimensions } from 'react-native';
+import { View, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, Image, Platform, StatusBar, Alert, useWindowDimensions } from 'react-native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { Button, Portal, Dialog, Paragraph } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
@@ -14,6 +14,7 @@ import RecordedPets from '../components/RecordedPets';
 import EditableSection from '../components/EditableSection';
 import DatePicker from '../components/DatePicker';
 import BackHeader from '../components/BackHeader';
+import CrossPlatformView from '../components/CrossPlatformView';
 
 const MyProfile = () => {
   const navigation = useNavigation();
@@ -275,7 +276,7 @@ const MyProfile = () => {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <CrossPlatformView fullWidthHeader={true}>
       <BackHeader 
         title="My Profile" 
         onBackPress={() => navigation.navigate('More')} 
@@ -457,7 +458,7 @@ const MyProfile = () => {
           </Dialog>
         )}
       </Portal>
-    </SafeAreaView>
+    </CrossPlatformView>
   );
 };
 
@@ -638,7 +639,7 @@ const styles = StyleSheet.create({
   webPopupTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 10,
+    // marginBottom: 10,
   },
   webPopupText: {
     marginBottom: 20,

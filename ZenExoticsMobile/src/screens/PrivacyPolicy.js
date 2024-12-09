@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Platform } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { theme } from '../styles/theme';
 import BackHeader from '../components/BackHeader';
+import CrossPlatformView from '../components/CrossPlatformView';
 import { useNavigation } from '@react-navigation/native';
 
 const appName = 'Zen Exotics';
@@ -11,7 +11,7 @@ const PrivacyPolicy = () => {
   const navigation = useNavigation();
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <CrossPlatformView fullWidthHeader={true}>
       <BackHeader 
         title="Privacy Policy" 
         onBackPress={() => navigation.navigate('More')} 
@@ -83,18 +83,17 @@ const PrivacyPolicy = () => {
         <Text style={styles.listItem}>Email: zam.hh.llc@gmail.com</Text>
         <Text style={styles.listItem}>Phone: 7195106341</Text>
       </ScrollView>
-    </SafeAreaView>
+    </CrossPlatformView>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
   container: {
     flex: 1,
     padding: 20,
+    width: '100%',
+    maxWidth: 800,
+    alignSelf: 'center',
   },
   contentContainer: {
     paddingBottom: Platform.OS === 'web' ? 16 : 80,

@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Platform, Dimensions } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { theme } from '../styles/theme';
+import BackHeader from '../components/BackHeader';
+import CrossPlatformView from '../components/CrossPlatformView';
+import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import { API_BASE_URL } from '../config/config';
-import BackHeader from '../components/BackHeader';
-import { useNavigation } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
-const inputWidth = Platform.OS === 'web' ? '40%' : '90%';
+const inputWidth = Platform.OS === 'web' ? 600 : '90%';
+const contentMaxWidth = Platform.OS === 'web' ? '800px' : '100%';
 
 const ContactUs = () => {
   const navigation = useNavigation();
@@ -51,72 +52,81 @@ const ContactUs = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <CrossPlatformView 
+      fullWidthHeader={true}
+      contentWidth={contentMaxWidth}
+    >
       <BackHeader 
         title="Contact Us" 
         onBackPress={() => navigation.navigate('More')} 
       />
       <View style={styles.container}>
-        <Text style={styles.title}>Contact Us</Text>
-        <Text style={styles.subtitle}>Get in touch with our support team</Text>
-        
-        <TextInput
-          style={[styles.input, { width: inputWidth }]}
-          placeholder="Your Name"
-          value={name}
-          onChangeText={setName}
-        />
-        <TextInput
-          style={[styles.input, { width: inputWidth }]}
-          placeholder="Your Email"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-        />
-        <TextInput
-          style={[styles.input, styles.messageInput, { width: inputWidth }]}
-          placeholder="Your Message"
-          value={message}
-          onChangeText={setMessage}
-          multiline
-        />
-        
-        {successMessage ? (
-          <Text style={[styles.successMessage, { width: inputWidth }]}>
-            {successMessage}
-          </Text>
-        ) : null}
-        
-        <TouchableOpacity 
-          style={[styles.button, { width: inputWidth }]} 
-          onPress={handleSubmit}
-          disabled={isSubmitting}
-        >
-          <Text style={styles.buttonText}>
-            {isSubmitting ? 'Sending...' : 'Send Message'}
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.contentWrapper}>
+          <Text style={styles.title}>Contact Us</Text>
+          <Text style={styles.subtitle}>Get in touch with our support team</Text>
+          
+          <TextInput
+            style={[styles.input, { width: inputWidth }]}
+            placeholder="Your Name"
+            value={name}
+            onChangeText={setName}
+          />
+          <TextInput
+            style={[styles.input, { width: inputWidth }]}
+            placeholder="Your Email"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+          />
+          <TextInput
+            style={[styles.input, styles.messageInput, { width: inputWidth }]}
+            placeholder="Your Message"
+            value={message}
+            onChangeText={setMessage}
+            multiline
+          />
+          
+          {successMessage ? (
+            <Text style={[styles.successMessage, { width: inputWidth }]}>
+              {successMessage}
+            </Text>
+          ) : null}
+          
+          <TouchableOpacity 
+            style={[styles.button, { width: inputWidth }]} 
+            onPress={handleSubmit}
+            disabled={isSubmitting}
+          >
+            <Text style={styles.buttonText}>
+              {isSubmitting ? 'Sending...' : 'Send Message'}
+            </Text>
+          </TouchableOpacity>
 
-        <View style={styles.contactInfo}>
-          <Text style={styles.contactInfoText}>Or reach us directly:</Text>
-          <Text style={styles.contactInfoText}>Email: zam.hh.llc@gmail.com</Text>
-          <Text style={styles.contactInfoText}>Phone: 719-510-6341</Text>
+          <View style={styles.contactInfo}>
+            <Text style={styles.contactInfoText}>Or reach us directly:</Text>
+            <Text style={styles.contactInfoText}>Email: zam.hh.llc@gmail.com</Text>
+            <Text style={styles.contactInfoText}>Phone: 719-510-6341</Text>
+          </View>
         </View>
       </View>
-    </SafeAreaView>
+    </CrossPlatformView>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
   container: {
     flex: 1,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    // marginBottom: 20,
+  },
+  contentWrapper: {
+    width: '100%',
     padding: 20,
     alignItems: 'center',
     justifyContent: 'center',
+    maxWidth: Platform.OS === 'web' ? 600 : '100%',
   },
   title: {
     fontSize: 24,

@@ -4,6 +4,7 @@ import { List, Divider } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
 import BackHeader from '../components/BackHeader';
+import CrossPlatformView from '../components/CrossPlatformView';
 
 const Settings = ({ navigation }) => {
   const settingsItems = [
@@ -41,7 +42,7 @@ const Settings = ({ navigation }) => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <CrossPlatformView fullWidthHeader={true}>
       <BackHeader 
         title="Settings" 
         onBackPress={() => navigation.navigate('More')} 
@@ -49,7 +50,7 @@ const Settings = ({ navigation }) => {
       <View style={Platform.OS === 'web' ? styles.webContent : styles.content}>
         {renderContent()}
       </View>
-    </SafeAreaView>
+    </CrossPlatformView>
   );
 };
 

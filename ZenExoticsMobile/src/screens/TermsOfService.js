@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Platform } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { theme } from '../styles/theme';
 import BackHeader from '../components/BackHeader';
+import CrossPlatformView from '../components/CrossPlatformView';
 import { useNavigation } from '@react-navigation/native';
 
 const appName = 'Zen Exotics';
@@ -11,7 +11,7 @@ const TermsOfService = () => {
   const navigation = useNavigation();
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <CrossPlatformView fullWidthHeader={true}>
       <BackHeader 
         title="Terms of Service" 
         onBackPress={() => navigation.navigate('More')} 
@@ -123,21 +123,17 @@ const TermsOfService = () => {
           By accessing or using {appName}, you acknowledge that you have read, understood, and agreed to these Terms of Service.
         </Text>
       </ScrollView>
-    </SafeAreaView>
+    </CrossPlatformView>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
   container: {
     flex: 1,
     padding: 20,
   },
   contentContainer: {
-    paddingBottom: Platform.OS === 'web' ? 16 : 80,
+    paddingBottom: 80,
   },
   title: {
     fontSize: 24,

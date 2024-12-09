@@ -1,11 +1,12 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, Platform, StatusBar, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Platform, Dimensions } from 'react-native';
 import { Card, Button, IconButton, TextInput, SegmentedButtons, Dialog, Portal, ActivityIndicator } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AuthContext } from '../context/AuthContext';
 import { theme } from '../styles/theme';
 import BackHeader from '../components/BackHeader';
 import { useNavigation } from '@react-navigation/native'; 
+import CrossPlatformView from '../components/CrossPlatformView';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const MAX_WIDTH = 500; // Maximum width for web view
@@ -300,7 +301,7 @@ const PaymentMethods = () => {
   );
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <CrossPlatformView fullWidthHeader={true}>
       <BackHeader 
         title="Payment Methods" 
         onBackPress={() => navigation.navigate('More')} 
@@ -352,16 +353,11 @@ const PaymentMethods = () => {
         {renderConfirmPrimaryDialog()}
         {renderDeleteConfirmDialog()}
       </ScrollView>
-    </SafeAreaView>
+    </CrossPlatformView>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
-  },
   container: {
     flex: 1,
   },
