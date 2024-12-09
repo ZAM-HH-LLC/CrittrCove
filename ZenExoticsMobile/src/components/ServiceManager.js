@@ -41,7 +41,7 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
   const [currentService, setCurrentService] = useState({
     serviceName: '',
     animalTypes: '',
-    rates: { puppies: '', adults: '' },
+    rates: { base_rate: ''},
     additionalAnimalRate: '',
   });
   const [collapsedServices, setCollapsedServices] = useState([]);
@@ -56,6 +56,7 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
   const [showValidationErrors, setShowValidationErrors] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [serviceToDelete, setServiceToDelete] = useState(null);
+  const [hoveredButton, setHoveredButton] = useState(null);
 
   const serviceInputRef = useRef(null);
   const animalInputRef = useRef(null);
@@ -81,7 +82,7 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
     if (
       currentService.serviceName.trim() &&
       currentService.animalTypes.trim() &&
-      (currentService.rates.puppies || currentService.rates.adults) &&
+      (currentService.rates.base_rate) &&
       (additionalRates.length === 0 || areAdditionalRatesValid)
     ) {
       const updatedService = {
@@ -102,7 +103,7 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
       setCurrentService({
         serviceName: '',
         animalTypes: '',
-        rates: { puppies: '', adults: '' },
+        rates: { base_rate: ''},
         additionalAnimalRate: '',
       });
       setAdditionalRates([]);
@@ -155,7 +156,7 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
         console.log('x: ', x, 'y: ', y, 'width: ', width, 'height: ', height, 'pageX: ', pageX, 'pageY: ', pageY);
         if (inputType === 'animal') {
           setPosition({ 
-            top: y + height + 87, // Offset for animal dropdown
+            top: y + height + 107, // Offset for animal dropdown
             left: x, 
             width: '100%',
           });
@@ -218,8 +219,7 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
         </View>
         
         <View style={[styles.middleRow, isCollapsed && styles.collapsedMiddleRow]}>
-          <Text style={styles.rateText}>Constant Care: ${item.rates.puppies || 'N/A'}</Text>
-          <Text style={styles.rateText}>Adults: ${item.rates.adults || 'N/A'}</Text>
+          <Text style={styles.rateText}>Base Rate: ${item.rates.base_rate || 'N/A'}</Text>
           <Text style={styles.rateText}>Additional Animal: ${item.additionalAnimalRate || 'N/A'}</Text>
           {!isCollapsed && item.additionalRates?.map((rate, idx) => (
             <Text key={idx} style={styles.rateText}>
@@ -244,30 +244,56 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity onPress={toggleCollapseAll} style={styles.collapseAllButton}>
-        <Text style={styles.collapseAllText}>
-          {allCollapsed ? 'Expand All' : 'Collapse All'}
-        </Text>
-      </TouchableOpacity>
+      <View style={styles.headerButtons}>
+        <Text style={styles.sectionTitle}>Services</Text>
+        <View style={styles.headerActions}>
+          <TouchableOpacity 
+            onPress={toggleCollapseAll} 
+            style={styles.headerButton}
+            onMouseEnter={() => setHoveredButton('collapse')}
+            onMouseLeave={() => setHoveredButton(null)}
+          >
+            <MaterialCommunityIcons 
+              name={allCollapsed ? "chevron-down" : "chevron-up"} 
+              size={24} 
+              color={theme.colors.primary} 
+            />
+            {hoveredButton === 'collapse' && (
+              <Text style={styles.buttonTooltip}>
+                {allCollapsed ? 'Expand' : 'Collapse'}
+              </Text>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.headerButton}
+            onMouseEnter={() => setHoveredButton('add')}
+            onMouseLeave={() => setHoveredButton(null)}
+            onPress={() => {
+              setCurrentService({
+                serviceName: '',
+                animalTypes: '',
+                rates: { base_rate: ''},
+                additionalAnimalRate: '',
+              });
+              setModalVisible(true);
+            }}
+          >
+            <MaterialCommunityIcons 
+              name="plus" 
+              size={24} 
+              color={theme.colors.primary} 
+            />
+            {hoveredButton === 'add' && (
+              <Text style={styles.buttonTooltip}>Add Service</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
       <FlatList
         data={services}
         keyExtractor={(item, index) => index.toString()}
         renderItem={renderServiceCard}
       />
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => {
-          setCurrentService({
-            serviceName: '',
-            animalTypes: '',
-            rates: { puppies: '', adults: '' },
-            additionalAnimalRate: '',
-          });
-          setModalVisible(true);
-        }}
-      >
-        <Text style={styles.addButtonText}>Add New Service</Text>
-      </TouchableOpacity>
       <Modal
         animationType="slide"
         transparent={true}
@@ -281,10 +307,15 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
                 {currentService?.index !== undefined ? 'Edit Service' : 'Add New Service'}
               </Text>
               <View style={styles.inputWrapper}>
+                <Text style={styles.inputLabel}>Service Name</Text>
                 <TextInput
                   ref={serviceInputRef}
-                  style={styles.input}
+                  style={[
+                    styles.input,
+                    showValidationErrors && !currentService?.serviceName?.trim() && styles.inputError
+                  ]}
                   placeholder="Service Name"
+                  placeholderTextColor={theme.colors.placeHolderText}
                   value={currentService?.serviceName}
                   onChangeText={handleServiceTypeChange}
                 />
@@ -312,10 +343,15 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
                 )}
               </View>
               <div style={styles.inputWrapper}>
+                <Text style={styles.inputLabel}>Animal Type</Text>
                 <TextInput
                   ref={animalInputRef}
-                  style={styles.input}
+                  style={[
+                    styles.input,
+                    showValidationErrors && !currentService?.animalTypes?.trim() && styles.inputError
+                  ]}
                   placeholder="Animal Type"
+                  placeholderTextColor={theme.colors.placeHolderText}
                   value={currentService?.animalTypes}
                   onChangeText={handleAnimalTypeChange}
                 />
@@ -342,72 +378,78 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
                   </View>
                 )}
               </div>
+              <Text style={styles.inputLabel}>Base Rate</Text>
               <TextInput
-                style={styles.input}
-                placeholder="Base Rate"
+                style={[
+                  styles.input,
+                  showValidationErrors && !currentService?.rates?.base_rate?.trim() && styles.inputError
+                ]}
+                placeholder="$ Ex. 25"
+                placeholderTextColor={theme.colors.placeHolderText}
                 keyboardType="decimal-pad"
-                value={currentService?.rates?.puppies || ''}
+                value={currentService?.rates?.base_rate ? `$${currentService.rates.base_rate}` : ''}
                 onChangeText={(value) =>
                   setCurrentService((prev) => ({
                     ...prev,
-                    rates: { ...prev.rates, puppies: value.replace(/[^0-9.]/g, '') },
+                    rates: { ...prev.rates, base_rate: value.replace(/[^0-9.]/g, '').replace('$', '') },
                   }))
                 }
               />
+              <Text style={styles.inputLabel}>Additional Animal Rate</Text>
               <TextInput
-                style={styles.input}
-                placeholder="Constant Care Rate"
+                style={[
+                  styles.input, 
+                  styles.additionalAnimalRate,
+                  showValidationErrors && !currentService?.additionalAnimalRate?.trim() && styles.inputError
+                ]}
+                placeholder="$ Ex. 20"
+                placeholderTextColor={theme.colors.placeHolderText}
                 keyboardType="decimal-pad"
-                value={currentService?.rates?.adults || ''}
-                onChangeText={(value) =>
-                  setCurrentService((prev) => ({
-                    ...prev,
-                    rates: { ...prev.rates, adults: value.replace(/[^0-9.]/g, '') },
-                  }))
-                }
-              />
-              <TextInput
-                style={[styles.input, styles.additionalAnimalRate]}
-                placeholder="Additional Animal Rate"
-                keyboardType="decimal-pad"
-                value={currentService?.additionalAnimalRate || ''}
+                value={currentService?.additionalAnimalRate ? `$${currentService.additionalAnimalRate}` : ''}
                 onChangeText={(value) =>
                   setCurrentService((prev) => ({ 
                     ...prev, 
-                    additionalAnimalRate: value.replace(/[^0-9.]/g, '') 
+                    additionalAnimalRate: value.replace(/[^0-9.]/g, '').replace('$', '') 
                   }))
                 }
               />
               {additionalRates.map((rate, idx) => (
                 <View key={idx} style={styles.additionalRateRow}>
+                  <Text style={styles.additionalRateTitle}>Rate #{idx + 1}</Text>
+                  <Text style={styles.inputLabel}>Rate Title</Text>
                   <TextInput
                     style={[
                       styles.input, 
                       styles.additionalRateInput,
                       showValidationErrors && !rate.label?.trim() && styles.inputError
                     ]}
-                    placeholder="Rate Title"
+                    placeholder="Animal with medication"
+                    placeholderTextColor={theme.colors.placeHolderText}
                     value={rate.label || ''}
                     onChangeText={(text) => updateAdditionalRate(idx, 'label', text)}
                   />
+                  <Text style={styles.inputLabel}>Rate Amount</Text>
                   <TextInput
                     style={[
                       styles.input, 
                       styles.additionalRateInput,
                       showValidationErrors && !rate.value?.trim() && styles.inputError
                     ]}
-                    placeholder="Rate Amount"
+                    placeholder="$ Ex. 20"
+                    placeholderTextColor={theme.colors.placeHolderText}
                     keyboardType="decimal-pad"
-                    value={rate.value || ''}
-                    onChangeText={(value) => updateAdditionalRate(idx, 'value', value.replace(/[^0-9.]/g, ''))}
+                    value={rate.value ? `$${rate.value}` : ''}
+                    onChangeText={(value) => updateAdditionalRate(idx, 'value', value.replace(/[^0-9.]/g, '').replace('$', ''))}
                   />
+                  <Text style={styles.inputLabel}>Rate Description</Text>
                   <TextInput
                     style={[
                       styles.input, 
                       styles.additionalRateInput,
                       showValidationErrors && !rate.description?.trim() && styles.inputError
                     ]}
-                    placeholder="Rate Description"
+                    placeholder="Rate for animal needing medicaiton"
+                    placeholderTextColor={theme.colors.placeHolderText}
                     value={rate.description || ''}
                     onChangeText={(text) => updateAdditionalRate(idx, 'description', text)}
                   />
@@ -531,7 +573,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   addButtonText: {
-    color: theme.colors.buttonText,
+    color: theme.colors.whiteText,
     fontSize: theme.fontSizes.medium,
   },
   modalOverlay: {
@@ -633,7 +675,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   collapseAllText: {
-    color: theme.colors.buttonText,
+    color: theme.colors.whiteText,
     fontSize: theme.fontSizes.medium,
   },
   collapsedRow: {
@@ -727,6 +769,65 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     flex: 1, // This helps with equal spacing in collapsed view
     marginRight: 10,
+  },
+  inputLabel: {
+    fontSize: theme.fontSizes.small,
+    color: theme.colors.text,
+    marginBottom: 5,
+    // marginTop: 10,
+    fontWeight: '500',
+    zIndex: -1,
+  },
+  additionalRateTitle: {
+    fontSize: theme.fontSizes.medium,
+    color: theme.colors.text,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingBottom: 10,
+    width: '100%',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: theme.colors.primary,
+    marginBottom: 10,
+  },
+  headerButton: {
+    marginLeft: 40,
+    // padding: 8,
+    position: 'relative',
+  },
+  buttonTooltip: {
+    position: 'absolute',
+    bottom: '100%',
+    left: '50%',
+    transform: [{ translateX: -35 }],
+    backgroundColor: theme.colors.surface,
+    padding: 8,
+    borderRadius: 4,
+    fontSize: theme.fontSizes.small,
+    color: theme.colors.text,
+    width: 70,
+    textAlign: 'center',
+    // marginBottom: 5,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: -1,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    zIndex: 1000,
   },
 });
 

@@ -12,6 +12,7 @@ export const theme = {
     calendarColorYellowBrown: '#8A8C6D', // Yellow-brown color for calendar (booked today, but time is available)
     text: 'black', // Text color for text bodies
     whiteText: 'white', // Text color for headers and buttons
+    placeHolderText: '#A9A9A9',
     accent: '#03dac4', // Accent color if needed
     error: '#B00020',
     danger: '#A52A2A',

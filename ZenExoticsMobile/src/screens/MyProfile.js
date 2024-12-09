@@ -9,6 +9,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthContext } from '../context/AuthContext';
 import FloatingSaveButton from '../components/FloatingSaveButton';
 import ServiceManager from '../components/ServiceManager';
+import ProfessionalTab from '../components/ProfessionalTab';
+import RecordedPets from '../components/RecordedPets';
+import EditableSection from '../components/EditableSection';
 
 const MyProfile = () => {
   const navigation = useNavigation();
@@ -29,28 +32,32 @@ const MyProfile = () => {
   const [authorizedHouseholdMembers, setAuthorizedHouseholdMembers] = useState(['']);
   const [isLoading, setIsLoading] = useState(true);
   const [editMode, setEditMode] = useState({
-    sitter: false, // Initialize edit mode for sitter
+    sitter: false,
     services: false,
-    // other sections if needed
+    bio: false,
+    professionalBio: false,
+    portfolio: false,
+    facilities: false,
+    skills: false,
   });
 
   const [services, setServices] = useState([
     {
       serviceName: 'Dog Walking',
       animalTypes: 'Dogs',
-      rates: { puppies: '20', adults: '15' },
+      rates: { base_rate: '20' },
       additionalAnimalRate: '10',
     },
     {
       serviceName: 'Cat Sitting',
       animalTypes: 'Cats',
-      rates: { puppies: '', adults: '25' }, // No puppy rates for cats
+      rates: { base_rate: '20' }, // No puppy rates for cats
       additionalAnimalRate: '5',
     },
     {
       serviceName: 'Exotic Pet Care',
       animalTypes: 'Lizards, Birds',
-      rates: { puppies: '', adults: '50' }, // Single adult rate
+      rates: { base_rate: '25' }, // Single adult rate
       additionalAnimalRate: '15',
     },
   ]);
@@ -244,14 +251,14 @@ const MyProfile = () => {
             style={[styles.tab, activeTab === 'client' && styles.activeTab]}
             onPress={() => setActiveTab('client')}
           >
-            <Text style={[styles.tabText, activeTab === 'client' && styles.activeTabText]}>Client View</Text>
+            <Text style={[styles.tabText, activeTab === 'client' && styles.activeTabText]}>Account Info</Text>
           </TouchableOpacity>
           {isApprovedSitter && (
             <TouchableOpacity
               style={[styles.tab, activeTab === 'sitter' && styles.activeTab]}
               onPress={() => setActiveTab('sitter')}
             >
-              <Text style={[styles.tabText, activeTab === 'sitter' && styles.activeTabText]}>Set Rates</Text>
+              <Text style={[styles.tabText, activeTab === 'sitter' && styles.activeTabText]}>Professional</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -296,30 +303,16 @@ const MyProfile = () => {
               {renderEditableField('Country', country, setCountry, 'address')}
               {/* {editMode.address && <Button mode="contained" onPress={() => toggleEditMode('address')} style={styles.saveButton}>Save</Button>} */}
             </View>
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>About Me</Text>
-                <TouchableOpacity onPress={() => toggleEditMode('bio')}>
-                  <MaterialCommunityIcons name="pencil" size={20} color={theme.colors.primary} />
-                </TouchableOpacity>
-              </View>
-              {renderEditableField('Bio', bio, setBio, 'bio')}
-              {/* {editMode.bio && <Button mode="contained" onPress={() => toggleEditMode('bio')} style={styles.saveButton}>Save</Button>} */}
-            </View>
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>My Pets</Text>
-              {pets.map((pet) => (
-                <TouchableOpacity key={pet.id} style={styles.petItem}>
-                  <View style={styles.petItemContent}>
-                    <Image source={{ uri: pet.photo }} style={styles.petPhoto} />
-                    <View style={styles.petInfo}>
-                      <Text style={styles.petName}>{pet.name}</Text>
-                      <Text style={styles.petDetails}>{pet.type} • {pet.breed} • {pet.age} years old</Text>
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
+            <EditableSection
+              title="About Me"
+              value={bio}
+              onChangeText={setBio}
+              editMode={editMode.bio}
+              toggleEditMode={() => toggleEditMode('bio')}
+              setHasUnsavedChanges={setHasUnsavedChanges}
+              getContentWidth={getContentWidth}
+            />
+            <RecordedPets pets={pets} />
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Emergency Contact</Text>
@@ -378,20 +371,15 @@ const MyProfile = () => {
           </View>
         )}
         {activeTab === 'sitter' && (
-          <View style={styles.centeredContent}>
-            {/* <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Set Rates</Text>
-              <TouchableOpacity onPress={() => toggleEditMode('sitter')}>
-                <MaterialCommunityIcons name="pencil" size={20} color={theme.colors.primary} />
-              </TouchableOpacity>
-            </View> */}
-            <ServiceManager
-              services={services}
-              setServices={setServices}
-              setHasUnsavedChanges={setHasUnsavedChanges}
-              editMode={editMode.services}
-            />
-          </View>
+          <ProfessionalTab
+            services={services}
+            setServices={setServices}
+            setHasUnsavedChanges={setHasUnsavedChanges}
+            getContentWidth={getContentWidth}
+            pets={pets}
+            editMode={editMode}
+            toggleEditMode={toggleEditMode}
+          />
         )}
       </ScrollView>
       <FloatingSaveButton 
