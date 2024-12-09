@@ -4,11 +4,14 @@ import { Card, Button, IconButton, TextInput, SegmentedButtons, Dialog, Portal, 
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AuthContext } from '../context/AuthContext';
 import { theme } from '../styles/theme';
+import BackHeader from '../components/BackHeader';
+import { useNavigation } from '@react-navigation/native'; 
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const MAX_WIDTH = 500; // Maximum width for web view
 
 const PaymentMethods = () => {
+  const navigation = useNavigation();
   const [activeTab, setActiveTab] = useState('pay');
   const [receivePaymentMethods, setReceivePaymentMethods] = useState([]);
   const [payForServicesMethods, setPayForServicesMethods] = useState([]);
@@ -298,6 +301,10 @@ const PaymentMethods = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <BackHeader 
+        title="Payment Methods" 
+        onBackPress={() => navigation.navigate('More')} 
+      />
       <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
         {isApprovedSitter && (
           <SegmentedButtons

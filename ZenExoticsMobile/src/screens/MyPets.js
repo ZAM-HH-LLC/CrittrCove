@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Platform, 
 import { Card, Title, Paragraph, Button } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
-
+import BackHeader from '../components/BackHeader';
 const { width: screenWidth } = Dimensions.get('window');
 
 const MyPets = ({ navigation }) => {
@@ -201,7 +201,6 @@ const MyPets = ({ navigation }) => {
         Platform.OS === 'web' && { alignItems: 'center' }
       ]}>
         <View style={styles.contentWrapper}>
-          <Text style={styles.title}>My Pets</Text>
           {pets.map(pet => (
             <PetCard key={pet.id} pet={pet} />
           ))}
@@ -223,18 +222,30 @@ const MyPets = ({ navigation }) => {
   if (Platform.OS === 'ios') {
     return (
       <SafeAreaView style={styles.container}>
+        <BackHeader 
+          title="My Pets" 
+          onBackPress={() => navigation.navigate('More')} 
+        />
         <Content />
       </SafeAreaView>
     );
   } else if (Platform.OS === 'android') {
     return (
       <View style={[styles.container, { paddingTop: StatusBar.currentHeight }]}>
+        <BackHeader 
+          title="My Pets" 
+          onBackPress={() => navigation.navigate('More')} 
+        />
         <Content />
       </View>
     );
   } else {
     return (
       <View style={styles.container}>
+        <BackHeader 
+          title="My Pets" 
+          onBackPress={() => navigation.navigate('More')} 
+        />
         <Content />
       </View>
     );

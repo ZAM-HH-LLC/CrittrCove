@@ -3,6 +3,7 @@ import { View, StyleSheet, Platform, SafeAreaView, Text, TouchableOpacity, Statu
 import { List, Divider } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
+import BackHeader from '../components/BackHeader';
 
 const Settings = ({ navigation }) => {
   const settingsItems = [
@@ -39,18 +40,12 @@ const Settings = ({ navigation }) => {
     </List.Section>
   );
 
-  const renderHeader = () => (
-    <View style={styles.header}>
-      <TouchableOpacity onPress={() => navigation.navigate('More')} style={styles.backButton}>
-        <MaterialCommunityIcons name="arrow-left" size={24} color={theme.colors.primary} />
-      </TouchableOpacity>
-      <Text style={styles.headerText}>Settings</Text>
-    </View>
-  );
-
   return (
     <SafeAreaView style={styles.container}>
-      {renderHeader()}
+      <BackHeader 
+        title="Settings" 
+        onBackPress={() => navigation.navigate('More')} 
+      />
       <View style={Platform.OS === 'web' ? styles.webContent : styles.content}>
         {renderContent()}
       </View>
@@ -79,21 +74,6 @@ const styles = StyleSheet.create({
   webListItem: {
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-  },
-  backButton: {
-    marginRight: 16,
-  },
-  headerText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: theme.colors.primary,
   },
 });
 

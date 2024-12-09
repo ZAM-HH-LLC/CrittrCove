@@ -13,6 +13,7 @@ import ProfessionalTab from '../components/ProfessionalTab';
 import RecordedPets from '../components/RecordedPets';
 import EditableSection from '../components/EditableSection';
 import DatePicker from '../components/DatePicker';
+import BackHeader from '../components/BackHeader';
 
 const MyProfile = () => {
   const navigation = useNavigation();
@@ -275,12 +276,10 @@ const MyProfile = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.navigate('More')} style={styles.backButton}>
-          <Ionicons name="chevron-back" size={24} color={theme.colors.primary} />
-        </TouchableOpacity>
-        <Text style={styles.headerText}>My Profile</Text>
-      </View>
+      <BackHeader 
+        title="My Profile" 
+        onBackPress={() => navigation.navigate('More')} 
+      />
       <ScrollView 
         ref={scrollViewRef} 
         contentContainerStyle={styles.scrollViewContent}

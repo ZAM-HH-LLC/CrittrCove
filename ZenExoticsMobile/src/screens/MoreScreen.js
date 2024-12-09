@@ -50,7 +50,9 @@ const MoreScreen = ({ navigation }) => {
     ],
     sitter: [
       { title: 'Profile', icon: 'account', route: 'MyProfile' },
-      { title: 'My Contracts', icon: 'file-document-outline', route: 'MyContracts' },
+      // TODO: implement My Contracts after MVP
+      // { title: 'My Contracts', icon: 'file-document-outline', route: 'MyContracts' },
+      { title: 'My Pets', icon: 'paw', route: 'MyPets' },
       { title: 'Payment Methods', icon: 'credit-card', route: 'PaymentMethods' },
       { title: 'Settings', icon: 'cog', route: 'Settings' },
       { title: 'Privacy Policy', icon: 'shield-account', route: 'PrivacyPolicy' },

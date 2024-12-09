@@ -2,12 +2,20 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { theme } from '../styles/theme';
+import BackHeader from '../components/BackHeader';
+import { useNavigation } from '@react-navigation/native';
 
 const appName = 'Zen Exotics';
 
 const TermsOfService = () => {
+  const navigation = useNavigation();
+
   return (
     <SafeAreaView style={styles.safeArea}>
+      <BackHeader 
+        title="Terms of Service" 
+        onBackPress={() => navigation.navigate('More')} 
+      />
       <ScrollView 
         style={styles.container}
         contentContainerStyle={styles.contentContainer}

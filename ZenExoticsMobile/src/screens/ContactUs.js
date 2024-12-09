@@ -4,11 +4,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { theme } from '../styles/theme';
 import axios from 'axios';
 import { API_BASE_URL } from '../config/config';
+import BackHeader from '../components/BackHeader';
+import { useNavigation } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
 const inputWidth = Platform.OS === 'web' ? '40%' : '90%';
 
 const ContactUs = () => {
+  const navigation = useNavigation();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
@@ -49,6 +52,10 @@ const ContactUs = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <BackHeader 
+        title="Contact Us" 
+        onBackPress={() => navigation.navigate('More')} 
+      />
       <View style={styles.container}>
         <Text style={styles.title}>Contact Us</Text>
         <Text style={styles.subtitle}>Get in touch with our support team</Text>
@@ -109,6 +116,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   title: {
     fontSize: 24,
