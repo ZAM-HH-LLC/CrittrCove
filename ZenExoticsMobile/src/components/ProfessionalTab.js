@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
+  Modal,
 } from 'react-native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import ServiceManager from './ServiceManager';
@@ -32,6 +33,43 @@ const ProfessionalTab = ({
     experience: '',
     specialties: [],
   });
+  const [selectedFacilities, setSelectedFacilities] = useState([]);
+  const [facilitiesModalVisible, setFacilitiesModalVisible] = useState(false);
+  const [tempSelectedFacilities, setTempSelectedFacilities] = useState([]);
+
+  const FACILITY_OPTIONS = [
+    // Living Situation
+    { id: 'apartment', label: 'Lives in an apartment' },
+    { id: 'house', label: 'Lives in a house' },
+    { id: 'fenced_yard', label: 'Has a fenced yard' },
+    
+    // Household Environment
+    { id: 'non_smoking', label: 'Non-smoking household' },
+    { id: 'no_children', label: 'No children present' },
+    { id: 'has_children', label: 'Children present' },
+    { id: 'security_system', label: 'Has security system' },
+    
+    // Pet Policies
+    { id: 'dogs_bed', label: 'Dogs allowed on bed' },
+    { id: 'dogs_furniture', label: 'Dogs allowed on furniture' },
+    { id: 'crate_available', label: 'Crate available' },
+    { id: 'separate_areas', label: 'Can separate pets' },
+    
+    // Care Details
+    { id: 'potty_0_2', label: 'Potty breaks every 0-2 hours' },
+    { id: 'potty_2_4', label: 'Potty breaks every 2-4 hours' },
+    { id: 'potty_4_6', label: 'Potty breaks every 4-6 hours' },
+    
+    // Resident Pets
+    { id: 'no_pets', label: 'No resident pets' },
+    { id: 'has_dogs', label: 'Has resident dogs' },
+    { id: 'has_cats', label: 'Has resident cats' },
+    
+    // Additional Features
+    { id: 'air_conditioned', label: 'Air-conditioned' },
+    { id: 'outdoor_area', label: 'Has outdoor play area' },
+    { id: 'emergency_transport', label: 'Emergency transport available' },
+  ];
 
   const pickProfessionalPhoto = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -90,6 +128,38 @@ const ProfessionalTab = ({
         {value || `No ${label.toLowerCase()} provided`}
       </Text>
     );
+  };
+
+  const toggleFacility = (facilityId) => {
+    setSelectedFacilities(prev => {
+      if (prev.includes(facilityId)) {
+        return prev.filter(id => id !== facilityId);
+      } else {
+        return [...prev, facilityId];
+      }
+    });
+    setHasUnsavedChanges(true);
+  };
+
+  const openFacilitiesModal = () => {
+    setTempSelectedFacilities([...selectedFacilities]);
+    setFacilitiesModalVisible(true);
+  };
+
+  const saveFacilities = () => {
+    setSelectedFacilities(tempSelectedFacilities);
+    setFacilitiesModalVisible(false);
+    setHasUnsavedChanges(true);
+  };
+
+  const toggleTempFacility = (facilityId) => {
+    setTempSelectedFacilities(prev => {
+      if (prev.includes(facilityId)) {
+        return prev.filter(id => id !== facilityId);
+      } else {
+        return [...prev, facilityId];
+      }
+    });
   };
 
   return (
@@ -178,15 +248,85 @@ const ProfessionalTab = ({
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Home & Facilities</Text>
-          <TouchableOpacity onPress={() => toggleEditMode('facilities')}>
-            <MaterialCommunityIcons name="pencil" size={20} color={theme.colors.primary} />
+          <TouchableOpacity onPress={openFacilitiesModal}>
+            <MaterialCommunityIcons 
+              name="pencil" 
+              size={24} 
+              color={theme.colors.primary} 
+            />
           </TouchableOpacity>
         </View>
-        {renderEditableField('Facilities', facilities, setFacilities, 'facilities', true)}
+        <View style={styles.facilitiesContainer}>
+          {selectedFacilities.map((facilityId) => {
+            const facility = FACILITY_OPTIONS.find(f => f.id === facilityId);
+            return (
+              <View key={facilityId} style={styles.facilityTag}>
+                <Text style={styles.facilityTagText}>{facility.label}</Text>
+              </View>
+            );
+          })}
+          {selectedFacilities.length === 0 && (
+            <Text style={styles.emptyText}>No facilities selected</Text>
+          )}
+        </View>
+
+        {/* Facilities Selection Modal */}
+        <Modal
+          visible={facilitiesModalVisible}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setFacilitiesModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Select Home & Facilities</Text>
+                <TouchableOpacity onPress={() => setFacilitiesModalVisible(false)}>
+                  <MaterialCommunityIcons name="close" size={24} color={theme.colors.text} />
+                </TouchableOpacity>
+              </View>
+              
+              <ScrollView style={styles.modalScroll}>
+                {FACILITY_OPTIONS.map((facility) => (
+                  <TouchableOpacity
+                    key={facility.id}
+                    style={[
+                      styles.modalFacilityTag,
+                      tempSelectedFacilities.includes(facility.id) && styles.facilityTagSelected
+                    ]}
+                    onPress={() => toggleTempFacility(facility.id)}
+                  >
+                    <Text style={[
+                      styles.modalFacilityText,
+                      tempSelectedFacilities.includes(facility.id) && styles.facilityTagTextSelected
+                    ]}>
+                      {facility.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+
+              <View style={styles.modalFooter}>
+                <TouchableOpacity 
+                  style={[styles.modalButton, styles.cancelButton]}
+                  onPress={() => setFacilitiesModalVisible(false)}
+                >
+                  <Text style={styles.modalButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.modalButton, styles.saveButton]}
+                  onPress={saveFacilities}
+                >
+                  <Text style={styles.modalButtonText2}>Save</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </View>
 
       {/* Skills & Experience Section */}
-      <View style={styles.section}>
+      {/* <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Skills & Experience</Text>
           <TouchableOpacity onPress={() => toggleEditMode('skills')}>
@@ -198,7 +338,7 @@ const ProfessionalTab = ({
           'skills', 
           true
         )}
-      </View>
+      </View> */}
     </View>
   );
 };
@@ -305,6 +445,99 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: theme.colors.placeholder,
     marginTop: 16,
+  },
+  facilitiesContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    paddingHorizontal: 4,
+  },
+  facilityTag: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+    marginBottom: 8,
+  },
+  facilityTagSelected: {
+    backgroundColor: theme.colors.primary,
+  },
+  facilityTagText: {
+    color: theme.colors.primary,
+    fontSize: theme.fontSizes.small,
+  },
+  facilityTagTextSelected: {
+    color: theme.colors.surface,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '90%',
+    maxWidth: 500,
+    backgroundColor: theme.colors.background,
+    borderRadius: 10,
+    padding: 20,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: theme.fontSizes.large,
+    fontWeight: 'bold',
+  },
+  modalScroll: {
+    maxHeight: '70%',
+  },
+  modalFacilityTag: {
+    padding: 16,
+    borderRadius: 8,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+    marginBottom: 8,
+  },
+  modalFacilityText: {
+    fontSize: theme.fontSizes.medium,
+    color: theme.colors.primary,
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
+  },
+  modalButton: {
+    padding: 12,
+    borderRadius: 8,
+    width: '48%',
+    alignItems: 'center',
+  },
+  saveButton: {
+    backgroundColor: theme.colors.primary,
+  },
+  cancelButton: {
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+  },
+  modalButtonText: {
+    color: theme.colors.primary,
+    fontSize: theme.fontSizes.medium,
+    fontWeight: 'bold',
+  },
+  modalButtonText2: {
+    color: theme.colors.whiteText,
+    fontSize: theme.fontSizes.medium,
+    fontWeight: 'bold',
   },
 });
 
