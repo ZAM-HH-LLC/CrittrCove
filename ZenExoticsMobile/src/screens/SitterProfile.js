@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Platform, useWindowDimensions, SafeAreaView, StatusBar } from 'react-native';
-import { TextInput, Button, Avatar } from 'react-native-paper';
-import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Platform, useWindowDimensions } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
+import BackHeader from '../components/BackHeader';
+import CrossPlatformView from '../components/CrossPlatformView';
+import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../context/AuthContext';
 
@@ -93,25 +94,26 @@ const SitterProfile = ({ route, navigation }) => {
     }
   }, [sitterData]);
 
-  if (!sitterData) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-            <Ionicons name="chevron-back" size={24} color={theme.colors.primary} />
-          </TouchableOpacity>
-          <Text style={styles.headerText}>Loading...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   const getContentWidth = () => {
     if (Platform.OS === 'web') {
       return Math.min(800, windowWidth - 32); // 32px for padding
     }
     return windowWidth - 32; // 16px padding on each side
   };
+
+  if (!sitterData) {
+    return (
+      <CrossPlatformView fullWidthHeader={true}>
+        <BackHeader 
+          title="Sitter Profile" 
+          onBackPress={handleBack}
+        />
+        <View style={styles.centered}>
+          <Text>Loading...</Text>
+        </View>
+      </CrossPlatformView>
+    );
+  }
 
   const renderProfilePhoto = () => {
     if (sitterData.profilePicture) {
@@ -133,14 +135,11 @@ const SitterProfile = ({ route, navigation }) => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-          <Ionicons name="chevron-back" size={24} color={theme.colors.primary} />
-        </TouchableOpacity>
-        <Text style={styles.headerText}>Sitter Profile</Text>
-      </View>
-
+    <CrossPlatformView fullWidthHeader={true} contentWidth={getContentWidth()}>
+      <BackHeader 
+        title="Sitter Profile" 
+        onBackPress={handleBack}
+      />
       <ScrollView contentContainerStyle={styles.scrollViewContent}>
         <View style={[styles.content, { width: getContentWidth() }]}>
           {/* Profile Header Section */}
@@ -227,32 +226,28 @@ const SitterProfile = ({ route, navigation }) => {
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </CrossPlatformView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
-  },
   scrollViewContent: {
     flexGrow: 1,
     paddingBottom: Platform.OS === 'web' ? 16 : 80,
+  },
+  profileHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
   },
   content: {
     alignSelf: 'center',
     paddingHorizontal: 16,
     paddingTop: 16,
   },
-  switchProfileButton: {
-    alignSelf: 'flex-end',
-    marginBottom: 16,
-  },
-  profileHeader: {
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
   },
   profilePhoto: {
     width: 120,
@@ -331,34 +326,6 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     margin: 20,
-  },
-  centered: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-    backgroundColor: theme.colors.background,
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  backButton: {
-    marginRight: 16,
-  },
-  headerText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: theme.colors.primary,
-  },
-  switchProfileButton: {
-    backgroundColor: theme.colors.primary,
   },
   ratingContainer: {
     flexDirection: 'row',
