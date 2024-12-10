@@ -72,6 +72,17 @@ const mockReviews = [
   }
 ];
 
+const useResponsiveLayout = () => {
+  const { width } = useWindowDimensions();
+  const [isWideScreen, setIsWideScreen] = useState(true);
+
+  useEffect(() => {
+    setIsWideScreen(Platform.OS === 'web' && width >= 900);
+  }, [width]);
+
+  return isWideScreen;
+};
+
 const SitterProfile = ({ route, navigation }) => {
   const { width: windowWidth } = useWindowDimensions();
   const [sitterData, setSitterData] = useState(null);
@@ -79,6 +90,7 @@ const SitterProfile = ({ route, navigation }) => {
   const [bioModalVisible, setBioModalVisible] = useState(false);
   const [reviewsModalVisible, setReviewsModalVisible] = useState(false);
   const [specialistModalVisible, setSpecialistModalVisible] = useState(false);
+  const isWideScreen = useResponsiveLayout();
 
   useEffect(() => {
     // Check if we can go back and if SearchSittersListing exists in history
@@ -256,6 +268,19 @@ const SitterProfile = ({ route, navigation }) => {
     );
   };
 
+  const styles2 = StyleSheet.create({
+    modalContent: {
+      backgroundColor: theme.colors.background,
+      padding: 24,
+      borderRadius: 12,
+      width: Platform.OS === 'web' ? 
+        (windowWidth <= 650 ? '90%' : '60%') : 
+        '90%',
+      maxWidth: 800,
+      maxHeight: '90%',
+    },
+  });
+
   // Create services array from sitterData
   const services = [
     { name: 'Boarding', price: "25" },
@@ -295,11 +320,17 @@ const SitterProfile = ({ route, navigation }) => {
       />
       <ScrollView contentContainerStyle={styles.scrollViewContent}>
         <View style={[styles.content, { width: getContentWidth() }]}>
-          <View style={styles.twoColumnLayout}>
+          <View style={[styles.twoColumnLayout, !isWideScreen && styles.singleColumnLayout]}>
             {/* Left Column */}
-            <View style={styles.leftColumn}>
+            <View style={[
+              styles.leftColumn, 
+              !isWideScreen && styles.leftColumnMobile
+            ]}>
               {/* Profile Info */}
-              <View style={styles.profileSection}>
+              <View style={[
+                styles.profileSection,
+                !isWideScreen && styles.profileSectionMobile
+              ]}>
                 {renderProfilePhoto()}
                 <Text style={styles.name}>{sitterData.name}</Text>
                 <Text style={styles.location}>{sitterData.location}</Text>
@@ -427,7 +458,7 @@ const SitterProfile = ({ route, navigation }) => {
         onRequestClose={() => setBioModalVisible(false)}
       >
         <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
+          <View style={styles2.modalContent}>
             <Text style={styles.bioText}>{sitterData.bio}</Text>
             <TouchableOpacity 
               style={styles.closeButton}
@@ -447,7 +478,7 @@ const SitterProfile = ({ route, navigation }) => {
         onRequestClose={() => setReviewsModalVisible(false)}
       >
         <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
+          <View style={styles2.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>All Reviews</Text>
               <TouchableOpacity 
@@ -479,7 +510,7 @@ const SitterProfile = ({ route, navigation }) => {
         onRequestClose={() => setSpecialistModalVisible(false)}
       >
         <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
+          <View style={styles2.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Specialist Experience</Text>
               <TouchableOpacity 
@@ -794,9 +825,11 @@ const styles = StyleSheet.create({
   mapContainer: {
     height: 200,
     width: '100%',
+    maxWidth: Platform.OS === 'web' ? 600 : undefined,
     borderRadius: 12,
     overflow: 'hidden',
     marginBottom: 24,
+    alignSelf: 'center',
   },
   map: {
     flex: 1,
@@ -844,14 +877,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
-  modalContent: {
-    backgroundColor: theme.colors.background,
-    padding: 24,
-    borderRadius: 12,
-    width: Platform.OS === 'web' ? '60%' : '90%',
-    maxWidth: 800,
-    maxHeight: '90%',
-  },
   aboutSubsections: {
     flexDirection: Platform.OS === 'web' ? 'row' : 'column',
     gap: 24,
@@ -875,8 +900,11 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   twoColumnLayout: {
-    flexDirection: Platform.OS === 'web' ? 'row' : 'column',
+    flexDirection: 'row',
     gap: 24,
+  },
+  singleColumnLayout: {
+    flexDirection: 'column',
   },
   leftColumn: {
     flex: Platform.OS === 'web' ? 1 : undefined,
@@ -895,6 +923,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    width: '100%',
+    maxWidth: Platform.OS === 'web' ? 600 : undefined,
+    alignSelf: 'center',
   },
   calendar: {
     height: 300,
@@ -1023,6 +1054,28 @@ const styles = StyleSheet.create({
   modalReviewItem: {
     marginBottom: 16,
     width: '100%',
+  },
+  leftColumnMobile: {
+    maxWidth: '100%',
+    alignItems: 'center',
+  },
+  profileSectionMobile: {
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 500, // Limit width on mobile for better readability
+    alignSelf: 'center',
+  },
+  servicesBox: {
+    backgroundColor: theme.colors.surface,
+    padding: 24,
+    borderRadius: 12,
+    marginTop: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    width: '100%', // Ensure full width in mobile view
   },
 });
 

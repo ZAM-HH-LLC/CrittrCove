@@ -7,6 +7,7 @@ import { theme } from '../styles/theme';
 import { debounce } from 'lodash';
 import { mockSitters } from '../data/mockData';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+// import { mockSitters } from '../data/mockData';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -61,15 +62,7 @@ const SitterCard = ({ sitter, onPress }) => (
           <Text style={styles.rating}>{sitter.reviews}</Text>
           <Text style={styles.reviewCount}>• {sitter.reviewCount || 50} reviews</Text>
         </View>
-        {/* <View style={styles.repeatContainer}>
-          <MaterialCommunityIcons name="sync" size={20} color={theme.colors.text} />
-          <Text style={styles.repeatText}>{sitter.repeatClients || 19} repeat clients</Text>
-        </View> */}
       </View>
-      {/* <View style={styles.availabilityContainer}>
-        <MaterialCommunityIcons name="clock-outline" size={20} color={theme.colors.success} />
-        <Text style={styles.availabilityText}>Availability updated today</Text>
-      </View> */}
     </View>
   </TouchableOpacity>
 );
@@ -251,12 +244,12 @@ const Header = ({ navigation, toggleMap, isSmallScreen }) => {
         />
       </TouchableOpacity>
       
-      <Text style={styles.headerTitle}>Available Sitters</Text>
+      <Text style={styles.headerTitle}>Available Professionals</Text>
       
       <View style={styles.headerButtons}>
         <TouchableOpacity 
           style={styles.iconButton}
-          onPress={() => navigation.navigate('SearchSitters')}
+          onPress={() => navigation.goBack()}
         >
           <MaterialCommunityIcons 
             name="filter-variant" 
@@ -382,8 +375,8 @@ const SearchSittersListing = ({ navigation }) => {
           sitter.coordinates.longitude <= (region.longitude + region.longitudeDelta/2);
           
         const matchesFilters = 
-          (!searchParams.serviceType || sitter.serviceTypes.includes(searchParams.serviceType)) &&
-          (!searchParams.animalType || sitter.animalTypes.includes(searchParams.animalType));
+          (!searchParams?.serviceType || sitter.serviceTypes.includes(searchParams.serviceType)) &&
+          (!searchParams?.animalType || sitter.animalTypes.includes(searchParams.animalType));
           
         return isWithinLatBounds && isWithinLngBounds && matchesFilters;
       });
@@ -494,7 +487,11 @@ const SearchSittersListing = ({ navigation }) => {
                   {sitters.length > 0 ? (
                     <>
                       {sitters.map(sitter => (
-                        <SitterCard key={sitter.id} sitter={sitter} onPress={() => handleSitterPress(sitter)} />
+                        <SitterCard 
+                          key={sitter.id} 
+                          sitter={sitter} 
+                          onPress={() => handleSitterPress(sitter)} 
+                        />
                       ))}
                       {loading && <LoadingIndicator />}
                       {!hasMore && <Text style={styles.noMoreSittersText}>No more sitters in this area</Text>}
@@ -519,7 +516,11 @@ const SearchSittersListing = ({ navigation }) => {
                 {sitters.length > 0 ? (
                   <>
                     {sitters.map(sitter => (
-                      <SitterCard key={sitter.id} sitter={sitter} onPress={() => handleSitterPress(sitter)} />
+                      <SitterCard 
+                        key={sitter.id} 
+                        sitter={sitter} 
+                        onPress={() => handleSitterPress(sitter)} 
+                      />
                     ))}
                     {loading && <LoadingIndicator />}
                     {!hasMore && <Text style={styles.noMoreSittersText}>No more sitters in this area</Text>}
