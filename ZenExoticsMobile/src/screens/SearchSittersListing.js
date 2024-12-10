@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Image, Platform, SafeAreaView, StatusBar } from 'react-native';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Image, Platform, SafeAreaView, StatusBar, TextInput } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import MapView from 'react-native-maps';
 import { Marker } from 'react-native-maps';
@@ -7,6 +7,7 @@ import { theme } from '../styles/theme';
 import { debounce } from 'lodash';
 import { mockSitters } from '../data/mockData';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 // import { mockSitters } from '../data/mockData';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -25,47 +26,56 @@ const LoadingIndicator = () => (
   </View>
 );
 
-const SitterCard = ({ sitter, onPress }) => (
-  <TouchableOpacity 
-    style={styles.sitterCard} 
-    onPress={onPress}
-  >
-    <View style={styles.cardHeader}>
-      <View style={styles.cardHeaderLeft}>
-        <Image 
-          source={{ uri: sitter.profilePicture }} 
-          style={styles.profilePicture} 
-        />
-        <View style={styles.verifiedBadge}>
-          <MaterialCommunityIcons name="check-circle" size={20} color={theme.colors.primary} />
+const SitterCard = ({ sitter, onPress }) => {
+  const truncateBio = (text, maxLength = 100) => {
+    if (text.length <= maxLength) return text;
+    return text.slice(0, maxLength).trim() + '...';
+  };
+
+  return (
+    <TouchableOpacity 
+      style={styles.sitterCard} 
+      onPress={onPress}
+    >
+      <View style={styles.cardHeader}>
+        <View style={styles.cardHeaderLeft}>
+          <Image 
+            source={{ uri: sitter.profilePicture }} 
+            style={styles.profilePicture} 
+          />
+          <View style={styles.verifiedBadge}>
+            <MaterialCommunityIcons name="check-circle" size={20} color={theme.colors.primary} />
+          </View>
+        </View>
+        <View style={styles.cardHeaderRight}>
+          <Text style={styles.priceText}>from</Text>
+          <Text style={styles.price}>${sitter.price}</Text>
+          <Text style={styles.priceSubtext}>per night</Text>
         </View>
       </View>
-      <View style={styles.cardHeaderRight}>
-        <Text style={styles.priceText}>from</Text>
-        <Text style={styles.price}>${sitter.price}</Text>
-        <Text style={styles.priceSubtext}>per night</Text>
-      </View>
-    </View>
-    <View style={styles.cardContent}>
-      <View style={styles.nameContainer}>
-        <Text style={styles.sitterNumber}>{sitter.id}. </Text>
-        <Text style={styles.sitterName}>{sitter.name}</Text>
-        <View style={styles.starBadge}>
-          <Text style={styles.starBadgeText}>Star Sitter</Text>
+      <View style={styles.cardContent}>
+        <View style={styles.nameContainer}>
+          <Text style={styles.sitterNumber}>{sitter.id}. </Text>
+          <Text style={styles.sitterName}>{sitter.name}</Text>
+          <View style={styles.starBadge}>
+            <Text style={styles.starBadgeText}>Star Sitter</Text>
+          </View>
+        </View>
+        <Text style={styles.sitterBio} numberOfLines={2}>
+          {truncateBio(sitter.bio)}
+        </Text>
+        <Text style={styles.sitterLocation}>{sitter.location}</Text>
+        <View style={styles.statsContainer}>
+          <View style={styles.ratingContainer}>
+            <MaterialCommunityIcons name="star" size={20} color={theme.colors.primary} />
+            <Text style={styles.rating}>{sitter.reviews}</Text>
+            <Text style={styles.reviewCount}>• {sitter.reviewCount || 50} reviews</Text>
+          </View>
         </View>
       </View>
-      <Text style={styles.sitterBio}>{sitter.bio}</Text>
-      <Text style={styles.sitterLocation}>{sitter.location}</Text>
-      <View style={styles.statsContainer}>
-        <View style={styles.ratingContainer}>
-          <MaterialCommunityIcons name="star" size={20} color={theme.colors.primary} />
-          <Text style={styles.rating}>{sitter.reviews}</Text>
-          <Text style={styles.reviewCount}>• {sitter.reviewCount || 50} reviews</Text>
-        </View>
-      </View>
-    </View>
-  </TouchableOpacity>
-);
+    </TouchableOpacity>
+  );
+};
 
 const WebMapComponent = ({ sitters, navigation, userLocation }) => {
   const { MapContainer, TileLayer, Marker, Popup } = require('react-leaflet');
@@ -230,7 +240,7 @@ const NativeMapComponent = ({ sitters, userLocation, currentMapRegion, handleReg
   );
 };
 
-const Header = ({ navigation, toggleMap, isSmallScreen }) => {
+const Header = ({ navigation, toggleMap, toggleFilters, isSmallScreen, showMap, showFilters }) => {
   return (
     <View style={styles.header}>
       <TouchableOpacity 
@@ -248,28 +258,280 @@ const Header = ({ navigation, toggleMap, isSmallScreen }) => {
       
       <View style={styles.headerButtons}>
         <TouchableOpacity 
-          style={styles.iconButton}
-          onPress={() => navigation.goBack()}
+          style={[styles.iconButton, showFilters && styles.iconButtonActive]}
+          onPress={toggleFilters}
         >
           <MaterialCommunityIcons 
             name="filter-variant" 
             size={24} 
-            color={theme.colors.text}
+            color={showFilters ? theme.colors.primary : theme.colors.text}
           />
         </TouchableOpacity>
         
         {isSmallScreen && (
           <TouchableOpacity 
-            style={styles.iconButton}
+            style={[styles.iconButton, showMap && styles.iconButtonActive]}
             onPress={toggleMap}
           >
             <MaterialCommunityIcons 
               name="map" 
               size={24} 
-              color={theme.colors.text}
+              color={showMap ? theme.colors.primary : theme.colors.text}
             />
           </TouchableOpacity>
         )}
+      </View>
+    </View>
+  );
+};
+
+const LocationInput = ({ value, onChange, suggestions, onSuggestionSelect }) => {
+  const locationInputRef = useRef(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const debouncedFetch = useCallback(
+    debounce(async (text) => {
+      if (text.length < 1) return;
+      
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${text}&countrycodes=us&limit=5`,
+          {
+            headers: {
+              'Accept': 'application/json',
+              'User-Agent': 'ZenExotics Mobile App'
+            }
+          }
+        );
+        const data = await response.json();
+        const suggestions = data.map(item => ({
+          display_name: item.display_name,
+          lat: item.lat,
+          lon: item.lon
+        }));
+        onSuggestionSelect(suggestions);
+      } catch (error) {
+        console.error('Error fetching locations:', error);
+        onSuggestionSelect([]);
+      }
+    }, 300),
+    [onSuggestionSelect]
+  );
+
+  return (
+    <View style={[styles.locationInputWrapper, { zIndex: 2 }]}>
+      <TextInput
+        ref={locationInputRef}
+        style={styles.locationInput}
+        placeholder="Enter city, state, or zip"
+        value={value}
+        onChangeText={(text) => {
+          onChange(text);
+          if (text.length < 1) {
+            onSuggestionSelect([]);
+          } else {
+            debouncedFetch(text);
+          }
+        }}
+      />
+      {suggestions.length > 0 && (
+        <View style={styles.suggestionsWrapper}>
+          <ScrollView 
+            style={styles.suggestionsContainer}
+            keyboardShouldPersistTaps="always"
+            nestedScrollEnabled={true}
+          >
+            {suggestions.map((suggestion, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.suggestionItem}
+                onPress={() => {
+                  onChange(suggestion.display_name);
+                  onSuggestionSelect([]);
+                }}
+              >
+                <Text>{suggestion.display_name}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+    </View>
+  );
+};
+
+const FiltersView = ({ isSmallScreen, onClose, setShowFilters }) => {
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+  const [location, setLocation] = useState('');
+  const [locationSuggestions, setLocationSuggestions] = useState([]);
+  const [service, setService] = useState('');
+  const [servicesSuggestions, setServicesSuggestions] = useState([]);
+  const locationInputRef = useRef(null);
+  const serviceInputRef = useRef(null);
+
+  // Services search with debounce
+  const searchServices = useCallback(
+    debounce((searchText) => {
+      if (!searchText) return;
+      const filteredServices = mockSitters.reduce((acc, sitter) => {
+        // Only include services from sitters in the selected location
+        if (!location || sitter.location.toLowerCase().includes(location.toLowerCase())) {
+          sitter.serviceTypes.forEach(service => {
+            if (service.toLowerCase().includes(searchText.toLowerCase()) && !acc.includes(service)) {
+              acc.push(service);
+            }
+          });
+        }
+        return acc;
+      }, []);
+      setServicesSuggestions(filteredServices);
+    }, 300),
+    [location]
+  );
+
+  const ServicesInput = () => (
+    <View style={[styles.servicesInputWrapper, { zIndex: 1 }]}>
+      <TextInput
+        ref={serviceInputRef}
+        style={styles.serviceInput}
+        placeholder="Search services"
+        value={service}
+        onChangeText={(text) => {
+          setService(text);
+          searchServices(text);
+        }}
+        keyboardShouldPersistTaps="always"
+      />
+      {servicesSuggestions.length > 0 && (
+        <View style={styles.suggestionsWrapper}>
+          <ScrollView 
+            style={styles.suggestionsContainer}
+            keyboardShouldPersistTaps="always"
+            nestedScrollEnabled={true}
+          >
+            {servicesSuggestions.map((suggestion, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.suggestionItem}
+                onPress={() => {
+                  setService(suggestion);
+                  setServicesSuggestions([]);
+                }}
+              >
+                <Text>{suggestion}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+    </View>
+  );
+
+  const handleApplyFilters = () => {
+    const filters = {
+      minPrice: minPrice ? parseFloat(minPrice) : null,
+      maxPrice: maxPrice ? parseFloat(maxPrice) : null,
+      location,
+      service
+    };
+
+    // Update the fetchSittersInRegion function to use these filters
+    if (currentMapRegion) {
+      fetchSittersInRegion(currentMapRegion, 1, filters);
+    }
+    setShowFilters(false);
+  };
+
+  const filterContent = (
+    <ScrollView 
+      style={styles.filtersContainer}
+      keyboardShouldPersistTaps="handled"
+      nestedScrollEnabled={true}
+    >
+      <View style={[styles.filterSection, { zIndex: 3 }]}>
+        <Text style={styles.filterTitle}>Price Range</Text>
+        <View style={styles.priceInputContainer}>
+          <TextInput
+            style={styles.priceInput}
+            placeholder="Min Price"
+            value={minPrice}
+            onChangeText={setMinPrice}
+            keyboardType="numeric"
+          />
+          <Text style={styles.priceSeparator}>-</Text>
+          <TextInput
+            style={styles.priceInput}
+            placeholder="Max Price"
+            value={maxPrice}
+            onChangeText={setMaxPrice}
+            keyboardType="numeric"
+          />
+        </View>
+      </View>
+
+      <View style={[styles.filterSection, { zIndex: 2 }]}>
+        <Text style={styles.filterTitle}>Location</Text>
+        <LocationInput
+          value={location}
+          onChange={setLocation}
+          suggestions={locationSuggestions}
+          onSuggestionSelect={setLocationSuggestions}
+        />
+      </View>
+
+      <View style={[styles.filterSection, { zIndex: 1 }]}>
+        <Text style={styles.filterTitle}>Services</Text>
+        <ServicesInput />
+      </View>
+
+      <TouchableOpacity 
+        style={styles.applyFiltersButton}
+        onPress={handleApplyFilters}
+      >
+        <Text style={styles.applyFiltersText}>Apply Filters</Text>
+      </TouchableOpacity>
+    </ScrollView>
+  );
+
+  if (isSmallScreen) {
+    return (
+      <View style={styles.filtersWrapper}>
+        <View style={styles.modalHeader}>
+          <Text style={styles.modalTitle}>Filters</Text>
+          <TouchableOpacity 
+            style={styles.closeButton}
+            onPress={() => setShowFilters(false)}
+          >
+            <MaterialCommunityIcons 
+              name="close" 
+              size={24} 
+              color={theme.colors.text} 
+            />
+          </TouchableOpacity>
+        </View>
+        {filterContent}
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.modalOverlay}>
+      <View style={styles.modalFiltersWrapper}>
+        <View style={styles.modalHeader}>
+          <Text style={styles.modalTitle}>Filters</Text>
+          <TouchableOpacity 
+            style={styles.closeButton}
+            onPress={() => setShowFilters(false)}
+          >
+            <MaterialCommunityIcons 
+              name="close" 
+              size={24} 
+              color={theme.colors.text} 
+            />
+          </TouchableOpacity>
+        </View>
+        {filterContent}
       </View>
     </View>
   );
@@ -340,7 +602,35 @@ const SearchSittersListing = ({ navigation }) => {
     };
   }, []);
 
+  const [showFilters, setShowFilters] = useState(false);
   const [showMap, setShowMap] = useState(false);
+  const [previousView, setPreviousView] = useState('list'); // Track previous view
+
+  // Simplified toggle functions
+  const toggleMap = () => {
+    if (showMap) {
+      // If map is already showing, close it and show listing
+      setShowMap(false);
+      setShowFilters(false);
+    } else {
+      // If map isn't showing, show it and hide filters
+      setShowMap(true);
+      setShowFilters(false);
+    }
+  };
+
+  const toggleFilters = () => {
+    if (showFilters) {
+      // If filters are already showing, close them and show listing
+      setShowFilters(false);
+      setShowMap(false);
+    } else {
+      // If filters aren't showing, show them and hide map
+      setShowFilters(true);
+      setShowMap(false);
+    }
+  };
+
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isSmallScreen, setIsSmallScreen] = useState(
@@ -360,7 +650,7 @@ const SearchSittersListing = ({ navigation }) => {
 
   const SITTERS_PER_PAGE = 20;
 
-  const fetchSittersInRegion = async (region, page) => {
+  const fetchSittersInRegion = async (region, page, filters = {}) => {
     try {
       setLoading(true);
       const startIndex = (page - 1) * SITTERS_PER_PAGE;
@@ -378,7 +668,23 @@ const SearchSittersListing = ({ navigation }) => {
           (!searchParams?.serviceType || sitter.serviceTypes.includes(searchParams.serviceType)) &&
           (!searchParams?.animalType || sitter.animalTypes.includes(searchParams.animalType));
           
-        return isWithinLatBounds && isWithinLngBounds && matchesFilters;
+        // Add price filter
+        const matchesPrice = 
+          (!filters.minPrice || sitter.price >= filters.minPrice) &&
+          (!filters.maxPrice || sitter.price <= filters.maxPrice);
+
+        // Add service filter
+        const matchesService = !filters.service || 
+          sitter.serviceTypes.some(service => 
+            service.toLowerCase().includes(filters.service.toLowerCase())
+          );
+
+        // Add location filter (you'll need to implement location matching logic)
+        const matchesLocation = !filters.location || 
+          sitter.location.toLowerCase().includes(filters.location.toLowerCase());
+        
+        return isWithinLatBounds && isWithinLngBounds && matchesFilters && 
+               matchesPrice && matchesService && matchesLocation;
       });
 
       const paginatedSitters = sittersInView.slice(startIndex, startIndex + SITTERS_PER_PAGE);
@@ -396,10 +702,6 @@ const SearchSittersListing = ({ navigation }) => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const toggleMap = () => {
-    setShowMap(prev => !prev);
   };
 
   const handleRegionChange = useCallback(
@@ -468,12 +770,15 @@ const SearchSittersListing = ({ navigation }) => {
     ]}>
       <Header 
         navigation={navigation} 
-        toggleMap={toggleMap} 
+        toggleMap={toggleMap}
+        toggleFilters={toggleFilters}
         isSmallScreen={isSmallScreen}
+        showMap={showMap}
+        showFilters={showFilters}
       />
       
       <View style={styles.container}>
-        {(!isSmallScreen || !showMap) && (
+        {(!isSmallScreen || (!showMap && !showFilters)) && (
           <View style={containerStyles}>
             {Platform.OS === 'web' ? (
               <div style={{ 
@@ -538,6 +843,14 @@ const SearchSittersListing = ({ navigation }) => {
             {renderMap()}
           </View>
         )}
+
+        {showFilters && (
+          <FiltersView 
+            isSmallScreen={isSmallScreen} 
+            onClose={() => setShowFilters(false)}
+            setShowFilters={setShowFilters}
+          />
+        )}
       </View>
     </SafeAreaView>
   );
@@ -576,6 +889,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     padding: 16,
     borderWidth: 1,
+    minHeight: 240,
     borderColor: theme.colors.border,
   },
   cardHeader: {
@@ -771,6 +1085,192 @@ const styles = StyleSheet.create({
     padding: 8,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  filtersWrapper: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: theme.colors.background,
+  },
+  filtersContainer: {
+    flex: 1,
+    padding: 16,
+    position: 'relative',
+  },
+  filterSection: {
+    marginBottom: 24,
+  },
+  filterTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 12,
+    color: theme.colors.text,
+  },
+  applyFiltersButton: {
+    backgroundColor: theme.colors.primary,
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 24,
+  },
+  applyFiltersText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  iconButtonActive: {
+    backgroundColor: theme.colors.surface,
+    borderColor: theme.colors.primary,
+    borderWidth: 1,
+  },
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  modalFiltersWrapper: {
+    backgroundColor: theme.colors.background,
+    borderRadius: 12,
+    width: '90%',
+    maxWidth: 400,
+    maxHeight: '80%',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: theme.colors.text,
+  },
+  closeButton: {
+    padding: 8,
+  },
+  priceInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 8,
+    gap: 8,
+  },
+  priceInput: {
+    flex: 1,
+    maxWidth: '45%',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+  },
+  priceSeparator: {
+    flex: 0.1,
+    textAlign: 'center',
+    fontSize: 20,
+    color: theme.colors.text,
+  },
+  locationInputContainer: {
+    position: 'relative',
+    zIndex: 1000,
+  },
+  locationInput: {
+    height: 45,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    backgroundColor: 'white',
+  },
+  suggestionsContainer: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    maxHeight: 200,
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 8,
+    zIndex: 1000,
+  },
+  suggestionItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  serviceInput: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+  },
+  locationInputWrapper: {
+    position: 'relative',
+    zIndex: 2,
+  },
+  suggestionsWrapper: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    zIndex: 1000,
+  },
+  suggestionsContainer: {
+    maxHeight: 200,
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  suggestionItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    backgroundColor: 'white',
+  },
+  filtersContainer: {
+    flex: 1,
+    padding: 16,
+    position: 'relative',
+    zIndex: 1000,
+  },
+  filterSection: {
+    marginBottom: 24,
+    position: 'relative',
+    zIndex: 1000,
+  },
+  servicesInputWrapper: {
+    position: 'relative',
+    zIndex: 1,
   },
 });
 
