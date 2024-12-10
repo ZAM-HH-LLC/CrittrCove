@@ -28,7 +28,7 @@ const mockSitters = [
     profilePicture: 'https://via.placeholder.com/150',
     reviews: 4.5,
     price: 25,
-    bio: 'Experienced with all types of pets.',
+    bio: 'Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.',
     location: 'Colorado Springs, CO',
     coordinates: { latitude: 38.8339, longitude: -104.8214 },
     serviceTypes: ['House Sitting', 'Dog Walking'],

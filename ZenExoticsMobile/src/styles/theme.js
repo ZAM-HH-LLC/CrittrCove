@@ -6,7 +6,7 @@ export const theme = {
   colors: {
     ...DefaultTheme.colors,
     primary: '#6A6C51', // Primary color for buttons and header background
-    secondary: '#03dac6',
+    secondary: '#516C61',
     background: '#f6f6f6',
     calendarColor: '#A99E6B', // Olive color for calendar (partially unavailable, available)
     calendarColorYellowBrown: '#8A8C6D', // Yellow-brown color for calendar (booked today, but time is available)
