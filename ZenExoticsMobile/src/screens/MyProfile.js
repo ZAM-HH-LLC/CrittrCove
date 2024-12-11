@@ -193,7 +193,7 @@ const MyProfile = () => {
   const getContentWidth = () => {
     // For web, cap at 600px, for mobile use window width minus padding
     if (Platform.OS === 'web') {
-      return Math.min(600, windowWidth - 32);
+      return '100%';
     }
     // For mobile, account for safe areas and padding
     return windowWidth - 32; // 16px padding on each side
