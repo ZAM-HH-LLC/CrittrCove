@@ -41,6 +41,8 @@ import MyContracts from './src/screens/MyContracts';
 import ChangePassword from './src/screens/ChangePassword';
 import AddPet from './src/screens/AddPet';
 import SearchSittersListing from './src/screens/SearchSittersListing';
+import MyBookings from './src/screens/MyBookings';
+import BookingDetails from './src/screens/BookingDetails';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -77,6 +79,8 @@ const screens = [
   { name: 'MyContracts', component: MyContracts },
   { name: 'ChangePassword', component: ChangePassword },
   { name: 'AddPet', component: AddPet },
+  { name: 'MyBookings', component: MyBookings },
+  { name: 'BookingDetails', component: BookingDetails },
 ];
 
 const linking = {

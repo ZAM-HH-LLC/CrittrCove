@@ -41,6 +41,7 @@ const MoreScreen = ({ navigation }) => {
     ],
     petOwner: [
       { title: 'Profile', icon: 'account', route: 'MyProfile' },
+      { title: 'My Bookings', icon: 'calendar-clock', route: 'MyBookings' },
       { title: 'Payment Methods', icon: 'credit-card', route: 'PaymentMethods' },
       { title: 'Become a Sitter', icon: 'account-tie', route: 'BecomeSitter' },
       { title: 'Settings', icon: 'cog', route: 'Settings' },
@@ -50,8 +51,7 @@ const MoreScreen = ({ navigation }) => {
     ],
     sitter: [
       { title: 'Profile', icon: 'account', route: 'MyProfile' },
-      // TODO: implement My Contracts after MVP
-      // { title: 'My Contracts', icon: 'file-document-outline', route: 'MyContracts' },
+      { title: 'My Bookings', icon: 'calendar-clock', route: 'MyBookings' },
       { title: 'My Pets', icon: 'paw', route: 'MyPets' },
       { title: 'Payment Methods', icon: 'credit-card', route: 'PaymentMethods' },
       { title: 'Settings', icon: 'cog', route: 'Settings' },

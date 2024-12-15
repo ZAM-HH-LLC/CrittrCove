@@ -1,0 +1,123 @@
+// components/BookingCard.js
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { theme } from '../styles/theme';
+
+const BookingCard = ({ booking, type, onViewDetails, onCancel }) => {
+  const { id, status, date, time } = booking;
+  const name = type === 'professional' ? booking.clientName : booking.professionalName;
+
+  return (
+    <TouchableOpacity 
+      style={styles.card}
+      onPress={() => onViewDetails()}
+      activeOpacity={0.7}
+    >
+      <View>
+        <View style={styles.header}>
+          <Text style={styles.bookingId}>Booking #{id}</Text>
+          <Text style={[
+            styles.status,
+            { color: status === 'Confirmed' ? theme.colors.success : theme.colors.warning }
+          ]}>
+            {status}
+          </Text>
+        </View>
+
+        <Text style={styles.name}>
+          {type === 'professional' ? 'Client: ' : 'Professional: '}{name}
+        </Text>
+        
+        <Text style={styles.datetime}>
+          {date} at {time}
+        </Text>
+
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={[styles.button, styles.viewButton]}
+            onPress={(e) => {
+              e.stopPropagation(); // Prevent card click when button is clicked
+              onViewDetails();
+            }}
+          >
+            <Text style={styles.buttonText}>View Details</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.button, styles.cancelButton]}
+            onPress={(e) => {
+              e.stopPropagation(); // Prevent card click when button is clicked
+              onCancel();
+            }}
+          >
+            <Text style={[styles.buttonText, styles.cancelButtonText]}>
+              Cancel Booking
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+};
+
+const styles = StyleSheet.create({
+  card: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  bookingId: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: theme.colors.primary,
+  },
+  status: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  name: {
+    fontSize: 16,
+    marginBottom: 4,
+  },
+  datetime: {
+    fontSize: 14,
+    color: theme.colors.placeholder,
+    marginBottom: 16,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  button: {
+    flex: 1,
+    padding: 8,
+    borderRadius: 4,
+    alignItems: 'center',
+  },
+  viewButton: {
+    backgroundColor: theme.colors.primary,
+  },
+  cancelButton: {
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.error,
+  },
+  buttonText: {
+    color: theme.colors.surface,
+    fontWeight: '500',
+  },
+  cancelButtonText: {
+    color: theme.colors.error,
+  },
+});
+
+export default BookingCard;
