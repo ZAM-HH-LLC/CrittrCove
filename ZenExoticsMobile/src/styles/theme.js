@@ -15,6 +15,9 @@ export const theme = {
     placeHolderText: '#A9A9A9',
     accent: '#03dac4', // Accent color if needed
     error: '#B00020',
+    surface: '#f6f6f6',
+    border: '#6A6C51',
+    // headerBorder: '#e0e0e0',
     danger: '#A52A2A',
   },
   fontSizes: {

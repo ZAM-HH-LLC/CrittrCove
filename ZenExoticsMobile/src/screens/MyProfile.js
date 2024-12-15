@@ -492,6 +492,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 16,
+    // borderWidth: 1,
+    // borderColor: theme.colors.border,
     width: '100%',
     maxWidth: 600,
     alignSelf: 'center',
@@ -502,6 +504,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 5,
     backgroundColor: theme.colors.surface,
+    borderColor: theme.colors.border,
+    borderWidth: 1,
     marginHorizontal: 5,
   },
   activeTab: {
@@ -566,6 +570,8 @@ const styles = StyleSheet.create({
   input: {
     marginBottom: 10,
     backgroundColor: theme.colors.surface,
+    borderColor: theme.colors.border,
+    borderWidth: 1,
     padding: 10,
     borderRadius: 5,
   },

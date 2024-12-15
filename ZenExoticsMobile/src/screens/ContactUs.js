@@ -142,6 +142,8 @@ const styles = StyleSheet.create({
   input: {
     backgroundColor: theme.colors.surface,
     borderRadius: 5,
+    borderColor: theme.colors.border,
+    borderWidth: 1,
     padding: 10,
     marginBottom: 15,
     fontSize: 16,
@@ -157,7 +159,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   buttonText: {
-    color: theme.colors.white,
+    color: theme.colors.whiteText,
     fontSize: 18,
     fontWeight: 'bold',
   },

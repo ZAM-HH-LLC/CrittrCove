@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { View, ScrollView, StyleSheet, Platform, SafeAreaView, Dimensions, StatusBar, TouchableOpacity } from 'react-native';
-import { Card, Title, Paragraph, List, Button, useTheme } from 'react-native-paper';
+import { View, ScrollView, StyleSheet, Platform, SafeAreaView, Dimensions, StatusBar, TouchableOpacity, Text } from 'react-native';
+import { Card, Title, Paragraph, List, Button, useTheme, Appbar } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import axios from 'axios';
 import { API_BASE_URL } from '../config/config';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthContext } from '../context/AuthContext';
+import CrossPlatformView from '../components/CrossPlatformView';
+import { theme } from '../styles/theme';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -127,10 +129,12 @@ const Dashboard = ({ navigation }) => {
   );
 
   return (
-    <View style={styles.container}>
-      {Platform.OS !== 'web' && <SafeAreaView style={styles.safeArea} />}
+    <CrossPlatformView fullWidthHeader={true}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Dashboard</Text>
+      </View>
       <Content />
-    </View>
+    </CrossPlatformView>
   );
 };
 
@@ -149,7 +153,7 @@ const styles = StyleSheet.create({
   contentContainer: {
     padding: 16,
     paddingBottom: Platform.OS === 'web' ? 0 : 80,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 16,
+    paddingTop: 16,
   },
   cardContainer: {
     maxWidth: Platform.OS === 'web' ? 800 : '100%',
@@ -167,6 +171,20 @@ const styles = StyleSheet.create({
   quickActionButton: {
     marginVertical: Platform.OS === 'web' ? 0 : 8,
     marginHorizontal: Platform.OS === 'web' ? 4 : 0,
+  },
+  header: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: theme.colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    justifyContent: 'center',
+    alignItems: Platform.OS === 'web' ? undefined : 'center',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '500',
+    color: theme.colors.text,
   },
 });
 

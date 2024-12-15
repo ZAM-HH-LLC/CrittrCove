@@ -40,6 +40,8 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     padding: 10,
     backgroundColor: theme.colors.surface,
+    borderColor: theme.colors.border,
+    borderWidth: 1,
     borderRadius: 5,
     width: '100%',
     maxWidth: 600,
