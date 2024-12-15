@@ -17,6 +17,7 @@ export const theme = {
     error: '#B00020',
     surface: '#f6f6f6',
     border: '#6A6C51',
+    inputBackground: '#f6f6f6',
     // headerBorder: '#e0e0e0',
     danger: '#A52A2A',
   },

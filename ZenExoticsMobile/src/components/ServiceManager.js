@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
+import { Picker } from '@react-native-picker/picker';
 
 const SERVICE_TYPE_SUGGESTIONS = [
   "Overnight Cat Sitting (Client's Home)",
@@ -36,6 +37,20 @@ const ANIMAL_TYPE_SUGGESTIONS = [
   'Fish',
 ];
 
+const TIME_OPTIONS = [
+  '15 min',
+  '30 min',
+  '45 min',
+  '1 hr',
+  '2 hr',
+  '4 hr',
+  '8 hr',
+  '24 hr',
+  'overnight',
+  'per day',
+  'per visit'
+];
+
 const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [currentService, setCurrentService] = useState({
@@ -43,6 +58,7 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
     animalTypes: '',
     rates: { base_rate: ''},
     additionalAnimalRate: '',
+    lengthOfService: '',
   });
   const [collapsedServices, setCollapsedServices] = useState([]);
   const [allCollapsed, setAllCollapsed] = useState(false);
@@ -57,6 +73,7 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [serviceToDelete, setServiceToDelete] = useState(null);
   const [hoveredButton, setHoveredButton] = useState(null);
+  const [showTimeDropdown, setShowTimeDropdown] = useState(false);
 
   const serviceInputRef = useRef(null);
   const animalInputRef = useRef(null);
@@ -82,6 +99,7 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
     if (
       currentService.serviceName.trim() &&
       currentService.animalTypes.trim() &&
+      currentService.lengthOfService &&
       (currentService.rates.base_rate) &&
       (additionalRates.length === 0 || areAdditionalRatesValid)
     ) {
@@ -105,6 +123,7 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
         animalTypes: '',
         rates: { base_rate: ''},
         additionalAnimalRate: '',
+        lengthOfService: '',
       });
       setAdditionalRates([]);
       setModalVisible(false);
@@ -156,7 +175,7 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
         console.log('x: ', x, 'y: ', y, 'width: ', width, 'height: ', height, 'pageX: ', pageX, 'pageY: ', pageY);
         if (inputType === 'animal') {
           setPosition({ 
-            top: y + height + 107, // Offset for animal dropdown
+            top: y + height - 6, // Offset for animal dropdown
             left: x, 
             width: '100%',
           });
@@ -221,6 +240,7 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
         <View style={[styles.middleRow, isCollapsed && styles.collapsedMiddleRow]}>
           <Text style={styles.rateText}>Base Rate: ${item.rates.base_rate || 'N/A'}</Text>
           <Text style={styles.rateText}>Additional Animal: ${item.additionalAnimalRate || 'N/A'}</Text>
+          {!isCollapsed && <Text style={styles.rateText}>Duration: {item.lengthOfService || 'N/A'}</Text>}
           {!isCollapsed && item.additionalRates?.map((rate, idx) => (
             <Text key={idx} style={styles.rateText}>
               {rate.label}: ${rate.value} {rate.description && `(${rate.description})`}
@@ -274,6 +294,7 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
                 animalTypes: '',
                 rates: { base_rate: ''},
                 additionalAnimalRate: '',
+                lengthOfService: '',
               });
               setModalVisible(true);
             }}
@@ -306,7 +327,7 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
               <Text style={styles.modalTitle}>
                 {currentService?.index !== undefined ? 'Edit Service' : 'Add New Service'}
               </Text>
-              <View style={styles.inputWrapper}>
+              <View style={[styles.inputWrapper, { zIndex: 3 }]}>
                 <Text style={styles.inputLabel}>Service Name</Text>
                 <TextInput
                   ref={serviceInputRef}
@@ -342,7 +363,7 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
                   </View>
                 )}
               </View>
-              <div style={styles.inputWrapper}>
+              <View style={[styles.inputWrapper, { zIndex: 2 }]}>
                 <Text style={styles.inputLabel}>Animal Type</Text>
                 <TextInput
                   ref={animalInputRef}
@@ -377,7 +398,51 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
                     ))}
                   </View>
                 )}
-              </div>
+              </View>
+              <View style={[styles.inputWrapper, { zIndex: 1 }]}>
+                <Text style={styles.inputLabel}>Length of Service</Text>
+                <TouchableOpacity
+                  style={[
+                    styles.input,
+                    styles.customDropdown,
+                    showValidationErrors && !currentService?.lengthOfService && styles.inputError
+                  ]}
+                  onPress={() => setShowTimeDropdown(!showTimeDropdown)}
+                >
+                  <Text style={{
+                    color: currentService?.lengthOfService ? theme.colors.text : theme.colors.placeHolderText
+                  }}>
+                    {currentService?.lengthOfService || "Select duration"}
+                  </Text>
+                  <MaterialCommunityIcons 
+                    name={showTimeDropdown ? "chevron-up" : "chevron-down"} 
+                    size={24} 
+                    color={theme.colors.primary} 
+                  />
+                </TouchableOpacity>
+                
+                {showTimeDropdown && (
+                  <View style={styles.timeDropdownContainer}>
+                    {TIME_OPTIONS.map((time) => (
+                      <TouchableOpacity
+                        key={time}
+                        style={styles.timeDropdownItem}
+                        onPress={() => {
+                          setCurrentService(prev => ({ ...prev, lengthOfService: time }));
+                          setShowTimeDropdown(false);
+                        }}
+                      >
+                        <Text style={[
+                          styles.timeDropdownText,
+                          currentService?.lengthOfService === time && styles.selectedTimeOption
+                        ]}>
+                          {time}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+              </View>
               <Text style={styles.inputLabel}>Base Rate</Text>
               <TextInput
                 style={[
@@ -621,14 +686,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.border,
     borderRadius: 5,
-    zIndex: 1000,
     elevation: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 5,
-    // paddingVertical: 8, // Add inner padding
-    marginTop: 5, // Add space between input and dropdown
+    marginTop: 5,
     maxHeight: 150,
     overflow: 'hidden',
   },  
@@ -828,6 +891,67 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
     zIndex: 1000,
+  },
+  dropdownContainer: {
+    paddingHorizontal: 10,
+    justifyContent: 'center',
+  },
+  picker: {
+    backgroundColor: theme.colors.inputBackground,
+    zIndex: -1,
+    color: theme.colors.placeHolderText,
+    height: 40,
+    width: '100%',
+  },
+  customDropdown: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    height: 40,
+  },
+  
+  timeDropdownContainer: {
+    position: 'absolute',
+    top: '80%',
+    left: 0,
+    right: 0,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 5,
+    marginTop: 2,
+    maxHeight: 160,
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    overflow: 'scroll',
+  },
+  
+  timeDropdownItem: {
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    height: 40,
+  },
+  
+  timeDropdownText: {
+    color: theme.colors.text,
+    fontSize: theme.fontSizes.medium,
+  },
+  
+  selectedTimeOption: {
+    color: theme.colors.primary,
+    fontWeight: 'bold',
+  },
+  inputWrapper: {
+    position: 'relative',
+    marginBottom: 5,
   },
 });
 
