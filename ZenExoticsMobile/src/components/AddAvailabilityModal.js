@@ -4,77 +4,126 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { theme } from '../styles/theme';
 import UnavailableTimeSlot from './UnavailableTimeSlot';
 import { format, parse } from 'date-fns';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
 const modalWidth = Platform.OS === 'web' ? width * 0.4 : width * 0.9;
+
+const ALL_SERVICES = "All Services";
+const SERVICE_TYPES = [
+  ALL_SERVICES,
+  "Overnight Cat Sitting (Client's Home)",
+  "Cat Boarding",
+  "Drop-In Visits (30 min)",
+  "Drop-In Visits (60 min)",
+  "Dog Walking",
+  "Doggy Day Care",
+  "Pet Boarding",
+  "Exotic Pet Care",
+  "Daytime Pet Sitting",
+  "Ferrier",
+];
 
 const AddAvailabilityModal = ({ isVisible, onClose, onSave, selectedDates, currentAvailability, bookings, onClientPress }) => {
   const [isAllDay, setIsAllDay] = useState(false);
   const [startTime, setStartTime] = useState(new Date());
   const [endTime, setEndTime] = useState(new Date());
-  const [markAsUnavailable, setMarkAsUnavailable] = useState(false);
+  const [isAvailable, setIsAvailable] = useState(true);
   const [showStartTimePicker, setShowStartTimePicker] = useState(false);
   const [showEndTimePicker, setShowEndTimePicker] = useState(false);
+  const [selectedServices, setSelectedServices] = useState([]);
+  const [showServiceDropdown, setShowServiceDropdown] = useState(false);
 
   useEffect(() => {
-    if (selectedDates.length > 0) {
-      const allUnavailableOrPartial = selectedDates.every(date => 
-        currentAvailability[date]?.isAvailable === false || 
-        currentAvailability[date]?.isAvailable === undefined
+    if (selectedDates.length > 0 && !isAllDay) {
+      const currentStartTime = format(startTime, 'HH:mm');
+      const currentEndTime = format(endTime, 'HH:mm');
+      
+      const hasMatchingUnavailableTime = currentAvailability[selectedDates[0]]?.unavailableTimes?.some(
+        time => time.startTime === currentStartTime && time.endTime === currentEndTime
       );
-      setMarkAsUnavailable(!allUnavailableOrPartial);
+      
+      setIsAvailable(!hasMatchingUnavailableTime);
     }
-  }, [selectedDates, currentAvailability]);
+  }, [selectedDates, startTime, endTime, currentAvailability]);
+
+  const isDuplicateTime = () => {
+    console.log("Checking for duplicate time");
+    console.log("Current availability for date:", currentAvailability[selectedDates[0]]);
+    
+    if (!currentAvailability[selectedDates[0]]) return false;
+    
+    const existingTimes = currentAvailability[selectedDates[0]].unavailableTimes || [];
+    const newStartTime = format(startTime, 'HH:mm');
+    const newEndTime = format(endTime, 'HH:mm');
+    
+    console.log("Existing times:", existingTimes);
+    console.log("New time:", newStartTime, "-", newEndTime);
+    
+    const isDuplicate = existingTimes.some(time => 
+      time.startTime === newStartTime && 
+      time.endTime === newEndTime
+    );
+    
+    console.log("Is duplicate:", isDuplicate);
+    return isDuplicate;
+  };
 
   const handleSave = () => {
+    if (selectedServices.length === 0) {
+      return;
+    }
+    
+    const services = selectedServices.includes(ALL_SERVICES) 
+      ? SERVICE_TYPES.filter(service => service !== ALL_SERVICES) 
+      : selectedServices;
+
+    if (isAvailable && !isAllDay) {
+      const isDuplicate = isDuplicateTime();
+      if (isDuplicate) {
+        return;
+      }
+    }
+
+    setIsAvailable(!isAvailable);
+
     onSave({
       dates: selectedDates,
       isAllDay,
       startTime: isAllDay ? null : format(startTime, 'HH:mm'),
       endTime: isAllDay ? null : format(endTime, 'HH:mm'),
-      isAvailable: !markAsUnavailable,
+      isAvailable: !isAvailable,
+      serviceTypes: services,
+      reason: `Unavailable for: ${services.join(', ')}`,
+      timeToRemove: !isAvailable ? {
+        startTime: format(startTime, 'HH:mm'),
+        endTime: format(endTime, 'HH:mm')
+      } : null
     });
   };
 
   const renderUnavailableTimes = () => {
-    if (selectedDates.length !== 1) return null;
+    if (selectedDates.length === 0) return null;
 
     const date = selectedDates[0];
-    const dateAvailability = currentAvailability[date];
-    
-    // Don't show for completely unavailable days
-    if (dateAvailability?.isAvailable === false) return null;
+    const unavailableTimes = currentAvailability[date]?.unavailableTimes || [];
 
-    const dateBookings = bookings[date] || [];
-    const unavailableTimes = dateAvailability?.unavailableTimes || [];
-
-    // Only show if there are unavailable times or bookings
-    if (unavailableTimes.length === 0 && dateBookings.length === 0) return null;
+    if (unavailableTimes.length === 0) return null;
 
     return (
-      <ScrollView style={styles.unavailableTimesContainer}>
+      <View style={styles.unavailableTimesContainer}>
         <Text style={styles.sectionTitle}>Unavailable Times:</Text>
-        {dateBookings.length > 0 ? (
-          dateBookings.map((booking, index) => (
-            <UnavailableTimeSlot 
-              key={`booking-${index}`}
-              startTime={booking.startTime}
-              endTime={booking.endTime}
-              reason={`Booked: ${booking.client_name}`}
-              onPress={() => onClientPress(booking.clientId)}
-            />
-          ))
-        ) : (
-          unavailableTimes.map((time, index) => (
-            <UnavailableTimeSlot 
-              key={`unavailable-${index}`}
+        <ScrollView>
+          {unavailableTimes.map((time, index) => (
+            <UnavailableTimeSlot
+              key={index}
               startTime={time.startTime}
               endTime={time.endTime}
-              reason="Personal Time"
+              reason={time.reason || 'No services specified'}
             />
-          ))
-        )}
-      </ScrollView>
+          ))}
+        </ScrollView>
+      </View>
     );
   };
 
@@ -187,21 +236,109 @@ const renderTimePicker = () => {
           </Text>
           <Text>Selected Dates: {selectedDates.join(', ')}</Text>
           {renderUnavailableTimes()}
+          <View style={styles.inputWrapper}>
+            <Text style={styles.inputLabel}>Service Type(s) *</Text>
+            <TouchableOpacity
+              style={[
+                styles.input,
+                styles.customDropdown,
+                selectedServices.length === 0 && styles.inputError
+              ]}
+              onPress={() => setShowServiceDropdown(!showServiceDropdown)}
+            >
+              <Text style={{
+                color: selectedServices.length > 0 ? theme.colors.text : theme.colors.placeHolderText
+              }}>
+                {selectedServices.length > 0 
+                  ? selectedServices.includes(ALL_SERVICES)
+                    ? "All Services"
+                    : selectedServices.length > 1
+                      ? `${selectedServices.length} services selected`
+                      : selectedServices[0]
+                  : "Select service type(s)"
+                }
+              </Text>
+              <MaterialCommunityIcons 
+                name={showServiceDropdown ? "chevron-up" : "chevron-down"} 
+                size={24} 
+                color={theme.colors.primary} 
+              />
+            </TouchableOpacity>
+            
+            {showServiceDropdown && (
+              <View style={styles.dropdownContainer}>
+                <ScrollView style={styles.dropdownScroll}>
+                  {SERVICE_TYPES.map((service) => (
+                    <TouchableOpacity
+                      key={service}
+                      style={styles.dropdownItem}
+                      onPress={() => {
+                        if (service === ALL_SERVICES) {
+                          setSelectedServices(
+                            selectedServices.includes(ALL_SERVICES) 
+                              ? [] 
+                              : [ALL_SERVICES]
+                          );
+                        } else {
+                          setSelectedServices(prev => {
+                            // Remove "All Services" if it was selected
+                            const withoutAll = prev.filter(s => s !== ALL_SERVICES);
+                            
+                            if (prev.includes(service)) {
+                              return withoutAll.filter(s => s !== service);
+                            } else {
+                              return [...withoutAll, service];
+                            }
+                          });
+                        }
+                      }}
+                    >
+                      <View style={styles.dropdownItemContent}>
+                        <Text style={[
+                          styles.dropdownText,
+                          selectedServices.includes(service) && styles.selectedOption
+                        ]}>
+                          {service}
+                        </Text>
+                        {selectedServices.includes(service) && (
+                          <MaterialCommunityIcons 
+                            name="check" 
+                            size={20} 
+                            color={theme.colors.primary} 
+                          />
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+          </View>
           <View style={styles.switchContainer}>
             <Text>All Day</Text>
             <Switch value={isAllDay} onValueChange={setIsAllDay} />
           </View>
-          <View style={styles.switchContainer}>
-            <Text>Mark as Unavailable</Text>
-            <Switch value={markAsUnavailable} onValueChange={setMarkAsUnavailable} />
-          </View>
           {!isAllDay && renderTimePicker()}
           <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.button} onPress={onClose}>
+            <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
               <Text style={styles.buttonText}>Cancel</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.button, styles.saveButton]} onPress={handleSave}>
-              <Text style={styles.buttonText}>Save</Text>
+            <TouchableOpacity
+              style={[
+                styles.availabilityButton,
+                isAvailable ? styles.unavailableButton : styles.availableButton,
+                selectedServices.length === 0 && styles.disabledButton
+              ]}
+              onPress={() => {
+                console.log("Availability button pressed");
+                if (selectedServices.length > 0) {
+                  handleSave();
+                }
+              }}
+            >
+              <Text style={styles.availabilityButtonText}>
+                {isAvailable ? 'Mark Unavailable' : 'Mark Available'}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -224,11 +361,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 17,
     maxHeight: '80%',
+    zIndex: 1,
   },
   modalTitle: {
     fontSize: theme.fontSizes.large,
     fontWeight: 'bold',
     marginBottom: 15,
+    zIndex: 1,
   },
   switchContainer: {
     flexDirection: 'row',
@@ -236,6 +375,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
     marginVertical: 10,
+    zIndex: 1,
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -243,14 +383,29 @@ const styles = StyleSheet.create({
     width: '100%',
     marginTop: 20,
   },
-  button: {
+  cancelButton: {
+    padding: 10,
+    borderRadius: 5,
+    width: '45%',
+    alignItems: 'center',
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  availabilityButton: {
     padding: 10,
     borderRadius: 5,
     width: '45%',
     alignItems: 'center',
   },
-  saveButton: {
+  unavailableButton: {
+    backgroundColor: theme.colors.danger,
+  },
+  availableButton: {
     backgroundColor: theme.colors.primary,
+  },
+  disabledButton: {
+    opacity: 0.5,
   },
   buttonText: {
     color: theme.colors.text,
@@ -262,6 +417,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
     marginVertical: 10,
+    zIndex: 1,
   },
   webTimePicker: {
     padding: 5,
@@ -272,11 +428,99 @@ const styles = StyleSheet.create({
   unavailableTimesContainer: {
     maxHeight: 150,
     marginVertical: 10,
+    width: '100%',
+    zIndex: 1,
   },
   sectionTitle: {
     fontSize: theme.fontSizes.medium,
     fontWeight: 'bold',
     marginBottom: 5,
+  },
+  availabilityButtonText: {
+    color: theme.colors.whiteText,
+    fontWeight: 'bold',
+  },
+  inputWrapper: {
+    position: 'relative',
+    width: '100%',
+    marginBottom: 15,
+    zIndex: 2,
+  },
+  
+  inputLabel: {
+    fontSize: theme.fontSizes.small,
+    color: theme.colors.text,
+    marginBottom: 5,
+    fontWeight: '500',
+  },
+  
+  input: {
+    borderColor: theme.colors.border,
+    borderWidth: 1,
+    borderRadius: 5,
+    padding: 10,
+    backgroundColor: theme.colors.inputBackground,
+  },
+  
+  customDropdown: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    height: 40,
+  },
+  
+  dropdownContainer: {
+    position: 'absolute',
+    top: '95%',
+    left: 0,
+    right: 0,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 5,
+    marginTop: 2,
+    maxHeight: 160,
+    zIndex: 1000,
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  
+  dropdownScroll: {
+    maxHeight: 160,
+  },
+  
+  dropdownItem: {
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    height: 40,
+  },
+  
+  dropdownText: {
+    color: theme.colors.text,
+    fontSize: theme.fontSizes.medium,
+  },
+  
+  selectedOption: {
+    color: theme.colors.primary,
+    fontWeight: 'bold',
+  },
+  
+  inputError: {
+    borderColor: theme.colors.danger,
+  },
+  
+  dropdownItemContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingRight: 10,
   },
 });
 

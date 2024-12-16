@@ -167,67 +167,87 @@ const AvailabilitySettings = () => {
   };
 
   const handleAddAvailability = (availabilityData) => {
-    console.log('Adding availability:', availabilityData);
     const newMarkedDates = { ...markedDates };
     const newCurrentAvailability = { ...currentAvailability };
 
     availabilityData.dates.forEach(date => {
-      const existingUnavailableTimes = newCurrentAvailability[date]?.unavailableTimes || [];
-
       if (availabilityData.isAvailable) {
-        // If making available, remove the specific time slot if it exists
-        const updatedUnavailableTimes = existingUnavailableTimes.filter(slot => 
-          slot.startTime !== availabilityData.startTime ||
-          slot.endTime !== availabilityData.endTime
-        );
+        // If marking as available, remove the specific time slot
+        if (!availabilityData.isAllDay && availabilityData.timeToRemove) {
+          const currentTimes = newCurrentAvailability[date]?.unavailableTimes || [];
+          newCurrentAvailability[date] = {
+            isAvailable: true,
+            unavailableTimes: currentTimes.filter(time => 
+              time.startTime !== availabilityData.timeToRemove.startTime || 
+              time.endTime !== availabilityData.timeToRemove.endTime
+            )
+          };
 
-        newCurrentAvailability[date] = {
-          isAvailable: true,
-          unavailableTimes: updatedUnavailableTimes
-        };
-
-        // Update marked dates based on whether there are any remaining unavailable times
-        if (updatedUnavailableTimes.length === 0) {
+          // Update calendar marker based on remaining unavailable times
+          if (newCurrentAvailability[date].unavailableTimes.length === 0) {
+            newMarkedDates[date] = {
+              customStyles: {
+                container: { backgroundColor: 'white' },
+                text: { color: 'black' }
+              }
+            };
+          } else {
+            newMarkedDates[date] = {
+              customStyles: {
+                container: { backgroundColor: theme.colors.calendarColor },
+                text: { color: 'white' }
+              }
+            };
+          }
+        } else {
+          // Handle all-day available
+          newCurrentAvailability[date] = {
+            isAvailable: true,
+            unavailableTimes: []
+          };
           newMarkedDates[date] = {
             customStyles: {
               container: { backgroundColor: 'white' },
               text: { color: 'black' }
             }
           };
-        } else {
+        }
+      } else {
+        // Handle marking as unavailable (existing logic)
+        if (!availabilityData.isAllDay) {
+          const newUnavailableTime = {
+            startTime: availabilityData.startTime,
+            endTime: availabilityData.endTime,
+            reason: availabilityData.reason
+          };
+
+          newCurrentAvailability[date] = {
+            isAvailable: true,
+            unavailableTimes: [
+              ...(newCurrentAvailability[date]?.unavailableTimes || []),
+              newUnavailableTime
+            ]
+          };
+
           newMarkedDates[date] = {
             customStyles: {
               container: { backgroundColor: theme.colors.calendarColor },
               text: { color: 'white' }
             }
           };
-        }
-      } else {
-        // If marking as unavailable
-        if (availabilityData.isAllDay) {
+        } else {
+          // Handle all-day unavailable
           newCurrentAvailability[date] = {
             isAvailable: false,
-            unavailableTimes: [{ startTime: '00:00', endTime: '24:00', reason: ' Personal Time' }]
+            unavailableTimes: [{
+              startTime: '00:00',
+              endTime: '24:00',
+              reason: availabilityData.reason
+            }]
           };
           newMarkedDates[date] = {
             customStyles: {
               container: { backgroundColor: 'lightgrey' },
-              text: { color: 'white' }
-            }
-          };
-        } else {
-          const newUnavailableTime = {
-            startTime: availabilityData.startTime,
-            endTime: availabilityData.endTime,
-            reason: ' Personal Time'
-          };
-          newCurrentAvailability[date] = {
-            isAvailable: true,
-            unavailableTimes: [...existingUnavailableTimes, newUnavailableTime]
-          };
-          newMarkedDates[date] = {
-            customStyles: {
-              container: { backgroundColor: theme.colors.calendarColor },
               text: { color: 'white' }
             }
           };
