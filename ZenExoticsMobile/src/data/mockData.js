@@ -1,3 +1,18 @@
+export const ALL_SERVICES = "All Services";
+export const SERVICE_TYPES = [
+  ALL_SERVICES,
+  "Overnight Cat Sitting (Client's Home)",
+  "Cat Boarding",
+  "Drop-In Visits (30 min)",
+  "Drop-In Visits (60 min)",
+  "Dog Walking",
+  "Doggy Day Care",
+  "Pet Boarding",
+  "Exotic Pet Care",
+  "Daytime Pet Sitting",
+  "Ferrier",
+];
+
 export const mockPets = [
   {
     id: '1',
@@ -217,3 +232,156 @@ export const mockSitters = [
     animalTypes: ['exotics'],
   }
 ];
+
+export const mockClients = [
+  {
+    id: '1',
+    name: 'Alice Johnson',
+    pet_types: ['Dog', 'Cat'],
+    last_booking: '2024-01-15',
+    pets: ['1', '2'], // References to pet IDs
+    email: 'alice@example.com',
+    phone: '555-0101',
+    address: '123 Pine St, Colorado Springs, CO',
+  },
+  {
+    id: '2',
+    name: 'Bob Wilson',
+    pet_types: ['Dog'],
+    last_booking: '2024-02-01',
+    pets: ['3'],
+    email: 'bob@example.com',
+    phone: '555-0102',
+    address: '456 Oak Ave, Colorado Springs, CO',
+  },
+  {
+    id: '3',
+    name: 'Carol Martinez',
+    pet_types: ['Cat', 'Exotic'],
+    last_booking: '2024-01-28',
+    pets: ['4', '5'],
+    email: 'carol@example.com',
+    phone: '555-0103',
+    address: '789 Maple Dr, Colorado Springs, CO',
+  },
+  {
+    id: '4',
+    name: 'David Brown',
+    pet_types: ['Dog'],
+    last_booking: '2024-02-05',
+    pets: ['6'],
+    email: 'david@example.com',
+    phone: '555-0104',
+    address: '321 Elm St, Colorado Springs, CO',
+  },
+  {
+    id: '5',
+    name: 'Eva Garcia',
+    pet_types: ['Exotic'],
+    last_booking: '2024-01-20',
+    pets: ['7'],
+    email: 'eva@example.com',
+    phone: '555-0105',
+    address: '654 Birch Ln, Colorado Springs, CO',
+  }
+];
+
+// Availability Tab
+export const fetchAvailabilityData = () => {
+  console.log("fetchAvailabilityData");
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({
+        availableDates: {
+          '2024-12-01': { startTime: '09:00', endTime: '17:00' },
+          '2024-12-02': { startTime: '10:00', endTime: '18:00' },
+          '2024-12-03': { startTime: '09:00', endTime: '17:00' },
+        },
+        unavailableDates: {
+          '2024-12-04': { startTime: '00:00', endTime: '24:00' },
+          '2024-12-05': { startTime: '10:00', endTime: '18:00' },
+        },
+        bookings: {
+          '2024-12-06': [
+            { id: 'bk1', startTime: '14:00', endTime: '16:00', client_name: 'Charlie' },
+            { id: 'bk2', startTime: '16:00', endTime: '18:00', client_name: 'Bob' },
+            { id: 'bk3', startTime: '18:00', endTime: '20:00', client_name: 'Nick' },
+            { id: 'bk4', startTime: '20:00', endTime: '22:00', client_name: 'Alfred' }
+          ],
+          '2024-12-07': [
+            { id: 'bk5', startTime: '10:00', endTime: '12:00', client_name: 'Uhtred' }
+          ],
+        },
+      });
+    }, 1000);
+  });
+};
+
+// Add mock update functions
+export const updateAvailability = (updates) => {
+  console.log("updateAvailability", updates);
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({ success: true, data: updates });
+    }, 500);
+  });
+};
+
+export const updateBooking = (bookingData) => {
+  console.log("updateBooking", bookingData);
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({ success: true, data: bookingData });
+    }, 500);
+  });
+};
+
+const mockBookingDetails = {
+  'bk1': {
+    id: 'bk1',
+    status: 'Pending',
+    startDate: '2024-12-06',
+    startTime: '14:00',
+    endDate: '2024-12-06',
+    endTime: '16:00',
+    clientName: 'Charlie',
+    professionalName: 'Sarah Wilson',
+    serviceType: 'Dog Walking',
+    animalType: 'Dog',
+    numberOfPets: 2,
+    duration: 2,
+    rates: {
+      baseRate: 20.00,
+      additionalPetRate: 5.00,
+      extraServices: [
+        { name: 'Premium Package', amount: 10.00 },
+        { name: 'Weekend Fee', amount: 5.00 }
+      ]
+    },
+    costs: {
+      baseTotal: 80.00,
+      additionalPetTotal: 5.00,
+      extraServicesTotal: 15.00,
+      subtotal: 100.00,
+      clientFee: 10.00,
+      taxes: 9.00,
+      totalClientCost: 119.00,
+      professionalPayout: 90.00,
+    },
+  },
+  // Add more mock booking details for other IDs...
+};
+
+export const fetchBookingDetails = (bookingId) => {
+  console.log("fetchBookingDetails", bookingId);
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      const bookingDetails = mockBookingDetails[bookingId];
+      if (bookingDetails) {
+        resolve(bookingDetails);
+      } else {
+        reject(new Error('Booking not found'));
+      }
+    }, 1000);
+  });
+};

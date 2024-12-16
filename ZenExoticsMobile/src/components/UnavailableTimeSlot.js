@@ -4,7 +4,7 @@ import { theme } from '../styles/theme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { format, parse } from 'date-fns';
 
-const UnavailableTimeSlot = ({ startTime, endTime, reason, onPress }) => {
+const UnavailableTimeSlot = ({ startTime, endTime, reason, onPress, onRemove }) => {
   const [showAllServices, setShowAllServices] = useState(false);
   
   const isAllDay = startTime === '00:00' && endTime === '24:00';
@@ -34,33 +34,37 @@ const UnavailableTimeSlot = ({ startTime, endTime, reason, onPress }) => {
     const services = reason?.replace('Unavailable for: ', '').split(', ') || [];
     
     if (services.length === 0) return 'No services specified';
-    if (services.length === 10) return 'All Services'; // Assuming 10 is total number of services excluding "All Services"
-    if (services.length > 3) return `${services.length} Services`;
-    return services.join(', ');
+    if (services.length === 10) return 'All Services';
+    return `${services.length} ${services.length === 1 ? 'Service' : 'Services'}`;
   };
 
   return (
     <>
-      <TouchableOpacity 
-        style={styles.container} 
-        onPress={onPress} 
-        disabled={!onPress}
-      >
-        <Text style={styles.time}>
-          {isAllDay ? 'All Day' : `${formatTime(startTime)} - ${formatTime(endTime)}`}
-        </Text>
-        <View style={styles.serviceContainer}>
-          <Text style={styles.reason}>{formatServicesDisplay()}</Text>
-          {reason && reason.split(', ').length > 3 && (
-            <TouchableOpacity 
-              onPress={() => setShowAllServices(true)}
-              style={styles.seeMoreButton}
-            >
-              <Text style={styles.seeMoreText}>See All</Text>
-            </TouchableOpacity>
-          )}
+      <View style={styles.container}>
+        <TouchableOpacity 
+          style={styles.removeButton} 
+          onPress={onRemove}
+        >
+          <MaterialCommunityIcons name="close" size={20} color={theme.colors.error} />
+        </TouchableOpacity>
+        
+        <View style={styles.contentContainer}>
+          <Text style={styles.time}>
+            {isAllDay ? 'All Day' : `${formatTime(startTime)} - ${formatTime(endTime)}`}
+          </Text>
+          <View style={styles.serviceContainer}>
+            <Text style={styles.reason}>{formatServicesDisplay()}</Text>
+            {reason && (
+              <TouchableOpacity 
+                onPress={() => setShowAllServices(true)}
+                style={styles.seeMoreButton}
+              >
+                <Text style={styles.seeMoreText}>See All</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
-      </TouchableOpacity>
+      </View>
 
       <Modal
         visible={showAllServices}
@@ -96,13 +100,22 @@ const UnavailableTimeSlot = ({ startTime, endTime, reason, onPress }) => {
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 8,
     paddingHorizontal: 10,
     backgroundColor: theme.colors.lightGrey,
     borderRadius: 5,
     marginBottom: 5,
+  },
+  removeButton: {
+    padding: 5,
+    marginRight: 5,
+  },
+  contentContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   time: {
     fontSize: theme.fontSizes.small,

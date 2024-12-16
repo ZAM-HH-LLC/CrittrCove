@@ -4,9 +4,7 @@ import { Chip, Card, Title, Paragraph, Button, Portal, Modal, useTheme } from 'r
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
 import SearchBar from '../components/SearchBar';
-import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_BASE_URL } from '../config/config';
+import { mockClients } from '../data/mockData';
 
 const Clients = ({ navigation }) => {
   const { colors } = useTheme();
@@ -22,25 +20,10 @@ const Clients = ({ navigation }) => {
 
   const fetchClients = async () => {
     try {
-      const token = await AsyncStorage.getItem('userToken');
-      if (!token) {
-        console.error('No token found');
-        return;
-      }
-      console.log('Token:', token);
-      
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      console.log('Token payload:', payload);
-      
-      const response = await axios.get(`${API_BASE_URL}/api/clients/`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      console.log('Clients response:', response.data);
-      setClients(response.data);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setClients(mockClients);
     } catch (error) {
-      console.error('Error fetching clients:', error.response?.data || error);
+      console.error('Error fetching clients:', error);
     }
   };
 

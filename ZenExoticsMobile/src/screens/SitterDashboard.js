@@ -103,7 +103,7 @@ const SitterDashboard = ({ navigation }) => {
             ))}
           </Card.Content>
           <Card.Actions>
-            <Button onPress={() => navigation.navigate('ManageBookings')}>View All Bookings</Button>
+            <Button onPress={() => navigation.navigate('MyBookings')}>View All Bookings</Button>
           </Card.Actions>
         </Card>
 

@@ -4,6 +4,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { theme } from '../styles/theme';
 import CrossPlatformView from '../components/CrossPlatformView';
 import BackHeader from '../components/BackHeader';
+import { fetchBookingDetails } from '../data/mockData';
 
 const BookingDetails = () => {
   const navigation = useNavigation();
@@ -11,49 +12,23 @@ const BookingDetails = () => {
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Mock booking data - replace with actual API call
   useEffect(() => {
-    const fetchBookingDetails = async () => {
+    const fetchBooking = async () => {
       setLoading(true);
-      // Simulate API call
-      setTimeout(() => {
-        setBooking({
-          id: route.params?.bookingId || '1234',
-          status: 'Pending',
-          startDate: '2024-02-20',
-          startTime: '14:00',
-          endDate: '2024-02-21',
-          endTime: '15:00',
-          clientName: 'John Doe',
-          professionalName: 'Sarah Wilson',
-          serviceType: 'Dog Walking',
-          animalType: 'Dog',
-          numberOfPets: 2,
-          duration: 1, // hours
-          rates: {
-            baseRate: 20.00,
-            additionalPetRate: 5.00,
-            extraServices: [
-              { name: 'Premium Package', amount: 10.00 },
-              { name: 'Weekend Fee', amount: 5.00 }
-            ]
-          },
-          costs: {
-            baseTotal: 40.00, // baseRate * numberOfPets * duration
-            additionalPetTotal: 5.00,
-            extraServicesTotal: 15.00,
-            subtotal: 60.00,
-            clientFee: 6.00,
-            taxes: 5.40,
-            totalClientCost: 71.40,
-            professionalPayout: 54.00,
-          },
-        });
+      try {
+        const bookingData = await fetchBookingDetails(route.params?.bookingId);
+        setBooking(bookingData);
+      } catch (error) {
+        console.error('Error fetching booking details:', error);
+        // Handle error (show error message, etc.)
+      } finally {
         setLoading(false);
-      }, 1000);
+      }
     };
 
-    fetchBookingDetails();
+    if (route.params?.bookingId) {
+      fetchBooking();
+    }
   }, [route.params?.bookingId]);
 
   const handleApprove = () => {
@@ -112,6 +87,20 @@ const BookingDetails = () => {
     );
   }
 
+  if (!booking) {
+    return (
+      <CrossPlatformView fullWidthHeader={true}>
+        <BackHeader
+          title="Booking Details"
+          onBackPress={() => navigation.goBack()}
+        />
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Booking not found</Text>
+        </View>
+      </CrossPlatformView>
+    );
+  }
+
   return (
     <CrossPlatformView fullWidthHeader={true}>
       <BackHeader
@@ -159,7 +148,7 @@ const BookingDetails = () => {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Cost Breakdown</Text>
-          <Text style={styles.serviceTitle}>{booking.serviceType}</Text>
+          <Text style={styles.label}>Service Type: {booking.serviceType}</Text>
           
           <View style={styles.costRow}>
             <Text style={styles.costLabel}>
@@ -404,6 +393,17 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: theme.colors.border,
     marginVertical: 12,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: theme.colors.error,
+    textAlign: 'center',
   },
 });
 
