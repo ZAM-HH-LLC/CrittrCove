@@ -20,10 +20,16 @@ const AvailabilityBookingCard = ({ booking, onPress, onEdit }) => {
     }
   };
 
+  const handlePress = () => {
+    if (onPress) {
+      onPress(booking);
+    }
+  };
+
   return (
     <TouchableOpacity 
       style={styles.card} 
-      onPress={() => navigation.navigate('BookingDetails', { bookingId: booking.id })}
+      onPress={handlePress}
     >
       <View style={styles.cardContent}>
         <View style={styles.timeContainer}>
@@ -36,7 +42,7 @@ const AvailabilityBookingCard = ({ booking, onPress, onEdit }) => {
       </View>
       <TouchableOpacity 
         style={styles.editButton} 
-        onPress={() => navigation.navigate('BookingDetails', { bookingId: booking.id })}
+        onPress={handlePress}
       >
         <MaterialCommunityIcons name="pencil" size={20} color={theme.colors.primary} />
       </TouchableOpacity>

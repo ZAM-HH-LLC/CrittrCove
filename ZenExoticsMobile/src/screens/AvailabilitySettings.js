@@ -19,7 +19,6 @@ const AvailabilitySettings = () => {
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
   const [isSettingsModalVisible, setIsSettingsModalVisible] = useState(false);
   const [defaultAvailability, setDefaultAvailability] = useState('available');
-  const [isMultiDaySelection, setIsMultiDaySelection] = useState(false);
   const [currentAvailability, setCurrentAvailability] = useState({});
   const [bookings, setBookings] = useState({});
   const [defaultSettings, setDefaultSettings] = useState({
@@ -152,24 +151,19 @@ const AvailabilitySettings = () => {
 
   const onDayPress = (day) => {
     const { dateString } = day;
-    if (isMultiDaySelection) {
-      if (selectedDates.length === 0 || selectedDates.length === 2) {
-        setSelectedDates([dateString]);
-      } else if (selectedDates.length === 1) {
-        const start = moment(selectedDates[0]);
-        const end = moment(dateString);
-        const range = [];
-        let current = start.clone();
-
-        while (current.isSameOrBefore(end)) {
-          range.push(current.format('YYYY-MM-DD'));
-          current.add(1, 'days');
-        }
-        setSelectedDates(range);
-        setIsAddModalVisible(true);
-      }
-    } else {
+    if (selectedDates.length === 0 || selectedDates.length === 2) {
       setSelectedDates([dateString]);
+    } else if (selectedDates.length === 1) {
+      const start = moment(selectedDates[0]);
+      const end = moment(dateString);
+      const range = [];
+      let current = start.clone();
+
+      while (current.isSameOrBefore(end)) {
+        range.push(current.format('YYYY-MM-DD'));
+        current.add(1, 'days');
+      }
+      setSelectedDates(range);
       setIsAddModalVisible(true);
     }
   };
@@ -503,20 +497,6 @@ const AvailabilitySettings = () => {
           />
         </TouchableOpacity>
       </View>
-      <View style={styles.selectionToggle}>
-        <TouchableOpacity
-          style={[styles.toggleButton, !isMultiDaySelection && styles.activeToggle]}
-          onPress={() => setIsMultiDaySelection(false)}
-        >
-          <Text style={styles.toggleText}>Select One Day</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.toggleButton, isMultiDaySelection && styles.activeToggle]}
-          onPress={() => setIsMultiDaySelection(true)}
-        >
-          <Text style={styles.toggleText}>Select Multiple Days</Text>
-        </TouchableOpacity>
-      </View>
 
       {/* Calendar Component */}
       <Calendar
@@ -580,7 +560,6 @@ const AvailabilitySettings = () => {
         selectedDates={selectedDates}
         currentAvailability={currentAvailability}
         bookings={bookings}
-        onClientPress={handleClientPress}
         onRemoveTimeSlot={handleRemoveTimeSlot}
       />
       <DefaultSettingsModal
@@ -607,23 +586,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: theme.fontSizes.large,
     fontWeight: 'bold',
-    color: theme.colors.text,
-  },
-  selectionToggle: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: 10,
-  },
-  toggleButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderWidth: 1,
-    borderColor: theme.colors.primary,
-  },
-  activeToggle: {
-    backgroundColor: theme.colors.primary,
-  },
-  toggleText: {
     color: theme.colors.text,
   },
   addButton: {

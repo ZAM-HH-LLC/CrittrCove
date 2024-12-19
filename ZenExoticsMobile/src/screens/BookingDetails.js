@@ -13,22 +13,42 @@ const BookingDetails = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Define an async function inside useEffect to fetch booking data
     const fetchBooking = async () => {
+      // Set loading state to true before starting the fetch
       setLoading(true);
+      
       try {
-        const bookingData = await fetchBookingDetails(route.params?.bookingId);
+        // route.params comes from React Navigation
+        // When we navigate using: navigation.navigate('BookingDetails', { bookingId: 'bk1' })
+        // The bookingId becomes available in route.params.bookingId
+        // The ?. is optional chaining - it prevents errors if route.params is undefined
+        const bookingId = route.params?.bookingId;
+        
+        // Call our mock API function from mockData.js
+        // await waits for the Promise to resolve
+        const bookingData = await fetchBookingDetails(bookingId);
+        
+        // Update our component state with the fetched data
         setBooking(bookingData);
       } catch (error) {
+        // If anything goes wrong (like booking not found), log the error
         console.error('Error fetching booking details:', error);
-        // Handle error (show error message, etc.)
       } finally {
+        // Whether successful or not, set loading to false
         setLoading(false);
       }
     };
 
+    // Only run fetchBooking if we have a bookingId in route.params
+    // This prevents unnecessary API calls if no ID is provided
     if (route.params?.bookingId) {
       fetchBooking();
     }
+    
+    // The dependency array [route.params?.bookingId] means this effect will run:
+    // 1. When the component first mounts
+    // 2. Any time route.params?.bookingId changes
   }, [route.params?.bookingId]);
 
   const handleApprove = () => {

@@ -290,6 +290,8 @@ export const mockClients = [
 export const fetchAvailabilityData = () => {
   console.log("fetchAvailabilityData");
   return new Promise((resolve) => {
+    // to get the bookings, we need to fetch the booking table on backend
+    // to get available/unavailable dates we need to fetch the availability table on backend
     setTimeout(() => {
       resolve({
         availableDates: {
@@ -336,39 +338,45 @@ export const updateBooking = (bookingData) => {
   });
 };
 
-const mockBookingDetails = {
-  'bk1': {
-    id: 'bk1',
-    status: 'Pending',
-    startDate: '2024-12-06',
-    startTime: '14:00',
-    endDate: '2024-12-06',
-    endTime: '16:00',
-    clientName: 'Charlie',
-    professionalName: 'Sarah Wilson',
-    serviceType: 'Dog Walking',
-    animalType: 'Dog',
-    numberOfPets: 2,
-    duration: 2,
-    rates: {
-      baseRate: 20.00,
-      additionalPetRate: 5.00,
-      extraServices: [
-        { name: 'Premium Package', amount: 10.00 },
-        { name: 'Weekend Fee', amount: 5.00 }
-      ]
-    },
-    costs: {
-      baseTotal: 80.00,
-      additionalPetTotal: 5.00,
-      extraServicesTotal: 15.00,
-      subtotal: 100.00,
-      clientFee: 10.00,
-      taxes: 9.00,
-      totalClientCost: 119.00,
-      professionalPayout: 90.00,
-    },
+const sharedBookingDetails = {
+  id: 'bk1',
+  status: 'Pending',
+  startDate: '2024-12-06',
+  startTime: '14:00',
+  endDate: '2024-12-06',
+  endTime: '16:00',
+  clientName: 'Charlie Bootylicker',
+  professionalName: 'Sarah Wilson',
+  serviceType: 'Dog Walking',
+  animalType: 'Dog',
+  numberOfPets: 2,
+  duration: 2,
+  rates: {
+    baseRate: 20.00,
+    additionalPetRate: 5.00,
+    extraServices: [
+      { name: 'Premium Package', amount: 10.00 },
+      { name: 'Weekend Fee', amount: 5.00 }
+    ]
   },
+  costs: {
+    baseTotal: 80.00,
+    additionalPetTotal: 5.00,
+    extraServicesTotal: 15.00,
+    subtotal: 100.00,
+    clientFee: 10.00,
+    taxes: 9.00,
+    totalClientCost: 119.00,
+    professionalPayout: 90.00,
+  },
+};
+
+const mockBookingDetails = {
+  'bk1': sharedBookingDetails,
+  '1234': { ...sharedBookingDetails, id: 'bk2' }, // Use same properties but override ID
+  '5678': { ...sharedBookingDetails, id: 'bk3' },
+  '91011': { ...sharedBookingDetails, id: 'bk3' },
+  '91012': { ...sharedBookingDetails, id: 'bk3' },
   // Add more mock booking details for other IDs...
 };
 

@@ -367,11 +367,9 @@ const renderBookings = () => {
   }
 
   const handleBookingPress = (booking) => {
-    // Force modal to close
-    setIsVisible(false);
     onClose();
     
-    // Navigate after a delay
+    // Navigate after a short delay
     setTimeout(() => {
       navigation.navigate('BookingDetails', { bookingId: booking.id });
     }, 300);
@@ -746,6 +744,9 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 6,
+    borderColor: theme.colors.border,
+    borderWidth: 1,
+    margin: 2,
   },
   activeToggle: {
     backgroundColor: theme.colors.primary,
