@@ -8,6 +8,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SERVICE_TYPES, ALL_SERVICES } from '../data/mockData';
 import AvailabilityBookingCard from './AvailabilityBookingCard';
 import { useNavigation } from '@react-navigation/native';
+import TimePicker from './TimePicker';
 
 const { width, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const modalWidth = Platform.OS === 'web' ? width * 0.4 : width * 0.9;
@@ -162,121 +163,30 @@ const AddAvailabilityModal = ({ isVisible: propIsVisible, onClose, onSave, selec
     );
   };
 
-const renderTimePicker = () => {
-  if (Platform.OS === 'web') {
-    return (
-      <>
-        <View style={styles.timePickerContainer}>
-          <Text>Start Time:</Text>
-          <input
-            type="time"
-            value={startTime instanceof Date ? format(startTime, 'HH:mm') : '00:00'}
-            onChange={(e) => {
-              const timeValue = e.target.value;
-              if (timeValue) {
-                try {
-                  const parsedTime = parse(timeValue, 'HH:mm', new Date());
-                  setStartTime(parsedTime);
-                } catch (error) {
-                  console.warn('Invalid time format:', error);
-                  setStartTime(new Date().setHours(0, 0, 0, 0));
-                }
-              }
-            }}
-            style={styles.webTimePicker}
-          />
-        </View>
-        <View style={styles.timePickerContainer}>
-          <Text>End Time:</Text>
-          <input
-            type="time"
-            value={endTime instanceof Date ? format(endTime, 'HH:mm') : '00:00'}
-            onChange={(e) => {
-              const timeValue = e.target.value;
-              if (timeValue) {
-                try {
-                  const parsedTime = parse(timeValue, 'HH:mm', new Date());
-                  setEndTime(parsedTime);
-                } catch (error) {
-                  console.warn('Invalid time format:', error);
-                  setEndTime(new Date().setHours(0, 0, 0, 0));
-                }
-              }
-            }}
-            style={styles.webTimePicker}
-          />
-        </View>
-      </>
-    );
-  } else if (Platform.OS === 'ios') {
-    return (
-      <>
-        <Text>Start Time:</Text>
-        <DateTimePicker
-          value={startTime}
-          mode="time"
-          is24Hour={true}
-          display="default"
-          onChange={(event, selectedTime) => setStartTime(selectedTime || startTime)}
-        />
-        <Text>End Time:</Text>
-        <DateTimePicker
-          value={endTime}
-          mode="time"
-          is24Hour={true}
-          display="default"
-          onChange={(event, selectedTime) => setEndTime(selectedTime || endTime)}
-        />
-      </>
-    );
-  } else {
-    return (
-      <>
-        <View>
-            <Text>Start Time:</Text>
-            <TouchableOpacity onPress={() => setShowStartTimePicker(true)}>
-                <View>
-                <Text>{format(startTime, 'hh:mm a')}</Text>
-                </View>
-            </TouchableOpacity>
-            {showStartTimePicker && (
-                <DateTimePicker
-                value={startTime}
-                mode="time"
-                is24Hour={false}
-                display="default"
-                onChange={(event, selectedTime) => {
-                    setShowStartTimePicker(false);
-                    setStartTime(selectedTime || startTime);
-                }}
-                />
-            )}
-        </View>
-
-        <View>
-            <Text>End Time:</Text>
-            <TouchableOpacity onPress={() => setShowEndTimePicker(true)}>
-                <View>
-                <Text>{format(endTime, 'hh:mm a')}</Text>
-                </View>
-            </TouchableOpacity>
-            {showEndTimePicker && (
-                <DateTimePicker
-                value={endTime}
-                mode="time"
-                is24Hour={false}
-                display="default"
-                onChange={(event, selectedTime) => {
-                    setShowEndTimePicker(false);
-                    setEndTime(selectedTime || endTime);
-                }}
-                />
-            )}
-        </View>
-      </>
-    );
-  }
-};
+const renderTimePicker = () => (
+  <>
+    <View style={styles.timePickerContainer}>
+      <Text>Start Time:</Text>
+      <TimePicker
+        value={startTime}
+        onChange={setStartTime}
+        showPicker={showStartTimePicker}
+        setShowPicker={setShowStartTimePicker}
+        fullWidth
+      />
+    </View>
+    <View style={styles.timePickerContainer}>
+      <Text>End Time:</Text>
+      <TimePicker
+        value={endTime}
+        onChange={setEndTime}
+        showPicker={showEndTimePicker}
+        setShowPicker={setShowEndTimePicker}
+        fullWidth
+      />
+    </View>
+  </>
+);
 
 const formatSelectedDates = () => {
   if (!selectedDates || selectedDates.length === 0) return '';

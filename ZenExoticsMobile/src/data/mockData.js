@@ -13,6 +13,20 @@ export const SERVICE_TYPES = [
   "Ferrier",
 ];
 
+export const TIME_OPTIONS = [
+  '15 min',
+  '30 min',
+  '45 min',
+  '1 hr',
+  '2 hr',
+  '4 hr',
+  '8 hr',
+  '24 hr',
+  'overnight',
+  'per day',
+  'per visit'
+];
+
 export const mockPets = [
   {
     id: '1',

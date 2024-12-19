@@ -1,16 +1,50 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, Alert, Platform } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { theme } from '../styles/theme';
 import CrossPlatformView from '../components/CrossPlatformView';
 import BackHeader from '../components/BackHeader';
 import { fetchBookingDetails } from '../data/mockData';
+import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import DatePicker from '../components/DatePicker';
+import { TIME_OPTIONS } from '../data/mockData';
+import AddRateModal from '../components/AddRateModal';
+import { format } from 'date-fns';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import TimePicker from '../components/TimePicker';
+
+const LAST_VIEWED_BOOKING_ID = 'last_viewed_booking_id';
+
+const SERVICE_OPTIONS = ['Dog Walking', 'Pet Sitting', 'House Sitting', 'Drop-In Visits'];
+const ANIMAL_OPTIONS = ['Dog', 'Cat', 'Bird', 'Small Animal'];
 
 const BookingDetails = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editedBooking, setEditedBooking] = useState({
+    rates: {
+      additionalPetRate: 0,
+      holidayFee: 0,
+      weekendFee: 0,
+      extraServices: []
+    }
+  });
+  const [showTimeDropdown, setShowTimeDropdown] = useState(false);
+  const [timeDropdownPosition, setTimeDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+  const timeInputRef = useRef(null);
+  const [showAddRateModal, setShowAddRateModal] = useState(false);
+  const [showStartTimePicker, setShowStartTimePicker] = useState(false);
+  const [showEndTimePicker, setShowEndTimePicker] = useState(false);
+  const [showServiceDropdown, setShowServiceDropdown] = useState(false);
+  const [showAnimalDropdown, setShowAnimalDropdown] = useState(false);
+  const [showPetRateDropdown, setShowPetRateDropdown] = useState(false);
+  const [showAdditionalPetRate, setShowAdditionalPetRate] = useState(true);
+  const [showHolidayRate, setShowHolidayRate] = useState(true);
+  const [showWeekendRate, setShowWeekendRate] = useState(true);
 
   useEffect(() => {
     // Define an async function inside useEffect to fetch booking data
@@ -19,11 +53,22 @@ const BookingDetails = () => {
       setLoading(true);
       
       try {
-        // route.params comes from React Navigation
-        // When we navigate using: navigation.navigate('BookingDetails', { bookingId: 'bk1' })
-        // The bookingId becomes available in route.params.bookingId
-        // The ?. is optional chaining - it prevents errors if route.params is undefined
-        const bookingId = route.params?.bookingId;
+        // First try to get bookingId from route params
+        let bookingId = route.params?.bookingId;
+
+        // If no bookingId in route params, try to get from AsyncStorage
+        if (!bookingId) {
+          bookingId = await AsyncStorage.getItem(LAST_VIEWED_BOOKING_ID);
+        } else {
+          // If we got bookingId from route params, save it to AsyncStorage
+          await AsyncStorage.setItem(LAST_VIEWED_BOOKING_ID, bookingId);
+        }
+
+        if (!bookingId) {
+          // If still no bookingId, navigate back to MyBookings
+          navigation.replace('MyBookings');
+          return;
+        }
         
         // Call our mock API function from mockData.js
         // await waits for the Promise to resolve
@@ -34,6 +79,7 @@ const BookingDetails = () => {
       } catch (error) {
         // If anything goes wrong (like booking not found), log the error
         console.error('Error fetching booking details:', error);
+        navigation.replace('MyBookings');
       } finally {
         // Whether successful or not, set loading to false
         setLoading(false);
@@ -42,14 +88,61 @@ const BookingDetails = () => {
 
     // Only run fetchBooking if we have a bookingId in route.params
     // This prevents unnecessary API calls if no ID is provided
-    if (route.params?.bookingId) {
-      fetchBooking();
-    }
+    fetchBooking();
     
     // The dependency array [route.params?.bookingId] means this effect will run:
     // 1. When the component first mounts
     // 2. Any time route.params?.bookingId changes
   }, [route.params?.bookingId]);
+
+  // Add cleanup when component unmounts
+  useEffect(() => {
+    return () => {
+      // Clear the cached booking ID when leaving the screen
+      AsyncStorage.removeItem(LAST_VIEWED_BOOKING_ID);
+    };
+  }, []);
+
+  // Reset edit mode when component mounts or reloads
+  useEffect(() => {
+    setIsEditMode(false);
+  }, []);
+
+  // Add this useEffect to properly initialize editedBooking
+  useEffect(() => {
+    if (booking) {
+      setEditedBooking({
+        ...booking,
+        rates: {
+          additionalPetRate: booking.rates?.additionalPetRate ?? 0,
+          holidayFee: booking.rates?.holidayFee ?? 0,
+          weekendFee: booking.rates?.weekendFee ?? 0,
+          extraServices: booking.rates?.extraServices || []
+        }
+      });
+    }
+  }, [booking]);
+
+  const measureTimeDropdown = () => {
+    if (timeInputRef.current && Platform.OS === 'web') {
+      timeInputRef.current.measure((x, y, width, height, pageX, pageY) => {
+        setTimeDropdownPosition({
+          top: pageY + height,
+          left: pageX,
+          width: width,
+        });
+      });
+    }
+  };
+
+  const handleTimeOptionSelect = (option) => {
+    setEditedBooking(prev => ({
+      ...prev,
+      lengthOfService: option
+    }));
+    setShowTimeDropdown(false);
+    recalculateTotals();
+  };
 
   const handleApprove = () => {
     // Implement approval logic
@@ -64,6 +157,24 @@ const BookingDetails = () => {
   const handleCancel = () => {
     // Implement cancellation logic
     console.log('Booking cancelled');
+  };
+
+  const toggleEditMode = () => {
+    if (isEditMode) {
+      // Save changes
+      setIsEditMode(false);
+      setEditedBooking(null);
+    } else {
+      // Enter edit mode
+      setIsEditMode(true);
+      setEditedBooking({
+        ...booking,
+        startTime: booking.startTime ? new Date(`2024-01-01T${booking.startTime}`) : new Date(),
+        endTime: booking.endTime ? new Date(`2024-01-01T${booking.endTime}`) : new Date(),
+        startDate: booking.startDate ? new Date(booking.startDate) : new Date(),
+        endDate: booking.endDate ? new Date(booking.endDate) : new Date(),
+      });
+    }
   };
 
   const StatusBadge = ({ status }) => (
@@ -93,82 +204,506 @@ const BookingDetails = () => {
     return colors[status] || colors.Pending;
   };
 
-  if (loading) {
-    return (
-      <CrossPlatformView fullWidthHeader={true}>
-        <BackHeader
-          title="Booking Details"
-          onBackPress={() => navigation.navigate('MyBookings')}
-        />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-        </View>
-      </CrossPlatformView>
-    );
-  }
+  const handleRemoveService = (index) => {
+    // Add this function since it's referenced in the code
+    console.log('Removing service at index:', index);
+  };
 
-  if (!booking) {
-    return (
-      <CrossPlatformView fullWidthHeader={true}>
-        <BackHeader
-          title="Booking Details"
-          onBackPress={() => navigation.goBack()}
-        />
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Booking not found</Text>
-        </View>
-      </CrossPlatformView>
-    );
-  }
-
-  return (
-    <CrossPlatformView fullWidthHeader={true}>
-      <BackHeader
-        title="Booking Details"
-        onBackPress={() => navigation.navigate('MyBookings')}
+  const renderEditButton = () => (
+    <TouchableOpacity 
+      onPress={toggleEditMode}
+      style={styles.editButton}
+      testID="edit-button"
+    >
+      <MaterialCommunityIcons 
+        name={isEditMode ? "check" : "pencil"} 
+        size={24} 
+        color={theme.colors.primary} 
       />
-      <ScrollView style={styles.container}>
-        <StatusBadge status={booking.status} />
+    </TouchableOpacity>
+  );
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Booking Parties</Text>
-          <Text style={styles.label}>Client:</Text>
-          <Text style={styles.text}>{booking.clientName}</Text>
-          <Text style={styles.label}>Professional:</Text>
-          <Text style={styles.text}>{booking.professionalName}</Text>
-        </View>
+  const handleUpdatePets = (newCount) => {
+    setEditedBooking(prev => ({
+      ...prev,
+      numberOfPets: parseInt(newCount),
+    }));
+    recalculateTotals();
+  };
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Date & Time</Text>
-          <View style={styles.dateTimeRow}>
-            <View style={styles.dateTimeColumn}>
-              <Text style={styles.label}>Start Date:</Text>
-              <Text style={styles.text}>{booking.startDate}</Text>
-              <Text style={styles.label}>Start Time:</Text>
-              <Text style={styles.text}>{booking.startTime}</Text>
+  const handleUpdateDuration = (newDuration) => {
+    setEditedBooking(prev => ({
+      ...prev,
+      duration: parseInt(newDuration),
+    }));
+    recalculateTotals();
+  };
+
+  const handleRemoveRate = (index) => {
+    const updatedRates = [...editedBooking.rates.extraServices];
+    updatedRates.splice(index, 1);
+    
+    setEditedBooking(prev => ({
+      ...prev,
+      rates: {
+        ...prev.rates,
+        extraServices: updatedRates
+      }
+    }));
+    recalculateTotals();
+  };
+
+  const recalculateTotals = async () => {
+    try {
+      const baseTotal = editedBooking.rates.baseRate * editedBooking.quantity;
+      const extraServicesTotal = editedBooking.rates.extraServices.reduce((sum, service) => sum + service.amount, 0);
+      const holidayFee = editedBooking.rates.holidayFee || 0;
+      const weekendFee = editedBooking.rates.weekendFee || 0;
+      
+      // Calculate additional pet fees (assuming 1 pet included in base rate)
+      const additionalPets = Math.max(0, editedBooking.numberOfPets - 1);
+      const additionalPetTotal = additionalPets * (editedBooking.rates.additionalPetRate || 0);
+      
+      const subtotal = baseTotal + extraServicesTotal + holidayFee + weekendFee + additionalPetTotal;
+      const clientFee = subtotal * 0.10;
+      const taxes = subtotal * 0.09;
+      const totalClientCost = subtotal + clientFee + taxes;
+      const professionalPayout = subtotal * 0.90;
+
+      setEditedBooking(prev => ({
+        ...prev,
+        costs: {
+          baseTotal,
+          extraServicesTotal,
+          additionalPetTotal,
+          subtotal,
+          clientFee,
+          taxes,
+          totalClientCost,
+          professionalPayout
+        }
+      }));
+    } catch (error) {
+      console.error('Error recalculating totals:', error);
+    }
+  };
+
+  const renderCostBreakdown = () => (
+    <View style={[styles.section, { zIndex: 1 }]}>
+      <Text style={styles.sectionTitle}>Cost Breakdown</Text>
+      
+      {isEditMode ? (
+        <View>
+          {/* Base Rate Section */}
+          <View style={[styles.rateSection, { zIndex: 3 }]}>
+            <Text style={styles.rateSectionTitle}>Base Rate</Text>
+            <View style={[styles.rateInputRow, { zIndex: 3 }]}>
+              <View style={styles.rateInputGroup}>
+                <Text style={styles.inputLabel}>Base Rate ($)</Text>
+                <TextInput
+                  style={styles.rateInput}
+                  value={editedBooking.rates.baseRate.toString()}
+                  onChangeText={(text) => {
+                    const rate = parseFloat(text) || 0;
+                    setEditedBooking(prev => ({
+                      ...prev,
+                      rates: {
+                        ...prev.rates,
+                        baseRate: rate
+                      }
+                    }));
+                    recalculateTotals();
+                  }}
+                  keyboardType="decimal-pad"
+                  placeholder="20.00"
+                />
+              </View>
+
+              <View style={[styles.rateInputGroup, { zIndex: 3 }]}>
+                <Text style={styles.inputLabel}>Time Unit</Text>
+                <TouchableOpacity
+                  style={styles.dropdownInput}
+                  onPress={() => {
+                    setShowTimeDropdown(!showTimeDropdown);
+                    setShowPetRateDropdown(false);
+                  }}
+                >
+                  <Text>{editedBooking.timeUnit || 'Hour'}</Text>
+                  <MaterialCommunityIcons 
+                    name={showTimeDropdown ? "chevron-up" : "chevron-down"} 
+                    size={20} 
+                    color={theme.colors.text} 
+                  />
+                </TouchableOpacity>
+                {showTimeDropdown && (
+                  <View style={[styles.dropdownList, { zIndex: 3 }]}>
+                    {['15 min', '30 min', 'Hour', 'Day'].map(unit => (
+                      <TouchableOpacity
+                        key={unit}
+                        style={styles.dropdownItem}
+                        onPress={() => {
+                          setEditedBooking(prev => ({
+                            ...prev,
+                            timeUnit: unit
+                          }));
+                          setShowTimeDropdown(false);
+                          recalculateTotals();
+                        }}
+                      >
+                        <Text>{unit}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+              </View>
+
+              <View style={styles.rateInputGroup}>
+                <Text style={styles.inputLabel}>Quantity</Text>
+                <TextInput
+                  style={styles.rateInput}
+                  value={editedBooking?.quantity?.toString() || '1'}
+                  onChangeText={(text) => {
+                    const qty = parseInt(text) || 1;
+                    setEditedBooking(prev => ({
+                      ...prev,
+                      quantity: qty
+                    }));
+                    recalculateTotals();
+                  }}
+                  keyboardType="numeric"
+                  placeholder="1"
+                />
+              </View>
             </View>
-            <View style={styles.dateTimeColumn}>
-              <Text style={styles.label}>End Date:</Text>
-              <Text style={styles.text}>{booking.endDate}</Text>
-              <Text style={styles.label}>End Time:</Text>
-              <Text style={styles.text}>{booking.endTime}</Text>
+          </View>
+
+          {/* Additional Rates Section */}
+          <View style={styles.rateSection}>
+            <Text style={styles.rateSectionTitle}>Additional Rates</Text>
+            
+            {/* Column Headers */}
+            <View style={styles.rateHeaderRow}>
+              <View style={styles.rateInputGroup}>
+                <Text style={styles.columnHeader}>Rate Title</Text>
+              </View>
+              <View style={[styles.rateInputGroup, styles.rateAmountColumn]}>
+                <Text style={styles.columnHeader}>Rate ($)</Text>
+              </View>
+              <View style={styles.actionButtons}>
+                {/* Empty space for alignment with buttons below */}
+              </View>
+            </View>
+
+            {/* Additional Pet Rate */}
+            {showAdditionalPetRate && (
+              <View key="additionalPetRate" style={styles.additionalRateRow}>
+                <View style={styles.rateInputGroup}>
+                  <TextInput
+                    style={styles.rateInput}
+                    value="Additional Pet Rate"
+                    editable={false}
+                  />
+                </View>
+                
+                <View style={styles.rateInputGroup}>
+                  <TextInput
+                    style={styles.rateInput}
+                    value={editedBooking.rates?.additionalPetRate?.toString() || '0'}
+                    onChangeText={(text) => {
+                      const rate = parseFloat(text) || 0;
+                      setEditedBooking(prev => ({
+                        ...prev,
+                        rates: {
+                          ...prev.rates,
+                          additionalPetRate: rate
+                        }
+                      }));
+                      recalculateTotals();
+                    }}
+                    keyboardType="decimal-pad"
+                    placeholder="0.00"
+                  />
+                </View>
+
+                <TouchableOpacity
+                  onPress={() => Alert.alert(
+                    'Additional Pet Rate',
+                    'This rate will be applied for each pet beyond the first pet included in the base rate.'
+                  )}
+                >
+                  <MaterialIcons 
+                    name="info-outline" 
+                    size={24} 
+                    color={theme.colors.primary} 
+                  />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.removeButton}
+                  onPress={() => {
+                    setShowAdditionalPetRate(false);
+                    setEditedBooking(prev => ({
+                      ...prev,
+                      rates: {
+                        ...prev.rates,
+                        additionalPetRate: 0
+                      }
+                    }));
+                    recalculateTotals();
+                  }}
+                >
+                  <MaterialCommunityIcons 
+                    name="close-circle" 
+                    size={24} 
+                    color={theme.colors.error} 
+                  />
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Holiday Rate */}
+            {showHolidayRate && (
+              <View key="holidayRate" style={styles.additionalRateRow}>
+                <View style={styles.rateInputGroup}>
+                  <TextInput
+                    style={styles.rateInput}
+                    value="Holiday Rate"
+                    editable={false}
+                  />
+                </View>
+                
+                <View style={styles.rateInputGroup}>
+                  <TextInput
+                    style={styles.rateInput}
+                    value={editedBooking.rates?.holidayFee?.toString() || '0'}
+                    onChangeText={(text) => {
+                      const rate = parseFloat(text) || 0;
+                      setEditedBooking(prev => ({
+                        ...prev,
+                        rates: {
+                          ...prev.rates,
+                          holidayFee: rate
+                        }
+                      }));
+                      recalculateTotals();
+                    }}
+                    keyboardType="decimal-pad"
+                    placeholder="0.00"
+                  />
+                </View>
+
+                <TouchableOpacity
+                  onPress={() => Alert.alert(
+                    'Holiday Rate',
+                    'Additional rate applied for bookings on holidays.'
+                  )}
+                >
+                  <MaterialIcons 
+                    name="info-outline" 
+                    size={24} 
+                    color={theme.colors.primary} 
+                  />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.removeButton}
+                  onPress={() => {
+                    setShowHolidayRate(false);
+                    setEditedBooking(prev => ({
+                      ...prev,
+                      rates: {
+                        ...prev.rates,
+                        holidayFee: 0
+                      }
+                    }));
+                    recalculateTotals();
+                  }}
+                >
+                  <MaterialCommunityIcons 
+                    name="close-circle" 
+                    size={24} 
+                    color={theme.colors.error} 
+                  />
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Weekend Rate */}
+            {showWeekendRate && (
+              <View key="weekendRate" style={styles.additionalRateRow}>
+                <View style={styles.rateInputGroup}>
+                  <TextInput
+                    style={styles.rateInput}
+                    value="Weekend Rate"
+                    editable={false}
+                  />
+                </View>
+                
+                <View style={styles.rateInputGroup}>
+                  <TextInput
+                    style={styles.rateInput}
+                    value={editedBooking.rates?.weekendFee?.toString() || '0'}
+                    onChangeText={(text) => {
+                      const rate = parseFloat(text) || 0;
+                      setEditedBooking(prev => ({
+                        ...prev,
+                        rates: {
+                          ...prev.rates,
+                          weekendFee: rate
+                        }
+                      }));
+                      recalculateTotals();
+                    }}
+                    keyboardType="decimal-pad"
+                    placeholder="0.00"
+                  />
+                </View>
+
+                <TouchableOpacity
+                  onPress={() => Alert.alert(
+                    'Weekend Rate',
+                    'Additional rate applied for bookings on weekends.'
+                  )}
+                >
+                  <MaterialIcons 
+                    name="info-outline" 
+                    size={24} 
+                    color={theme.colors.primary} 
+                  />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.removeButton}
+                  onPress={() => {
+                    setShowWeekendRate(false);
+                    setEditedBooking(prev => ({
+                      ...prev,
+                      rates: {
+                        ...prev.rates,
+                        weekendFee: 0
+                      }
+                    }));
+                    recalculateTotals();
+                  }}
+                >
+                  <MaterialCommunityIcons 
+                    name="close-circle" 
+                    size={24} 
+                    color={theme.colors.error} 
+                  />
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Other Additional Rates */}
+            {editedBooking.rates.extraServices.map((service, index) => (
+              <View key={index} style={styles.additionalRateRow}>
+                <View style={styles.rateInputGroup}>
+                  <TextInput
+                    style={styles.rateInput}
+                    value={service.name}
+                    onChangeText={(text) => {
+                      const updatedServices = [...editedBooking.rates.extraServices];
+                      updatedServices[index] = { ...service, name: text };
+                      setEditedBooking(prev => ({
+                        ...prev,
+                        rates: {
+                          ...prev.rates,
+                          extraServices: updatedServices
+                        }
+                      }));
+                    }}
+                    placeholder="Rate Title"
+                  />
+                </View>
+                
+                <View style={styles.rateInputGroup}>
+                  <TextInput
+                    style={styles.rateInput}
+                    value={service.amount.toString()}
+                    onChangeText={(text) => {
+                      const amount = parseFloat(text) || 0;
+                      const updatedServices = [...editedBooking.rates.extraServices];
+                      updatedServices[index] = { ...service, amount };
+                      setEditedBooking(prev => ({
+                        ...prev,
+                        rates: {
+                          ...prev.rates,
+                          extraServices: updatedServices
+                        }
+                      }));
+                      recalculateTotals();
+                    }}
+                    keyboardType="decimal-pad"
+                    placeholder="0.00"
+                  />
+                </View>
+
+                <MaterialIcons 
+                  name="info-outline" 
+                  size={24} 
+                  color={theme.colors.primary} 
+                />
+
+                <TouchableOpacity
+                  style={styles.removeButton}
+                  onPress={() => handleRemoveRate(index)}
+                >
+                  <MaterialCommunityIcons 
+                    name="close-circle" 
+                    size={24} 
+                    color={theme.colors.error} 
+                  />
+                </TouchableOpacity>
+              </View>
+            ))}
+
+            <TouchableOpacity
+              style={styles.addRateButton}
+              onPress={() => setShowAddRateModal(true)}
+            >
+              <MaterialCommunityIcons 
+                name="plus-circle" 
+                size={24} 
+                color={theme.colors.primary} 
+              />
+              <Text style={styles.addRateText}>Add Rate</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Summary Section */}
+          <View style={styles.summarySection}>
+            <Text style={styles.rateSectionTitle}>Summary</Text>
+            <View style={styles.summaryRow}>
+              <Text>Subtotal:</Text>
+              <Text>${editedBooking.costs.subtotal.toFixed(2)}</Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <Text>Client Fee (10%):</Text>
+              <Text>${editedBooking.costs.clientFee.toFixed(2)}</Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <Text>Taxes (9%):</Text>
+              <Text>${editedBooking.costs.taxes.toFixed(2)}</Text>
+            </View>
+            <View style={[styles.summaryRow, styles.totalRow]}>
+              <Text style={styles.totalLabel}>Total Client Cost:</Text>
+              <Text style={styles.totalAmount}>
+                ${editedBooking.costs.totalClientCost.toFixed(2)}
+              </Text>
+            </View>
+            <View style={[styles.summaryRow, styles.payoutRow]}>
+              <Text style={styles.payoutLabel}>Professional Payout:</Text>
+              <Text style={styles.payoutAmount}>
+                ${editedBooking.costs.professionalPayout.toFixed(2)}
+              </Text>
             </View>
           </View>
         </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Service Details</Text>
-          <Text style={styles.label}>Service Type:</Text>
-          <Text style={styles.text}>{booking.serviceType}</Text>
-          <Text style={styles.label}>Animal Type:</Text>
-          <Text style={styles.text}>{booking.animalType}</Text>
-          <Text style={styles.label}>Number of Pets:</Text>
-          <Text style={styles.text}>{booking.numberOfPets}</Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Cost Breakdown</Text>
-          <Text style={styles.label}>Service Type: {booking.serviceType}</Text>
+      ) : (
+        // Existing non-edit mode view
+        <View>
+          {/* <Text style={styles.label}>Service Type: {booking.serviceType}</Text> */}
           
           <View style={styles.costRow}>
             <Text style={styles.costLabel}>
@@ -229,6 +764,266 @@ const BookingDetails = () => {
             </Text>
           </View>
         </View>
+      )}
+    </View>
+  );
+
+  // Update the renderDateTimeSection to handle null values
+  const renderDateTimeSection = () => (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>Date & Time</Text>
+      {isEditMode ? (
+        <View>
+          <View style={styles.dateTimeRow}>
+            <View style={styles.dateTimeColumn}>
+              <Text style={styles.label}>Start Date:</Text>
+              <DatePicker
+                value={editedBooking?.startDate || new Date()}
+                onChange={(date) => {
+                  setEditedBooking(prev => ({
+                    ...prev,
+                    startDate: date
+                  }));
+                }}
+                placeholder="Select Start Date"
+              />
+              {/* <Text style={styles.label}>Start Time:</Text> */}
+              <TimePicker
+                label="Start Time:"
+                value={editedBooking?.startTime || new Date()}
+                onChange={(selectedTime) => {
+                  setEditedBooking(prev => ({
+                    ...prev,
+                    startTime: selectedTime
+                  }));
+                }}
+                showPicker={showStartTimePicker}
+                setShowPicker={setShowStartTimePicker}
+              />
+            </View>
+            <View style={styles.dateTimeColumn}>
+              <Text style={styles.label}>End Date:</Text>
+              <DatePicker
+                value={editedBooking?.endDate || new Date()}
+                onChange={(date) => {
+                  setEditedBooking(prev => ({
+                    ...prev,
+                    endDate: date
+                  }));
+                }}
+                placeholder="Select End Date"
+              />
+              {/* <Text style={styles.label}>End Time:</Text> */}
+              <TimePicker
+                label="End Time:"
+                value={editedBooking?.endTime || new Date()}
+                onChange={(selectedTime) => {
+                  setEditedBooking(prev => ({
+                    ...prev,
+                    endTime: selectedTime
+                  }));
+                }}
+                showPicker={showEndTimePicker}
+                setShowPicker={setShowEndTimePicker}
+              />
+            </View>
+          </View>
+        </View>
+      ) : (
+        <View style={styles.dateTimeRow}>
+          <View style={styles.dateTimeColumn}>
+            <Text style={styles.label}>Start:</Text>
+            <Text style={styles.text}>
+              {booking?.startDate} {booking?.startTime}
+            </Text>
+          </View>
+          <View style={styles.dateTimeColumn}>
+            <Text style={styles.label}>End:</Text>
+            <Text style={styles.text}>
+              {booking?.endDate} {booking?.endTime}
+            </Text>
+          </View>
+        </View>
+      )}
+    </View>
+  );
+
+  if (loading) {
+    return (
+      <CrossPlatformView fullWidthHeader={true}>
+        <BackHeader
+          title="Booking Details"
+          onBackPress={() => navigation.navigate('MyBookings')}
+        />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+        </View>
+      </CrossPlatformView>
+    );
+  }
+
+  if (!booking) {
+    return (
+      <CrossPlatformView fullWidthHeader={true}>
+        <BackHeader
+          title="Booking Details"
+          onBackPress={() => navigation.goBack()}
+        />
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Booking not found</Text>
+        </View>
+      </CrossPlatformView>
+    );
+  }
+
+  return (
+    <CrossPlatformView fullWidthHeader={true}>
+      <BackHeader
+        title="Booking Details"
+        onBackPress={() => navigation.goBack()}
+        rightComponent={renderEditButton()}
+      />
+      <ScrollView style={styles.container}>
+        <StatusBadge status={booking.status} />
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Booking Parties</Text>
+          <Text style={styles.label}>Client:</Text>
+          <Text style={styles.text}>{booking.clientName}</Text>
+          <Text style={styles.label}>Professional:</Text>
+          <Text style={styles.text}>{booking.professionalName}</Text>
+        </View>
+
+        {renderDateTimeSection()}
+
+        <View style={[styles.section, { zIndex: 2 }]}>
+          <Text style={styles.sectionTitle}>Service Details</Text>
+          {isEditMode ? (
+            <View style={{ zIndex: 3 }}>
+              <View style={[styles.editRow, { zIndex: 3 }]}>
+                <Text style={styles.label}>Service Type:</Text>
+                <View style={[styles.dropdownContainer, { zIndex: 3 }]}>
+                  <TouchableOpacity
+                    style={styles.dropdownInput}
+                    onPress={() => {
+                      setShowServiceDropdown(!showServiceDropdown);
+                      setShowAnimalDropdown(false);
+                    }}
+                  >
+                    <Text>{editedBooking.serviceType || 'Select Service'}</Text>
+                    <MaterialCommunityIcons 
+                      name={showServiceDropdown ? "chevron-up" : "chevron-down"} 
+                      size={24} 
+                      color={theme.colors.text} 
+                    />
+                  </TouchableOpacity>
+
+                  {showServiceDropdown && (
+                    <View style={styles.dropdownList}>
+                      <ScrollView nestedScrollEnabled={true}>
+                        {SERVICE_OPTIONS.map((service) => (
+                          <TouchableOpacity
+                            key={service}
+                            style={styles.dropdownItem}
+                            onPress={() => {
+                              setEditedBooking(prev => ({
+                                ...prev,
+                                serviceType: service
+                              }));
+                              setShowServiceDropdown(false);
+                            }}
+                          >
+                            <Text style={[
+                              styles.dropdownText,
+                              editedBooking.serviceType === service && styles.selectedOption
+                            ]}>
+                              {service}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
+                </View>
+              </View>
+
+              <View style={[styles.editRow, { zIndex: 2 }]}>
+                <Text style={styles.label}>Animal Type:</Text>
+                <View style={[styles.dropdownContainer, { zIndex: 2 }]}>
+                  <TouchableOpacity
+                    style={styles.dropdownInput}
+                    onPress={() => {
+                      setShowAnimalDropdown(!showAnimalDropdown);
+                      setShowServiceDropdown(false);
+                    }}
+                  >
+                    <Text>{editedBooking.animalType || 'Select Animal'}</Text>
+                    <MaterialCommunityIcons 
+                      name={showAnimalDropdown ? "chevron-up" : "chevron-down"} 
+                      size={24} 
+                      color={theme.colors.text} 
+                    />
+                  </TouchableOpacity>
+
+                  {showAnimalDropdown && (
+                    <View style={styles.dropdownList}>
+                      <ScrollView nestedScrollEnabled={true}>
+                        {ANIMAL_OPTIONS.map((animal) => (
+                          <TouchableOpacity
+                            key={animal}
+                            style={styles.dropdownItem}
+                            onPress={() => {
+                              setEditedBooking(prev => ({
+                                ...prev,
+                                animalType: animal
+                              }));
+                              setShowAnimalDropdown(false);
+                            }}
+                          >
+                            <Text style={[
+                              styles.dropdownText,
+                              editedBooking.animalType === animal && styles.selectedOption
+                            ]}>
+                              {animal}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
+                </View>
+              </View>
+
+              <View style={[styles.editRow, { zIndex: 1 }]}>
+                <Text style={styles.label}>Number of Pets:</Text>
+                <TextInput
+                  style={styles.editInput}
+                  value={editedBooking.numberOfPets.toString()}
+                  onChangeText={(text) => {
+                    const number = parseInt(text) || 1;
+                    setEditedBooking(prev => ({
+                      ...prev,
+                      numberOfPets: number
+                    }));
+                  }}
+                  keyboardType="numeric"
+                  maxLength={2}
+                />
+              </View>
+            </View>
+          ) : (
+            <View>
+              <Text style={styles.label}>Service Type:</Text>
+              <Text style={styles.text}>{booking.serviceType}</Text>
+              <Text style={styles.label}>Animal Type:</Text>
+              <Text style={styles.text}>{booking.animalType}</Text>
+              <Text style={styles.label}>Number of Pets:</Text>
+              <Text style={styles.text}>{booking.numberOfPets}</Text>
+            </View>
+          )}
+        </View>
+
+        {renderCostBreakdown()}
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Cancellation Policy</Text>
@@ -264,6 +1059,21 @@ const BookingDetails = () => {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      <AddRateModal
+        visible={showAddRateModal}
+        onClose={() => setShowAddRateModal(false)}
+        onAdd={(newRate) => {
+          setEditedBooking(prev => ({
+            ...prev,
+            rates: {
+              ...prev.rates,
+              extraServices: [...(prev.rates.extraServices || []), newRate]
+            }
+          }));
+          recalculateTotals();
+          setShowAddRateModal(false);
+        }}
+      />
     </CrossPlatformView>
   );
 };
@@ -389,9 +1199,11 @@ const styles = StyleSheet.create({
   dateTimeRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginBottom: 15,
   },
   dateTimeColumn: {
     flex: 1,
+    marginRight: 10,
   },
   serviceTitle: {
     fontSize: 16,
@@ -424,6 +1236,238 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: theme.colors.error,
     textAlign: 'center',
+  },
+  editButton: {
+    marginRight: 16,
+    padding: 8,
+  },
+  editField: {
+    padding: 16,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  editableServiceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  removeServiceButton: {
+    marginLeft: 8,
+  },
+  editRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+    position: 'relative',
+  },
+  editInput: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 4,
+    padding: 8,
+    width: 80,
+    textAlign: 'right',
+  },
+  addRateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    marginTop: 8,
+  },
+  addRateText: {
+    marginLeft: 8,
+    color: theme.colors.primary,
+    fontSize: 16,
+  },
+  editableServiceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  removeServiceButton: {
+    marginLeft: 8,
+  },
+  dropdownContainer: {
+    position: 'relative',
+    width: 150,
+  },
+  dropdownInput: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 4,
+    padding: 4,
+    backgroundColor: theme.colors.surface,
+  },
+  timeDropdownList: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 4,
+    maxHeight: 200,
+    zIndex: 1001,
+    elevation: 5,
+    marginTop: 4,
+  },
+  dropdownItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    backgroundColor: '#FFFFFF',
+  },
+  dropdownText: {
+    color: theme.colors.text,
+  },
+  selectedOption: {
+    color: theme.colors.primary,
+    fontWeight: 'bold',
+  },
+  bookingDatesSection: {
+    marginTop: 20,
+    marginBottom: 20,
+  },
+  sectionSubtitle: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 10,
+  },
+  dateTimeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 15,
+  },
+  datePickerContainer: {
+    flex: 1,
+    marginRight: 10,
+  },
+  timePickerContainer: {
+    width: 120,
+  },
+  timePickerButton: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 4,
+    padding: 8,
+    backgroundColor: theme.colors.surface,
+  },
+  dropdownList: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 4,
+    maxHeight: 150,
+    elevation: 5,
+    marginTop: 4,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  rateSection: {
+    marginBottom: 20,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 8,
+    backgroundColor: theme.colors.surface,
+  },
+  rateSectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 12,
+    color: theme.colors.primary,
+  },
+  rateInputRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  rateInputGroup: {
+    flex: 1,
+  },
+  inputLabel: {
+    fontSize: 12,
+    color: theme.colors.placeholder,
+    marginBottom: 4,
+  },
+  rateInput: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 4,
+    padding: 8,
+    fontSize: 14,
+  },
+  additionalRateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  removeButton: {
+    padding: 4,
+  },
+  summarySection: {
+    marginTop: 20,
+    padding: 12,
+    backgroundColor: theme.colors.surface,
+    borderRadius: 8,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  rateHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+    paddingHorizontal: 4,
+  },
+  columnHeader: {
+    fontSize: 12,
+    color: theme.colors.placeholder,
+    fontWeight: '500',
+  },
+  rateAmountColumn: {
+    alignItems: 'flex-start',
+  },
+  rateActionButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: 72,
+    gap: 8,
+  },
+  infoButton: {
+    padding: 4,
+  },
+  actionButtons: {
+    width: 72, // Approximate width of both buttons + gap
+  },
+  additionalRateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    paddingBottom: 8,
   },
 });
 

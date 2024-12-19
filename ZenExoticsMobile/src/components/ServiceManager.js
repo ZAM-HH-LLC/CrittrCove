@@ -15,6 +15,7 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
 import { Picker } from '@react-native-picker/picker';
+import { TIME_OPTIONS } from '../data/mockData';
 
 const SERVICE_TYPE_SUGGESTIONS = [
   "Overnight Cat Sitting (Client's Home)",
@@ -38,20 +39,6 @@ const ANIMAL_TYPE_SUGGESTIONS = [
   'Bird',
   'Rabbit',
   'Fish',
-];
-
-const TIME_OPTIONS = [
-  '15 min',
-  '30 min',
-  '45 min',
-  '1 hr',
-  '2 hr',
-  '4 hr',
-  '8 hr',
-  '24 hr',
-  'overnight',
-  'per day',
-  'per visit'
 ];
 
 const GENERAL_CATEGORIES = [

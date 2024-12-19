@@ -9,8 +9,9 @@ const BackHeader = ({
   onBackPress, 
   rightIcon = null, // Optional right icon
   onRightPress = null, // Optional right icon press handler
-  customStyles = {} // Optional custom styles
-    }) => {
+  rightComponent = null, // Add this prop
+  customStyles = {} 
+}) => {
   const navigation = useNavigation();
 
   return (
@@ -25,17 +26,19 @@ const BackHeader = ({
       
       <Text style={styles.headerText}>{title}</Text>
       
-      {rightIcon && (
-        <TouchableOpacity 
-          onPress={onRightPress} 
-          style={styles.rightButton}
-        >
-          <MaterialCommunityIcons 
-            name={rightIcon} 
-            size={24} 
-            color={theme.colors.primary} 
-          />
-        </TouchableOpacity>
+      {rightComponent ? rightComponent : (
+        rightIcon && (
+          <TouchableOpacity 
+            onPress={onRightPress} 
+            style={styles.rightButton}
+          >
+            <MaterialCommunityIcons 
+              name={rightIcon} 
+              size={24} 
+              color={theme.colors.primary} 
+            />
+          </TouchableOpacity>
+        )
       )}
     </View>
   );

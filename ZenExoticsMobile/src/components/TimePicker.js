@@ -2,8 +2,9 @@ import React from 'react';
 import { View, Text, StyleSheet, Platform, TouchableOpacity } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { theme } from '../styles/theme';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-const TimePicker = ({ label, value, onChange }) => {
+const TimePicker = ({ label, value, onChange, fullWidth = false, containerStyle }) => {
   const [showPicker, setShowPicker] = React.useState(false);
 
   const handleChange = (event, selectedDate) => {
@@ -17,26 +18,46 @@ const TimePicker = ({ label, value, onChange }) => {
     setShowPicker(true);
   };
 
+  const renderTimeDisplay = () => (
+    <TouchableOpacity 
+      onPress={showTimepicker}
+      style={[styles.timeButton, !fullWidth && styles.compactTimeButton]}
+    >
+      <Text style={styles.timeText}>
+        {value.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+      </Text>
+      <MaterialCommunityIcons name="clock-outline" size={24} color={theme.colors.text} />
+    </TouchableOpacity>
+  );
+
   if (Platform.OS === 'web') {
+    const webInputStyle = {
+      padding: 12,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      borderRadius: 8,
+      backgroundColor: theme.colors.surface,
+      fontSize: 16,
+      width: fullWidth ? 150 : '90%',
+    };
+
     return (
-      <View style={styles.container}>
-        <Text>{label}</Text>
+      <View style={[styles.container, fullWidth && styles.fullWidth, containerStyle]}>
+        {label && <Text style={styles.label}>{label}</Text>}
         <input
           type="time"
           value={value.toTimeString().slice(0, 5)}
           onChange={(e) => onChange(new Date(`2000-01-01T${e.target.value}`))}
-          style={styles.webTimePicker}
+          style={webInputStyle}
         />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Text>{label}</Text>
-      <TouchableOpacity onPress={showTimepicker}>
-        <Text>{value.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
-      </TouchableOpacity>
+    <View style={[styles.container, fullWidth && styles.fullWidth, containerStyle]}>
+      {label && <Text style={styles.label}>{label}</Text>}
+      {renderTimeDisplay()}
       {showPicker && (
         <DateTimePicker
           value={value}
@@ -52,17 +73,34 @@ const TimePicker = ({ label, value, onChange }) => {
 
 const styles = StyleSheet.create({
   container: {
+    marginVertical: 8,
+  },
+  fullWidth: {
+    // width: '100%',
+  },
+  label: {
+    fontSize: 14,
+    color: theme.colors.placeholder,
+    marginBottom: 4,
+  },
+  timeButton: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginVertical: 10,
-  },
-  webTimePicker: {
-    padding: 5,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    borderRadius: 5,
+    borderRadius: 8,
+    padding: 12,
+    backgroundColor: theme.colors.surface,
+    minHeight: 48,
   },
+  compactTimeButton: {
+    width: 150,
+  },
+  timeText: {
+    fontSize: 16,
+    color: theme.colors.text,
+  }
 });
 
 export default TimePicker;
