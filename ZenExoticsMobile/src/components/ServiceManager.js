@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,9 @@ import {
   FlatList,
   Modal,
   Alert,
+  ScrollView,
+  TouchableWithoutFeedback,
+  Platform,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
@@ -51,14 +54,27 @@ const TIME_OPTIONS = [
   'per visit'
 ];
 
+const GENERAL_CATEGORIES = [
+  'Farm Animals', 
+  'Domestic',
+  'Exotic',
+  'Aquatic',
+  'Invertibrates',
+];
+
 const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [currentService, setCurrentService] = useState({
     serviceName: '',
+    serviceDescription: '',
     animalTypes: '',
-    rates: { base_rate: ''},
-    additionalAnimalRate: '',
+    rates: { 
+      base_rate: '',
+      additionalAnimalRate: '',
+      holidayRate: ''
+    },
     lengthOfService: '',
+    categories: [],
   });
   const [collapsedServices, setCollapsedServices] = useState([]);
   const [allCollapsed, setAllCollapsed] = useState(false);
@@ -74,9 +90,61 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
   const [serviceToDelete, setServiceToDelete] = useState(null);
   const [hoveredButton, setHoveredButton] = useState(null);
   const [showTimeDropdown, setShowTimeDropdown] = useState(false);
+  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [categoryDropdownPosition, setCategoryDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+  const [dropdownRef, setDropdownRef] = useState(null);
+  const [serviceDropdownRef, setServiceDropdownRef] = useState(null);
+  const [animalDropdownRef, setAnimalDropdownRef] = useState(null);
+  const [timeDropdownRef, setTimeDropdownRef] = useState(null);
 
   const serviceInputRef = useRef(null);
   const animalInputRef = useRef(null);
+  const categoryInputRef = useRef(null);
+  const timeInputRef = useRef(null);
+
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      const handleClickOutside = (event) => {
+        if (showCategoryDropdown && 
+            dropdownRef && 
+            categoryInputRef.current && 
+            !dropdownRef.contains(event.target) &&
+            !categoryInputRef.current.contains(event.target)) {
+          setShowCategoryDropdown(false);
+        }
+
+        if (showServiceDropdown &&
+            serviceDropdownRef &&
+            serviceInputRef.current &&
+            !serviceDropdownRef.contains(event.target) &&
+            !serviceInputRef.current.contains(event.target)) {
+          setShowServiceDropdown(false);
+        }
+
+        if (showAnimalDropdown &&
+            animalDropdownRef &&
+            animalInputRef.current &&
+            !animalDropdownRef.contains(event.target) &&
+            !animalInputRef.current.contains(event.target)) {
+          setShowAnimalDropdown(false);
+        }
+
+        if (showTimeDropdown &&
+            timeDropdownRef &&
+            timeInputRef.current &&
+            !timeDropdownRef.contains(event.target) &&
+            !timeInputRef.current.contains(event.target)) {
+          setShowTimeDropdown(false);
+        }
+      };
+
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [showCategoryDropdown, showServiceDropdown, showAnimalDropdown, dropdownRef, serviceDropdownRef, animalDropdownRef, showTimeDropdown, timeDropdownRef]);
 
   const toggleCollapseAll = () => {
     if (allCollapsed) {
@@ -87,7 +155,14 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
     setAllCollapsed(!allCollapsed);
   };
 
-  const handleAddService = () => {
+  const simulateApiCall = async (method, data) => {
+    console.log(`Simulating ${method} API call with data:`, data);
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return { success: true };
+  };
+
+  const handleAddService = async () => {
     setShowValidationErrors(true);
     
     const areAdditionalRatesValid = additionalRates.every(rate => 
@@ -101,34 +176,61 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
       currentService.animalTypes.trim() &&
       currentService.lengthOfService &&
       (currentService.rates.base_rate) &&
+      selectedCategories.length > 0 &&
       (additionalRates.length === 0 || areAdditionalRatesValid)
     ) {
       const updatedService = {
         ...currentService,
-        additionalRates,
+        categories: selectedCategories,
+        rates: {
+          ...currentService.rates,
+          ...additionalRates.reduce((acc, rate) => ({
+            ...acc,
+            [rate.label]: { value: rate.value, description: rate.description }
+          }), {})
+        }
       };
 
-      if (currentService.index !== undefined) {
-        setServices((prevServices) =>
-          prevServices.map((service, index) =>
-            index === currentService.index ? updatedService : service
-          )
-        );
-      } else {
-        setServices((prevServices) => [...prevServices, updatedService]);
-      }
+      try {
+        if (currentService.index !== undefined) {
+          // Simulate PUT request
+          await simulateApiCall('PUT', {
+            serviceId: currentService.index,
+            data: updatedService
+          });
+          
+          setServices((prevServices) =>
+            prevServices.map((service, index) =>
+              index === currentService.index ? updatedService : service
+            )
+          );
+        } else {
+          // Simulate POST request
+          await simulateApiCall('POST', updatedService);
+          
+          setServices((prevServices) => [...prevServices, updatedService]);
+        }
 
-      setCurrentService({
-        serviceName: '',
-        animalTypes: '',
-        rates: { base_rate: ''},
-        additionalAnimalRate: '',
-        lengthOfService: '',
-      });
-      setAdditionalRates([]);
-      setModalVisible(false);
-      setHasUnsavedChanges(true);
-      setShowValidationErrors(false);
+        setCurrentService({
+          serviceName: '',
+          serviceDescription: '',
+          animalTypes: '',
+          rates: { 
+            base_rate: '',
+            additionalAnimalRate: '',
+            holidayRate: ''
+          },
+          lengthOfService: '',
+          categories: [],
+        });
+        setAdditionalRates([]);
+        setModalVisible(false);
+        setHasUnsavedChanges(true);
+        setShowValidationErrors(false);
+      } catch (error) {
+        console.error('Error saving service:', error);
+        Alert.alert('Error', 'Failed to save service');
+      }
     }
   };
 
@@ -141,38 +243,15 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
 
   const handleServiceTypeChange = (text) => {
     setCurrentService((prev) => ({ ...prev, serviceName: text }));
-    if (text.trim()) {
-      const filteredSuggestions = SERVICE_TYPE_SUGGESTIONS.filter((suggestion) =>
-        suggestion.toLowerCase().includes(text.toLowerCase())
-      ).slice(0, 5);
-      setServiceTypeSuggestions(filteredSuggestions);
-      measureDropdown(serviceInputRef, setServiceDropdownPosition, 'service');
-      setShowServiceDropdown(true);
-    } else {
-      setServiceTypeSuggestions([]);
-      setShowServiceDropdown(false);
-    }
   };
 
   const handleAnimalTypeChange = (text) => {
     setCurrentService((prev) => ({ ...prev, animalTypes: text }));
-    if (text.trim()) {
-      const filteredSuggestions = ANIMAL_TYPE_SUGGESTIONS.filter((suggestion) =>
-        suggestion.toLowerCase().startsWith(text.toLowerCase())
-      ).slice(0, 5);
-      setAnimalTypeSuggestions(filteredSuggestions);
-      measureDropdown(animalInputRef, setAnimalDropdownPosition, 'animal');
-      setShowAnimalDropdown(true);
-    } else {
-      setAnimalTypeSuggestions([]);
-      setShowAnimalDropdown(false);
-    }
   };
 
   const measureDropdown = (inputRef, setPosition, inputType) => {
     if (inputRef.current) {
       inputRef.current.measure((x, y, width, height, pageX, pageY) => {
-        console.log('x: ', x, 'y: ', y, 'width: ', width, 'height: ', height, 'pageX: ', pageX, 'pageY: ', pageY);
         if (inputType === 'animal') {
           setPosition({ 
             top: y + height - 6, // Offset for animal dropdown
@@ -208,9 +287,43 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
     );
   };
 
-  const handleDeleteService = (index) => {
-    setServiceToDelete(index);
-    setShowDeleteModal(true);
+  const handleDeleteService = async (index) => {
+    try {
+      // Simulate DELETE request
+      await simulateApiCall('DELETE', { serviceId: index });
+      
+      setServices(prevServices => 
+        prevServices.filter((_, i) => i !== serviceToDelete)
+      );
+      setHasUnsavedChanges(true);
+      setShowDeleteModal(false);
+    } catch (error) {
+      console.error('Error deleting service:', error);
+      Alert.alert('Error', 'Failed to delete service');
+    }
+  };
+
+  const handleCategorySelect = (category) => {
+    setSelectedCategories(prev => {
+      if (prev.includes(category)) {
+        return prev.filter(c => c !== category);
+      }
+      return [...prev, category];
+    });
+  };
+
+  const getFilteredServiceSuggestions = () => {
+    if (!currentService?.serviceName) return SERVICE_TYPE_SUGGESTIONS;
+    return SERVICE_TYPE_SUGGESTIONS.filter(suggestion =>
+      suggestion.toLowerCase().includes(currentService.serviceName.toLowerCase())
+    );
+  };
+
+  const getFilteredAnimalSuggestions = () => {
+    if (!currentService?.animalTypes) return ANIMAL_TYPE_SUGGESTIONS;
+    return ANIMAL_TYPE_SUGGESTIONS.filter(suggestion =>
+      suggestion.toLowerCase().includes(currentService.animalTypes.toLowerCase())
+    );
   };
 
   const renderServiceCard = ({ item, index }) => {
@@ -218,7 +331,12 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
     return (
       <View style={[styles.serviceCard, isCollapsed && styles.collapsedCard]}>
         <View style={[styles.topRow, isCollapsed && styles.collapsedTopRow]}>
-          <Text style={styles.serviceName}>{item.serviceName}</Text>
+          <View style={styles.serviceInfo}>
+            <Text style={styles.serviceName}>{item.serviceName}</Text>
+            {!isCollapsed && item.serviceDescription && (
+              <Text style={styles.serviceDescription}>{item.serviceDescription}</Text>
+            )}
+          </View>
           {!isCollapsed && (
             <View style={styles.topRowIcons}>
               <TouchableOpacity 
@@ -239,7 +357,8 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
         
         <View style={[styles.middleRow, isCollapsed && styles.collapsedMiddleRow]}>
           <Text style={styles.rateText}>Base Rate: ${item.rates.base_rate || 'N/A'}</Text>
-          <Text style={styles.rateText}>Additional Animal: ${item.additionalAnimalRate || 'N/A'}</Text>
+          <Text style={styles.rateText}>Additional Animal: ${item.rates.additionalAnimalRate || 'N/A'}</Text>
+          {!isCollapsed && <Text style={styles.rateText}>Holiday Rate: ${item.rates.holidayRate || 'N/A'}</Text>}
           {!isCollapsed && <Text style={styles.rateText}>Duration: {item.lengthOfService || 'N/A'}</Text>}
           {!isCollapsed && item.additionalRates?.map((rate, idx) => (
             <Text key={idx} style={styles.rateText}>
@@ -291,10 +410,15 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
             onPress={() => {
               setCurrentService({
                 serviceName: '',
+                serviceDescription: '',
                 animalTypes: '',
-                rates: { base_rate: ''},
-                additionalAnimalRate: '',
+                rates: { 
+                  base_rate: '',
+                  additionalAnimalRate: '',
+                  holidayRate: ''
+                },
                 lengthOfService: '',
+                categories: [],
               });
               setModalVisible(true);
             }}
@@ -327,43 +451,59 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
               <Text style={styles.modalTitle}>
                 {currentService?.index !== undefined ? 'Edit Service' : 'Add New Service'}
               </Text>
-              <View style={[styles.inputWrapper, { zIndex: 3 }]}>
-                <Text style={styles.inputLabel}>Service Name</Text>
-                <TextInput
-                  ref={serviceInputRef}
-                  style={[
-                    styles.input,
-                    showValidationErrors && !currentService?.serviceName?.trim() && styles.inputError
-                  ]}
-                  placeholder="Service Name"
-                  placeholderTextColor={theme.colors.placeHolderText}
-                  value={currentService?.serviceName}
-                  onChangeText={handleServiceTypeChange}
-                />
-                {showServiceDropdown && (
-                  <View style={[styles.suggestionsContainer, serviceDropdownPosition]}>
-                    {serviceTypeSuggestions.map((suggestion, index) => (
-                      <TouchableOpacity
-                        key={index}
-                        onPress={() => {
-                          setCurrentService((prev) => ({ ...prev, serviceName: suggestion }));
-                          setShowServiceDropdown(false);
-                        }}
-                      >
-                        <Text 
-                          style={[
-                            styles.suggestionText,
-                            index === serviceTypeSuggestions.length - 1 && { borderBottomWidth: 0 }
-                          ]}
+              <View style={[styles.inputWrapper, { zIndex: 4 }]}>
+                <Text style={styles.inputLabel}>General Categories</Text>
+                <TouchableOpacity
+                  ref={categoryInputRef}
+                  style={[styles.input, styles.categoryInput]}
+                  onPress={() => {
+                    measureDropdown(categoryInputRef, setCategoryDropdownPosition, 'category');
+                    setShowCategoryDropdown(!showCategoryDropdown);
+                  }}
+                >
+                  <Text style={selectedCategories.length ? styles.selectedText : styles.placeholderText}>
+                    {selectedCategories.length ? selectedCategories.join(', ') : 'Select categories'}
+                  </Text>
+                  <MaterialCommunityIcons 
+                    name={showCategoryDropdown ? "chevron-up" : "chevron-down"} 
+                    size={24} 
+                    color={theme.colors.primary} 
+                  />
+                </TouchableOpacity>
+                {showCategoryDropdown && (
+                  <View 
+                    ref={ref => setDropdownRef(ref)}
+                    style={[styles.categoryDropdownContainer, categoryDropdownPosition]}
+                  >
+                    <ScrollView 
+                      style={styles.categoryScrollView}
+                      nestedScrollEnabled={true}
+                      showsVerticalScrollIndicator={true}
+                      persistentScrollbar={true}
+                    >
+                      {GENERAL_CATEGORIES.map((category, index) => (
+                        <TouchableOpacity
+                          key={index}
+                          onPress={() => handleCategorySelect(category)}
+                          style={styles.categoryItem}
                         >
-                          {suggestion}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
+                          <Text style={styles.categoryText}>{category}</Text>
+                          <View style={styles.checkmarkContainer}>
+                            {selectedCategories.includes(category) && (
+                              <MaterialCommunityIcons 
+                                name="check" 
+                                size={20} 
+                                color={theme.colors.primary} 
+                              />
+                            )}
+                          </View>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
                   </View>
                 )}
               </View>
-              <View style={[styles.inputWrapper, { zIndex: 2 }]}>
+              <View style={[styles.inputWrapper, { zIndex: 3 }]}>
                 <Text style={styles.inputLabel}>Animal Type</Text>
                 <TextInput
                   ref={animalInputRef}
@@ -375,33 +515,98 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
                   placeholderTextColor={theme.colors.placeHolderText}
                   value={currentService?.animalTypes}
                   onChangeText={handleAnimalTypeChange}
+                  onFocus={() => {
+                    setShowAnimalDropdown(true);
+                    measureDropdown(animalInputRef, setAnimalDropdownPosition, 'animal');
+                  }}
                 />
                 {showAnimalDropdown && (
-                  <View style={[styles.suggestionsContainer, animalDropdownPosition]}>
-                    {animalTypeSuggestions.map((suggestion, index) => (
-                      <TouchableOpacity
-                        key={index}
-                        onPress={() => {
-                          setCurrentService((prev) => ({ ...prev, animalTypes: suggestion }));
-                          setShowAnimalDropdown(false);
-                        }}
-                      >
-                        <Text 
-                          style={[
-                            styles.suggestionText,
-                            index === animalTypeSuggestions.length - 1 && { borderBottomWidth: 0 }
-                          ]}
+                  <View 
+                    ref={ref => setAnimalDropdownRef(ref)}
+                    style={[styles.suggestionsContainer, animalDropdownPosition]}
+                  >
+                    <ScrollView 
+                      style={styles.suggestionScrollView}
+                      nestedScrollEnabled={true}
+                      showsVerticalScrollIndicator={true}
+                      persistentScrollbar={true}
+                    >
+                      {getFilteredAnimalSuggestions().map((suggestion, index) => (
+                        <TouchableOpacity
+                          key={index}
+                          onPress={() => {
+                            setCurrentService((prev) => ({ ...prev, animalTypes: suggestion }));
+                            setShowAnimalDropdown(false);
+                          }}
                         >
-                          {suggestion}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
+                          <Text style={styles.suggestionText}>{suggestion}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </View>
+                )}
+              </View>
+              <View style={[styles.inputWrapper, { zIndex: 2 }]}>
+                <Text style={styles.inputLabel}>Service Name</Text>
+                <TextInput
+                  ref={serviceInputRef}
+                  style={[
+                    styles.input,
+                    showValidationErrors && !currentService?.serviceName?.trim() && styles.inputError
+                  ]}
+                  placeholder="Service Name"
+                  placeholderTextColor={theme.colors.placeHolderText}
+                  value={currentService?.serviceName}
+                  onChangeText={handleServiceTypeChange}
+                  onFocus={() => {
+                    setShowServiceDropdown(true);
+                    measureDropdown(serviceInputRef, setServiceDropdownPosition, 'service');
+                  }}
+                />
+                {showServiceDropdown && (
+                  <View 
+                    ref={ref => setServiceDropdownRef(ref)}
+                    style={[styles.suggestionsContainer, serviceDropdownPosition]}
+                  >
+                    <ScrollView 
+                      style={styles.suggestionScrollView}
+                      nestedScrollEnabled={true}
+                      showsVerticalScrollIndicator={true}
+                      persistentScrollbar={true}
+                    >
+                      {getFilteredServiceSuggestions().map((suggestion, index) => (
+                        <TouchableOpacity
+                          key={index}
+                          onPress={() => {
+                            setCurrentService((prev) => ({ ...prev, serviceName: suggestion }));
+                            setShowServiceDropdown(false);
+                          }}
+                        >
+                          <Text style={styles.suggestionText}>{suggestion}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
                   </View>
                 )}
               </View>
               <View style={[styles.inputWrapper, { zIndex: 1 }]}>
+                <Text style={styles.inputLabel}>Service Description</Text>
+                <TextInput
+                  style={[styles.input, styles.descriptionInput]}
+                  placeholder="Detailed description of service (Helps with search results)"
+                  placeholderTextColor={theme.colors.placeHolderText}
+                  value={currentService?.serviceDescription}
+                  onChangeText={(text) => 
+                    setCurrentService(prev => ({ ...prev, serviceDescription: text }))
+                  }
+                  multiline={true}
+                  numberOfLines={3}
+                />
+              </View>
+              <View style={[styles.inputWrapper, { zIndex: 1 }]}>
                 <Text style={styles.inputLabel}>Length of Service</Text>
                 <TouchableOpacity
+                  ref={timeInputRef}
                   style={[
                     styles.input,
                     styles.customDropdown,
@@ -422,7 +627,10 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
                 </TouchableOpacity>
                 
                 {showTimeDropdown && (
-                  <View style={styles.timeDropdownContainer}>
+                  <View 
+                    ref={ref => setTimeDropdownRef(ref)}
+                    style={styles.timeDropdownContainer}
+                  >
                     {TIME_OPTIONS.map((time) => (
                       <TouchableOpacity
                         key={time}
@@ -465,16 +673,40 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
                 style={[
                   styles.input, 
                   styles.additionalAnimalRate,
-                  showValidationErrors && !currentService?.additionalAnimalRate?.trim() && styles.inputError
+                  showValidationErrors && !currentService?.rates?.additionalAnimalRate?.trim() && styles.inputError
                 ]}
                 placeholder="$ Ex. 20"
                 placeholderTextColor={theme.colors.placeHolderText}
                 keyboardType="decimal-pad"
-                value={currentService?.additionalAnimalRate ? `$${currentService.additionalAnimalRate}` : ''}
+                value={currentService?.rates?.additionalAnimalRate ? `$${currentService.rates.additionalAnimalRate}` : ''}
                 onChangeText={(value) =>
                   setCurrentService((prev) => ({ 
                     ...prev, 
-                    additionalAnimalRate: value.replace(/[^0-9.]/g, '').replace('$', '') 
+                    rates: {
+                      ...prev.rates,
+                      additionalAnimalRate: value.replace(/[^0-9.]/g, '').replace('$', '')
+                    }
+                  }))
+                }
+              />
+              <Text style={styles.inputLabel}>Holiday Rate</Text>
+              <TextInput
+                style={[
+                  styles.input, 
+                  styles.additionalAnimalRate,
+                  showValidationErrors && !currentService?.rates?.holidayRate?.trim() && styles.inputError
+                ]}
+                placeholder="$ Ex. 30"
+                placeholderTextColor={theme.colors.placeHolderText}
+                keyboardType="decimal-pad"
+                value={currentService?.rates?.holidayRate ? `$${currentService.rates.holidayRate}` : ''}
+                onChangeText={(value) =>
+                  setCurrentService((prev) => ({ 
+                    ...prev, 
+                    rates: {
+                      ...prev.rates,
+                      holidayRate: value.replace(/[^0-9.]/g, '').replace('$', '')
+                    }
                   }))
                 }
               />
@@ -682,19 +914,25 @@ const styles = StyleSheet.create({
   },
   suggestionsContainer: {
     position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
     backgroundColor: theme.colors.surface,
-    borderWidth: 1,
+    borderRadius: 8,
+    borderWidth: 2,
     borderColor: theme.colors.border,
-    borderRadius: 5,
-    elevation: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    marginTop: 5,
-    maxHeight: 150,
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    maxHeight: 200,
     overflow: 'hidden',
-  },  
+  },
+  suggestionScrollView: {
+    maxHeight: 200,
+    overflow: 'scroll',
+  },
   suggestionText: {
     padding: 10,
     borderBottomWidth: 1,
@@ -917,7 +1155,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: theme.colors.surface,
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: theme.colors.border,
     borderRadius: 5,
     marginTop: 2,
@@ -952,6 +1190,84 @@ const styles = StyleSheet.create({
   inputWrapper: {
     position: 'relative',
     marginBottom: 5,
+  },
+  categoryInput: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingRight: 10,
+  },
+  categoryItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  categoryText: {
+    fontSize: theme.fontSizes.medium,
+    color: theme.colors.text,
+  },
+  selectedText: {
+    color: theme.colors.text,
+  },
+  placeholderText: {
+    color: theme.colors.placeHolderText,
+  },
+  categoryDropdownContainer: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    backgroundColor: theme.colors.surface,
+    borderRadius: 5,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    maxHeight: 200,
+    overflow: 'hidden',
+  },
+  categoryScrollView: {
+    maxHeight: 200,
+    overflow: 'scroll',
+  },
+  categoryItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+  },
+  categoryText: {
+    fontSize: theme.fontSizes.medium,
+    color: theme.colors.text,
+    flex: 1,
+  },
+  checkmarkContainer: {
+    width: 24,
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  descriptionInput: {
+    height: 80,
+    textAlignVertical: 'top',
+    paddingTop: 10,
+  },
+  serviceInfo: {
+    flex: 1,
+    marginRight: 10,
+  },
+  serviceDescription: {
+    fontSize: theme.fontSizes.small,
+    color: theme.colors.textSecondary,
+    marginTop: 5,
   },
 });
 
