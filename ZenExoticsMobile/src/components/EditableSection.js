@@ -78,6 +78,8 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.surface,
     padding: 10,
     borderRadius: 5,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   fieldText: {
     width: '100%',

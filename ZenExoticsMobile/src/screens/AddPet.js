@@ -8,7 +8,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { format } from 'date-fns';
 import { theme } from '../styles/theme';
 import FloatingSaveButton from '../components/FloatingSaveButton';
-
+import DatePicker from '../components/DatePicker';
 const { width: screenWidth } = Dimensions.get('window');
 
 const WebInput = ({ label, value, onChangeText, type = 'text', style }) => {
@@ -250,14 +250,12 @@ const AddPet = ({ route }) => {
         </Text>
       </TouchableOpacity>
       {showDatePicker && (
-        <DateTimePicker
+        <DatePicker
           value={estimatedBirthday}
-          mode="date"
-          display="default"
-          onChange={(event, selectedDate) => {
-            if (selectedDate) {
-              setEstimatedBirthday(selectedDate);
-              calculateAge(selectedDate); // Calculate age when date is selected
+          onChange={(date) => {
+            if (date) {
+              setEstimatedBirthday(date);
+              calculateAge(date); // Calculate age when date is selected
               setHasUnsavedChanges(true); // Set hasUnsavedChanges to true when date is selected
             }
             setShowDatePicker(false);
@@ -764,6 +762,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     marginBottom: 8,
+    marginTop: 16,
     textAlign: 'center', // Center the label text
   },
   boldLabel: {
