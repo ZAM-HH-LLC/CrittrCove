@@ -337,34 +337,35 @@ const BookingDetails = () => {
     setShowAddOccurrenceModal(false);
   };
 
+  const handleDateTimeCardPress = (occurrence) => {
+    setSelectedOccurrence(occurrence);
+    setShowEditOccurrenceModal(true);
+  };
+
   const renderDateTimeSection = () => (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Date & Time</Text>
       {booking?.occurrences?.map((occurrence, index) => (
-        <TouchableOpacity
+        <TouchableOpacity 
           key={index}
           style={styles.occurrenceCard}
-          onPress={() => isProfessional && setSelectedOccurrence(occurrence)}
+          onPress={() => handleDateTimeCardPress(occurrence)}
         >
           <View style={styles.occurrenceDetails}>
-            <Text style={styles.occurrenceDate}>
+            <Text style={styles.dateText}>
               {format(new Date(occurrence.startDate), 'MMM d, yyyy')}
             </Text>
-            <Text style={styles.occurrenceTime}>
-              {formatTimeString(occurrence.startDate, occurrence.startTime)} - 
-              {formatTimeString(occurrence.endDate, occurrence.endTime)}
+            <Text style={styles.timeText}>
+              {`${occurrence.startTime} - ${occurrence.endTime}`}
             </Text>
           </View>
           {isProfessional && (
-            <TouchableOpacity
+            <TouchableOpacity 
               style={styles.editOccurrenceButton}
-              onPress={() => {
-                setSelectedOccurrence(occurrence);
-                setShowEditOccurrenceModal(true);
-              }}
+              onPress={() => handleDateTimeCardPress(occurrence)}
             >
               <MaterialCommunityIcons name="pencil" size={20} color={theme.colors.primary} />
-              <Text style={styles.editOccurrenceText}>Edit Occurrence</Text>
+              <Text style={styles.editOccurrenceText}>Edit</Text>
             </TouchableOpacity>
           )}
         </TouchableOpacity>
@@ -489,7 +490,6 @@ const BookingDetails = () => {
       <BackHeader
         title="Booking Details"
         onBackPress={() => navigation.goBack()}
-        rightComponent={renderEditButton()}
       />
       <ScrollView style={styles.container}>
         <StatusBadge status={booking.status} />
@@ -505,7 +505,20 @@ const BookingDetails = () => {
         {renderDateTimeSection()}
 
         <View style={[styles.section, { zIndex: 2 }]}>
-          <Text style={styles.sectionTitle}>Service Details</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Service Details</Text>
+            <TouchableOpacity 
+              onPress={toggleEditMode}
+              style={styles.sectionEditButton}
+              testID="edit-button"
+            >
+              <MaterialCommunityIcons 
+                name={isEditMode ? "check" : "pencil"} 
+                size={24} 
+                color={theme.colors.primary} 
+              />
+            </TouchableOpacity>
+          </View>
           {isEditMode ? (
             <View style={{ zIndex: 3 }}>
               <View style={[styles.editRow, { zIndex: 3 }]}>
@@ -621,11 +634,11 @@ const BookingDetails = () => {
             </View>
           ) : (
             <View>
-              <Text style={styles.label}>Service Type:</Text>
+              <Text style={[styles.label, {fontSize: 14}]}>Service Type:</Text>
               <Text style={styles.text}>{booking.serviceType}</Text>
-              <Text style={styles.label}>Animal Type:</Text>
+              <Text style={[styles.label, {fontSize: 14}]}>Animal Type:</Text>
               <Text style={styles.text}>{booking.animalType}</Text>
-              <Text style={styles.label}>Number of Pets:</Text>
+              <Text style={[styles.label, {fontSize: 14}]}>Number of Pets:</Text>
               <Text style={styles.text}>{booking.numberOfPets}</Text>
             </View>
           )}
@@ -1103,12 +1116,12 @@ const styles = StyleSheet.create({
   occurrenceDetails: {
     flex: 1,
   },
-  occurrenceDate: {
+  dateText: {
     fontSize: 16,
     fontWeight: '500',
     marginBottom: 4,
   },
-  occurrenceTime: {
+  timeText: {
     fontSize: 14,
     color: theme.colors.placeholder,
   },
@@ -1171,6 +1184,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingVertical: 4,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  sectionEditButton: {
+    padding: 8,
   },
 });
 

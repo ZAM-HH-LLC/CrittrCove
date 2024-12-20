@@ -35,12 +35,32 @@ const EditOccurrenceModal = ({ visible, onClose, onSave, occurrence }) => {
   };
 
   const handleSave = () => {
+    const sanitizedRates = {
+      baseRate: parseFloat(rates.baseRate) || 0,
+      additionalRates: rates.additionalRates.map(rate => ({
+        name: rate.name,
+        amount: parseFloat(rate.amount) || 0
+      }))
+    };
+
     onSave({
       ...occurrence,
-      rates: rates,
+      rates: sanitizedRates,
       totalCost: parseFloat(calculateTotal())
     });
     onClose();
+  };
+
+  const handleAdditionalRateChange = (index, field, value) => {
+    const updated = [...rates.additionalRates];
+    updated[index] = { 
+      ...updated[index], 
+      [field]: field === 'amount' ? parseFloat(value) || 0 : value 
+    };
+    setRates(prev => ({
+      ...prev,
+      additionalRates: updated
+    }));
   };
 
   if (!occurrence) return null;
@@ -73,7 +93,7 @@ const EditOccurrenceModal = ({ visible, onClose, onSave, occurrence }) => {
             </View>
 
             <View style={styles.rateSection}>
-              <Text style={styles.label}>Base Rate ($)</Text>
+              <Text style={[styles.label, {marginTop: 10}]}>Base Rate ($)</Text>
               <TextInput
                 style={styles.input}
                 value={rates.baseRate.toString()}
@@ -89,43 +109,34 @@ const EditOccurrenceModal = ({ visible, onClose, onSave, occurrence }) => {
               <Text style={styles.sectionTitle}>Additional Rates</Text>
               {rates.additionalRates.map((rate, index) => (
                 <View key={index} style={styles.additionalRate}>
+                  <View style={styles.additionalRateHeader}>
+                    <Text style={styles.additionalRateTitle}>{rate.name}</Text>
+                    <TouchableOpacity
+                      onPress={() => {
+                        setRates(prev => ({
+                          ...prev,
+                          additionalRates: prev.additionalRates.filter((_, i) => i !== index)
+                        }));
+                      }}
+                    >
+                      <MaterialCommunityIcons name="close" size={24} color={theme.colors.error} />
+                    </TouchableOpacity>
+                  </View>
+                  <Text style={styles.label}>Rate Name</Text>
                   <TextInput
                     style={styles.rateNameInput}
                     value={rate.name}
-                    onChangeText={(text) => {
-                      const updated = [...rates.additionalRates];
-                      updated[index] = { ...rate, name: text };
-                      setRates(prev => ({
-                        ...prev,
-                        additionalRates: updated
-                      }));
-                    }}
+                    onChangeText={(text) => handleAdditionalRateChange(index, 'name', text)}
                     placeholder="Rate Name"
                   />
+                  <Text style={styles.label}>Rate Amount</Text>
                   <TextInput
                     style={styles.rateAmountInput}
                     value={rate.amount.toString()}
-                    onChangeText={(text) => {
-                      const updated = [...rates.additionalRates];
-                      updated[index] = { ...rate, amount: parseFloat(text) || 0 };
-                      setRates(prev => ({
-                        ...prev,
-                        additionalRates: updated
-                      }));
-                    }}
+                    onChangeText={(text) => handleAdditionalRateChange(index, 'amount', text)}
                     keyboardType="decimal-pad"
                     placeholder="Amount"
                   />
-                  <TouchableOpacity
-                    onPress={() => {
-                      setRates(prev => ({
-                        ...prev,
-                        additionalRates: prev.additionalRates.filter((_, i) => i !== index)
-                      }));
-                    }}
-                  >
-                    <MaterialCommunityIcons name="close" size={24} color={theme.colors.error} />
-                  </TouchableOpacity>
                 </View>
               ))}
               
@@ -187,6 +198,7 @@ const styles = StyleSheet.create({
     maxWidth: 500,
     maxHeight: '80%',
     position: 'relative',
+    overflow: 'hidden',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -222,27 +234,26 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   additionalRate: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-    // marginLeft: 10,
-    // gap: 10,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 8,
+    padding: 15,
   },
   rateNameInput: {
-    flex: 2,
     borderWidth: 1,
     borderColor: theme.colors.border,
     borderRadius: 4,
     padding: 10,
+    marginBottom: 10,
+    width: '100%',
   },
   rateAmountInput: {
-    flex: 1,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    marginHorizontal: 10,
     borderRadius: 4,
     padding: 10,
+    width: '100%',
   },
   addRateButton: {
     flexDirection: 'row',
@@ -297,6 +308,17 @@ const styles = StyleSheet.create({
   saveButtonText: {
     color: theme.colors.surface,
     fontWeight: 'bold',
+  },
+  additionalRateHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  additionalRateTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: theme.colors.text,
   },
 });
 
