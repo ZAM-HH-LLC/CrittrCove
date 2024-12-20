@@ -365,6 +365,37 @@ const sharedBookingDetails = {
   animalType: 'Dog',
   numberOfPets: 2,
   duration: 2,
+  occurrences: [
+    {
+      id: 'occ1',
+      startDate: '2024-12-06',
+      endDate: '2024-12-06',
+      startTime: '14:00',
+      endTime: '16:00',
+      rates: {
+        baseRate: 20.00,
+        additionalRates: [
+          { name: 'Weekend Fee', amount: 5.00 },
+          { name: 'Premium Package', amount: 10.00 }
+        ]
+      },
+      totalCost: 35.00
+    },
+    {
+      id: 'occ2',
+      startDate: '2024-12-07',
+      endDate: '2024-12-07',
+      startTime: '14:00',
+      endTime: '16:00',
+      rates: {
+        baseRate: 20.00,
+        additionalRates: [
+          { name: 'Weekend Fee', amount: 5.00 }
+        ]
+      },
+      totalCost: 25.00
+    }
+  ],
   rates: {
     baseRate: 20.00,
     additionalPetRate: 5.00,

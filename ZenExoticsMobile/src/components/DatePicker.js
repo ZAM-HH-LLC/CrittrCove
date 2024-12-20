@@ -3,6 +3,10 @@ import { Platform, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { theme } from '../styles/theme';
 
+// Called in DefaultSettingsModal.js
+// Called in MyProfile.js
+// Called in BookingDetails.js
+
 const DatePicker = ({ 
   value, 
   onChange, 

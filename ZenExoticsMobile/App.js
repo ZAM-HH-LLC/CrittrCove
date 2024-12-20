@@ -106,6 +106,13 @@ const linking = {
   },
 };
 
+const globalStyles = `
+  input, textarea {
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+`;
+
 function TabNavigator() {
   return (
     <Tab.Navigator tabBar={props => <Navigation {...props} />}>
@@ -159,6 +166,20 @@ function AppContent() {
       }
     };
     checkAuth();
+  }, []);
+
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      // Create and append style element
+      const style = document.createElement('style');
+      style.textContent = globalStyles;
+      document.head.appendChild(style);
+
+      // Cleanup
+      return () => {
+        document.head.removeChild(style);
+      };
+    }
   }, []);
 
   if (initialRoute === null) {

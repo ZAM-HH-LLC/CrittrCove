@@ -36,7 +36,7 @@ const TimePicker = ({ label, value, onChange, fullWidth = false, containerStyle 
       borderWidth: 1,
       borderColor: theme.colors.border,
       borderRadius: 8,
-      backgroundColor: theme.colors.surface,
+      backgroundColor: theme.colors.whiteText,
       fontSize: 16,
       width: fullWidth ? 150 : '90%',
     };
@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
     borderRadius: 8,
     padding: 12,
-    backgroundColor: theme.colors.surface,
+    // backgroundColor: 'black',
     minHeight: 48,
   },
   compactTimeButton: {

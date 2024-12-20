@@ -13,6 +13,8 @@ import AddRateModal from '../components/AddRateModal';
 import { format } from 'date-fns';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import TimePicker from '../components/TimePicker';
+import EditOccurrenceModal from '../components/EditOccurrenceModal';
+import AddOccurrenceModal from '../components/AddOccurrenceModal';
 
 const LAST_VIEWED_BOOKING_ID = 'last_viewed_booking_id';
 
@@ -45,6 +47,11 @@ const BookingDetails = () => {
   const [showAdditionalPetRate, setShowAdditionalPetRate] = useState(true);
   const [showHolidayRate, setShowHolidayRate] = useState(true);
   const [showWeekendRate, setShowWeekendRate] = useState(true);
+  const [selectedOccurrence, setSelectedOccurrence] = useState(null);
+  const [showEditOccurrenceModal, setShowEditOccurrenceModal] = useState(false);
+  const [showAddOccurrenceModal, setShowAddOccurrenceModal] = useState(false);
+  const [expandedOccurrenceId, setExpandedOccurrenceId] = useState(null);
+  const isProfessional = true; // TODO: Get this from auth context
 
   useEffect(() => {
     // Define an async function inside useEffect to fetch booking data
@@ -288,565 +295,166 @@ const BookingDetails = () => {
     }
   };
 
-  const renderCostBreakdown = () => (
-    <View style={[styles.section, { zIndex: 1 }]}>
-      <Text style={styles.sectionTitle}>Cost Breakdown</Text>
-      
-      {isEditMode ? (
-        <View>
-          {/* Base Rate Section */}
-          <View style={[styles.rateSection, { zIndex: 3 }]}>
-            <Text style={styles.rateSectionTitle}>Base Rate</Text>
-            <View style={[styles.rateInputRow, { zIndex: 3 }]}>
-              <View style={styles.rateInputGroup}>
-                <Text style={styles.inputLabel}>Base Rate ($)</Text>
-                <TextInput
-                  style={styles.rateInput}
-                  value={editedBooking.rates.baseRate.toString()}
-                  onChangeText={(text) => {
-                    const rate = parseFloat(text) || 0;
-                    setEditedBooking(prev => ({
-                      ...prev,
-                      rates: {
-                        ...prev.rates,
-                        baseRate: rate
-                      }
-                    }));
-                    recalculateTotals();
-                  }}
-                  keyboardType="decimal-pad"
-                  placeholder="20.00"
-                />
-              </View>
+  const calculateTotalCosts = (occurrences) => {
+    const subtotal = occurrences.reduce((sum, occ) => sum + occ.totalCost, 0);
+    const clientFee = subtotal * 0.10; // 10% client fee
+    const taxes = subtotal * 0.09; // 9% tax
+    return {
+      subtotal,
+      clientFee,
+      taxes,
+      totalClientCost: subtotal + clientFee + taxes
+    };
+  };
 
-              <View style={[styles.rateInputGroup, { zIndex: 3 }]}>
-                <Text style={styles.inputLabel}>Time Unit</Text>
-                <TouchableOpacity
-                  style={styles.dropdownInput}
-                  onPress={() => {
-                    setShowTimeDropdown(!showTimeDropdown);
-                    setShowPetRateDropdown(false);
-                  }}
-                >
-                  <Text>{editedBooking.timeUnit || 'Hour'}</Text>
-                  <MaterialCommunityIcons 
-                    name={showTimeDropdown ? "chevron-up" : "chevron-down"} 
-                    size={20} 
-                    color={theme.colors.text} 
-                  />
-                </TouchableOpacity>
-                {showTimeDropdown && (
-                  <View style={[styles.dropdownList, { zIndex: 3 }]}>
-                    {['15 min', '30 min', 'Hour', 'Day'].map(unit => (
-                      <TouchableOpacity
-                        key={unit}
-                        style={styles.dropdownItem}
-                        onPress={() => {
-                          setEditedBooking(prev => ({
-                            ...prev,
-                            timeUnit: unit
-                          }));
-                          setShowTimeDropdown(false);
-                          recalculateTotals();
-                        }}
-                      >
-                        <Text>{unit}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                )}
-              </View>
+  const handleSaveOccurrence = (updatedOccurrence) => {
+    const updatedOccurrences = booking.occurrences.map(occ => 
+      occ.id === updatedOccurrence.id ? updatedOccurrence : occ
+    );
+    
+    // Update booking with new occurrences and recalculate costs
+    setBooking(prev => ({
+      ...prev,
+      occurrences: updatedOccurrences,
+      costs: calculateTotalCosts(updatedOccurrences)
+    }));
+    
+    setShowEditOccurrenceModal(false);
+  };
 
-              <View style={styles.rateInputGroup}>
-                <Text style={styles.inputLabel}>Quantity</Text>
-                <TextInput
-                  style={styles.rateInput}
-                  value={editedBooking?.quantity?.toString() || '1'}
-                  onChangeText={(text) => {
-                    const qty = parseInt(text) || 1;
-                    setEditedBooking(prev => ({
-                      ...prev,
-                      quantity: qty
-                    }));
-                    recalculateTotals();
-                  }}
-                  keyboardType="numeric"
-                  placeholder="1"
-                />
-              </View>
-            </View>
-          </View>
+  const handleAddOccurrence = (newOccurrence) => {
+    const updatedOccurrences = [...booking.occurrences, {
+      ...newOccurrence,
+      id: `occ${booking.occurrences.length + 1}`,
+    }];
+    
+    setBooking(prev => ({
+      ...prev,
+      occurrences: updatedOccurrences,
+      costs: calculateTotalCosts(updatedOccurrences)
+    }));
+    
+    setShowAddOccurrenceModal(false);
+  };
 
-          {/* Additional Rates Section */}
-          <View style={styles.rateSection}>
-            <Text style={styles.rateSectionTitle}>Additional Rates</Text>
-            
-            {/* Column Headers */}
-            <View style={styles.rateHeaderRow}>
-              <View style={styles.rateInputGroup}>
-                <Text style={styles.columnHeader}>Rate Title</Text>
-              </View>
-              <View style={[styles.rateInputGroup, styles.rateAmountColumn]}>
-                <Text style={styles.columnHeader}>Rate ($)</Text>
-              </View>
-              <View style={styles.actionButtons}>
-                {/* Empty space for alignment with buttons below */}
-              </View>
-            </View>
-
-            {/* Additional Pet Rate */}
-            {showAdditionalPetRate && (
-              <View key="additionalPetRate" style={styles.additionalRateRow}>
-                <View style={styles.rateInputGroup}>
-                  <TextInput
-                    style={styles.rateInput}
-                    value="Additional Pet Rate"
-                    editable={false}
-                  />
-                </View>
-                
-                <View style={styles.rateInputGroup}>
-                  <TextInput
-                    style={styles.rateInput}
-                    value={editedBooking.rates?.additionalPetRate?.toString() || '0'}
-                    onChangeText={(text) => {
-                      const rate = parseFloat(text) || 0;
-                      setEditedBooking(prev => ({
-                        ...prev,
-                        rates: {
-                          ...prev.rates,
-                          additionalPetRate: rate
-                        }
-                      }));
-                      recalculateTotals();
-                    }}
-                    keyboardType="decimal-pad"
-                    placeholder="0.00"
-                  />
-                </View>
-
-                <TouchableOpacity
-                  onPress={() => Alert.alert(
-                    'Additional Pet Rate',
-                    'This rate will be applied for each pet beyond the first pet included in the base rate.'
-                  )}
-                >
-                  <MaterialIcons 
-                    name="info-outline" 
-                    size={24} 
-                    color={theme.colors.primary} 
-                  />
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.removeButton}
-                  onPress={() => {
-                    setShowAdditionalPetRate(false);
-                    setEditedBooking(prev => ({
-                      ...prev,
-                      rates: {
-                        ...prev.rates,
-                        additionalPetRate: 0
-                      }
-                    }));
-                    recalculateTotals();
-                  }}
-                >
-                  <MaterialCommunityIcons 
-                    name="close-circle" 
-                    size={24} 
-                    color={theme.colors.error} 
-                  />
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {/* Holiday Rate */}
-            {showHolidayRate && (
-              <View key="holidayRate" style={styles.additionalRateRow}>
-                <View style={styles.rateInputGroup}>
-                  <TextInput
-                    style={styles.rateInput}
-                    value="Holiday Rate"
-                    editable={false}
-                  />
-                </View>
-                
-                <View style={styles.rateInputGroup}>
-                  <TextInput
-                    style={styles.rateInput}
-                    value={editedBooking.rates?.holidayFee?.toString() || '0'}
-                    onChangeText={(text) => {
-                      const rate = parseFloat(text) || 0;
-                      setEditedBooking(prev => ({
-                        ...prev,
-                        rates: {
-                          ...prev.rates,
-                          holidayFee: rate
-                        }
-                      }));
-                      recalculateTotals();
-                    }}
-                    keyboardType="decimal-pad"
-                    placeholder="0.00"
-                  />
-                </View>
-
-                <TouchableOpacity
-                  onPress={() => Alert.alert(
-                    'Holiday Rate',
-                    'Additional rate applied for bookings on holidays.'
-                  )}
-                >
-                  <MaterialIcons 
-                    name="info-outline" 
-                    size={24} 
-                    color={theme.colors.primary} 
-                  />
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.removeButton}
-                  onPress={() => {
-                    setShowHolidayRate(false);
-                    setEditedBooking(prev => ({
-                      ...prev,
-                      rates: {
-                        ...prev.rates,
-                        holidayFee: 0
-                      }
-                    }));
-                    recalculateTotals();
-                  }}
-                >
-                  <MaterialCommunityIcons 
-                    name="close-circle" 
-                    size={24} 
-                    color={theme.colors.error} 
-                  />
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {/* Weekend Rate */}
-            {showWeekendRate && (
-              <View key="weekendRate" style={styles.additionalRateRow}>
-                <View style={styles.rateInputGroup}>
-                  <TextInput
-                    style={styles.rateInput}
-                    value="Weekend Rate"
-                    editable={false}
-                  />
-                </View>
-                
-                <View style={styles.rateInputGroup}>
-                  <TextInput
-                    style={styles.rateInput}
-                    value={editedBooking.rates?.weekendFee?.toString() || '0'}
-                    onChangeText={(text) => {
-                      const rate = parseFloat(text) || 0;
-                      setEditedBooking(prev => ({
-                        ...prev,
-                        rates: {
-                          ...prev.rates,
-                          weekendFee: rate
-                        }
-                      }));
-                      recalculateTotals();
-                    }}
-                    keyboardType="decimal-pad"
-                    placeholder="0.00"
-                  />
-                </View>
-
-                <TouchableOpacity
-                  onPress={() => Alert.alert(
-                    'Weekend Rate',
-                    'Additional rate applied for bookings on weekends.'
-                  )}
-                >
-                  <MaterialIcons 
-                    name="info-outline" 
-                    size={24} 
-                    color={theme.colors.primary} 
-                  />
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.removeButton}
-                  onPress={() => {
-                    setShowWeekendRate(false);
-                    setEditedBooking(prev => ({
-                      ...prev,
-                      rates: {
-                        ...prev.rates,
-                        weekendFee: 0
-                      }
-                    }));
-                    recalculateTotals();
-                  }}
-                >
-                  <MaterialCommunityIcons 
-                    name="close-circle" 
-                    size={24} 
-                    color={theme.colors.error} 
-                  />
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {/* Other Additional Rates */}
-            {editedBooking.rates.extraServices.map((service, index) => (
-              <View key={index} style={styles.additionalRateRow}>
-                <View style={styles.rateInputGroup}>
-                  <TextInput
-                    style={styles.rateInput}
-                    value={service.name}
-                    onChangeText={(text) => {
-                      const updatedServices = [...editedBooking.rates.extraServices];
-                      updatedServices[index] = { ...service, name: text };
-                      setEditedBooking(prev => ({
-                        ...prev,
-                        rates: {
-                          ...prev.rates,
-                          extraServices: updatedServices
-                        }
-                      }));
-                    }}
-                    placeholder="Rate Title"
-                  />
-                </View>
-                
-                <View style={styles.rateInputGroup}>
-                  <TextInput
-                    style={styles.rateInput}
-                    value={service.amount.toString()}
-                    onChangeText={(text) => {
-                      const amount = parseFloat(text) || 0;
-                      const updatedServices = [...editedBooking.rates.extraServices];
-                      updatedServices[index] = { ...service, amount };
-                      setEditedBooking(prev => ({
-                        ...prev,
-                        rates: {
-                          ...prev.rates,
-                          extraServices: updatedServices
-                        }
-                      }));
-                      recalculateTotals();
-                    }}
-                    keyboardType="decimal-pad"
-                    placeholder="0.00"
-                  />
-                </View>
-
-                <MaterialIcons 
-                  name="info-outline" 
-                  size={24} 
-                  color={theme.colors.primary} 
-                />
-
-                <TouchableOpacity
-                  style={styles.removeButton}
-                  onPress={() => handleRemoveRate(index)}
-                >
-                  <MaterialCommunityIcons 
-                    name="close-circle" 
-                    size={24} 
-                    color={theme.colors.error} 
-                  />
-                </TouchableOpacity>
-              </View>
-            ))}
-
-            <TouchableOpacity
-              style={styles.addRateButton}
-              onPress={() => setShowAddRateModal(true)}
-            >
-              <MaterialCommunityIcons 
-                name="plus-circle" 
-                size={24} 
-                color={theme.colors.primary} 
-              />
-              <Text style={styles.addRateText}>Add Rate</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Summary Section */}
-          <View style={styles.summarySection}>
-            <Text style={styles.rateSectionTitle}>Summary</Text>
-            <View style={styles.summaryRow}>
-              <Text>Subtotal:</Text>
-              <Text>${editedBooking.costs.subtotal.toFixed(2)}</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text>Client Fee (10%):</Text>
-              <Text>${editedBooking.costs.clientFee.toFixed(2)}</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text>Taxes (9%):</Text>
-              <Text>${editedBooking.costs.taxes.toFixed(2)}</Text>
-            </View>
-            <View style={[styles.summaryRow, styles.totalRow]}>
-              <Text style={styles.totalLabel}>Total Client Cost:</Text>
-              <Text style={styles.totalAmount}>
-                ${editedBooking.costs.totalClientCost.toFixed(2)}
-              </Text>
-            </View>
-            <View style={[styles.summaryRow, styles.payoutRow]}>
-              <Text style={styles.payoutLabel}>Professional Payout:</Text>
-              <Text style={styles.payoutAmount}>
-                ${editedBooking.costs.professionalPayout.toFixed(2)}
-              </Text>
-            </View>
-          </View>
-        </View>
-      ) : (
-        // Existing non-edit mode view
-        <View>
-          {/* <Text style={styles.label}>Service Type: {booking.serviceType}</Text> */}
-          
-          <View style={styles.costRow}>
-            <Text style={styles.costLabel}>
-              Base Rate: ${booking.rates.baseRate.toFixed(2)} x {booking.numberOfPets} Pets x {booking.duration} Hour
-            </Text>
-            <Text style={styles.costAmount}>
-              ${booking.costs.baseTotal.toFixed(2)}
-            </Text>
-          </View>
-
-          {booking.numberOfPets > 1 && (
-            <View style={styles.costRow}>
-              <Text style={styles.costLabel}>
-                Additional Pet Rate: ${booking.rates.additionalPetRate.toFixed(2)} x {booking.numberOfPets - 1} Pet
-              </Text>
-              <Text style={styles.costAmount}>
-                ${booking.costs.additionalPetTotal.toFixed(2)}
-              </Text>
-            </View>
-          )}
-
-          {booking.rates.extraServices.map((service, index) => (
-            <View key={index} style={styles.costRow}>
-              <Text style={styles.costLabel}>{service.name}:</Text>
-              <Text style={styles.costAmount}>
-                ${service.amount.toFixed(2)}
-              </Text>
-            </View>
-          ))}
-
-          <View style={styles.divider} />
-
-          <View style={styles.costRow}>
-            <Text style={styles.label}>Subtotal:</Text>
-            <Text style={styles.text}>${booking.costs.subtotal.toFixed(2)}</Text>
-          </View>
-          <View style={styles.costRow}>
-            <Text style={styles.label}>Client Fee:</Text>
-            <Text style={styles.text}>${booking.costs.clientFee.toFixed(2)}</Text>
-          </View>
-          <View style={styles.costRow}>
-            <Text style={styles.label}>Taxes:</Text>
-            <Text style={styles.text}>${booking.costs.taxes.toFixed(2)}</Text>
-          </View>
-
-          <View style={styles.divider} />
-
-          <View style={[styles.costRow, styles.totalRow]}>
-            <Text style={styles.totalLabel}>Total Client Cost:</Text>
-            <Text style={styles.totalAmount}>
-              ${booking.costs.totalClientCost.toFixed(2)}
-            </Text>
-          </View>
-          <View style={[styles.costRow, styles.payoutRow]}>
-            <Text style={styles.payoutLabel}>Professional Payout:</Text>
-            <Text style={styles.payoutAmount}>
-              ${booking.costs.professionalPayout.toFixed(2)}
-            </Text>
-          </View>
-        </View>
-      )}
-    </View>
-  );
-
-  // Update the renderDateTimeSection to handle null values
   const renderDateTimeSection = () => (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Date & Time</Text>
-      {isEditMode ? (
-        <View>
-          <View style={styles.dateTimeRow}>
-            <View style={styles.dateTimeColumn}>
-              <Text style={styles.label}>Start Date:</Text>
-              <DatePicker
-                value={editedBooking?.startDate || new Date()}
-                onChange={(date) => {
-                  setEditedBooking(prev => ({
-                    ...prev,
-                    startDate: date
-                  }));
-                }}
-                placeholder="Select Start Date"
-              />
-              {/* <Text style={styles.label}>Start Time:</Text> */}
-              <TimePicker
-                label="Start Time:"
-                value={editedBooking?.startTime || new Date()}
-                onChange={(selectedTime) => {
-                  setEditedBooking(prev => ({
-                    ...prev,
-                    startTime: selectedTime
-                  }));
-                }}
-                showPicker={showStartTimePicker}
-                setShowPicker={setShowStartTimePicker}
-              />
-            </View>
-            <View style={styles.dateTimeColumn}>
-              <Text style={styles.label}>End Date:</Text>
-              <DatePicker
-                value={editedBooking?.endDate || new Date()}
-                onChange={(date) => {
-                  setEditedBooking(prev => ({
-                    ...prev,
-                    endDate: date
-                  }));
-                }}
-                placeholder="Select End Date"
-              />
-              {/* <Text style={styles.label}>End Time:</Text> */}
-              <TimePicker
-                label="End Time:"
-                value={editedBooking?.endTime || new Date()}
-                onChange={(selectedTime) => {
-                  setEditedBooking(prev => ({
-                    ...prev,
-                    endTime: selectedTime
-                  }));
-                }}
-                showPicker={showEndTimePicker}
-                setShowPicker={setShowEndTimePicker}
-              />
-            </View>
-          </View>
-        </View>
-      ) : (
-        <View style={styles.dateTimeRow}>
-          <View style={styles.dateTimeColumn}>
-            <Text style={styles.label}>Start:</Text>
-            <Text style={styles.text}>
-              {booking?.startDate} {booking?.startTime}
+      {booking?.occurrences?.map((occurrence, index) => (
+        <TouchableOpacity
+          key={index}
+          style={styles.occurrenceCard}
+          onPress={() => isProfessional && setSelectedOccurrence(occurrence)}
+        >
+          <View style={styles.occurrenceDetails}>
+            <Text style={styles.occurrenceDate}>
+              {format(new Date(occurrence.startDate), 'MMM d, yyyy')}
+            </Text>
+            <Text style={styles.occurrenceTime}>
+              {formatTimeString(occurrence.startDate, occurrence.startTime)} - 
+              {formatTimeString(occurrence.endDate, occurrence.endTime)}
             </Text>
           </View>
-          <View style={styles.dateTimeColumn}>
-            <Text style={styles.label}>End:</Text>
-            <Text style={styles.text}>
-              {booking?.endDate} {booking?.endTime}
-            </Text>
-          </View>
-        </View>
+          {isProfessional && (
+            <TouchableOpacity
+              style={styles.editOccurrenceButton}
+              onPress={() => {
+                setSelectedOccurrence(occurrence);
+                setShowEditOccurrenceModal(true);
+              }}
+            >
+              <MaterialCommunityIcons name="pencil" size={20} color={theme.colors.primary} />
+              <Text style={styles.editOccurrenceText}>Edit Occurrence</Text>
+            </TouchableOpacity>
+          )}
+        </TouchableOpacity>
+      ))}
+      
+      {isProfessional && (
+        <TouchableOpacity
+          style={styles.addOccurrenceButton}
+          onPress={() => setShowAddOccurrenceModal(true)}
+        >
+          <MaterialCommunityIcons name="plus" size={24} color={theme.colors.primary} />
+          <Text style={styles.addOccurrenceText}>Add Occurrence</Text>
+        </TouchableOpacity>
       )}
     </View>
   );
+
+  const renderCostBreakdown = () => (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>Cost Breakdown</Text>
+      
+      {booking?.occurrences?.map((occurrence, index) => (
+        <TouchableOpacity 
+          key={index}
+          style={styles.occurrenceCostRow}
+          onPress={() => setExpandedOccurrenceId(
+            expandedOccurrenceId === occurrence.id ? null : occurrence.id
+          )}
+        >
+          <View style={styles.occurrenceCostHeader}>
+            <Text>{format(new Date(occurrence.startDate), 'MMM d, yyyy')}</Text>
+            <View style={styles.costAndIcon}>
+              <Text style={styles.occurrenceCost}>
+                ${occurrence.totalCost.toFixed(2)}
+              </Text>
+              <MaterialCommunityIcons 
+                name={expandedOccurrenceId === occurrence.id ? "chevron-up" : "chevron-down"}
+                size={20} 
+                color={theme.colors.text} 
+              />
+            </View>
+          </View>
+          
+          {expandedOccurrenceId === occurrence.id && (
+            <View style={styles.expandedCostDetails}>
+              <View style={styles.costDetailRow}>
+                <Text>Base Rate:</Text>
+                <Text>${occurrence.rates.baseRate.toFixed(2)}</Text>
+              </View>
+              {occurrence.rates.additionalRates.map((rate, idx) => (
+                <View key={idx} style={styles.costDetailRow}>
+                  <Text>{rate.name}:</Text>
+                  <Text>${rate.amount.toFixed(2)}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+        </TouchableOpacity>
+      ))}
+
+      <View style={styles.costSummary}>
+        <View style={styles.summaryRow}>
+          <Text>Subtotal:</Text>
+          <Text>${booking.costs.subtotal.toFixed(2)}</Text>
+        </View>
+        <View style={styles.summaryRow}>
+          <Text>Client Fee (10%):</Text>
+          <Text>${booking.costs.clientFee.toFixed(2)}</Text>
+        </View>
+        <View style={styles.summaryRow}>
+          <Text>Taxes (9%):</Text>
+          <Text>${booking.costs.taxes.toFixed(2)}</Text>
+        </View>
+        <View style={[styles.summaryRow, styles.totalRow]}>
+          <Text style={styles.totalLabel}>Total:</Text>
+          <Text style={styles.totalAmount}>
+            ${booking.costs.totalClientCost.toFixed(2)}
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
+
+  const formatTimeString = (dateStr, timeStr) => {
+    if (!dateStr || !timeStr) return '';
+    const [hours, minutes] = timeStr.split(':');
+    const date = new Date(dateStr);
+    date.setHours(parseInt(hours, 10), parseInt(minutes, 10));
+    return format(date, 'h:mm a');
+  };
 
   if (loading) {
     return (
@@ -1073,6 +681,18 @@ const BookingDetails = () => {
           recalculateTotals();
           setShowAddRateModal(false);
         }}
+      />
+      <EditOccurrenceModal
+        visible={showEditOccurrenceModal}
+        onClose={() => setShowEditOccurrenceModal(false)}
+        onSave={handleSaveOccurrence}
+        occurrence={selectedOccurrence}
+      />
+      <AddOccurrenceModal
+        visible={showAddOccurrenceModal}
+        onClose={() => setShowAddOccurrenceModal(false)}
+        onAdd={handleAddOccurrence}
+        defaultRates={booking?.rates}
       />
     </CrossPlatformView>
   );
@@ -1468,6 +1088,89 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
     paddingBottom: 8,
+  },
+  occurrenceCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 15,
+    backgroundColor: theme.colors.surface,
+    borderRadius: 8,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  occurrenceDetails: {
+    flex: 1,
+  },
+  occurrenceDate: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  occurrenceTime: {
+    fontSize: 14,
+    color: theme.colors.placeholder,
+  },
+  editOccurrenceButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 20,
+  },
+  editOccurrenceText: {
+    color: theme.colors.primary,
+    marginLeft: 5,
+  },
+  addOccurrenceButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+    borderRadius: 8,
+    marginTop: 12,
+  },
+  addOccurrenceText: {
+    marginLeft: 8,
+    color: theme.colors.primary,
+    fontSize: 16,
+  },
+  occurrenceCostRow: {
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    paddingVertical: 12,
+  },
+  occurrenceCostHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  costAndIcon: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  occurrenceCost: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  costSummary: {
+    marginTop: 20,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+  },
+  expandedCostDetails: {
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+  },
+  costDetailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 4,
   },
 });
 
