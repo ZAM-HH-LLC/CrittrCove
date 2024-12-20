@@ -4,7 +4,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { theme } from '../styles/theme';
 import CrossPlatformView from '../components/CrossPlatformView';
 import BackHeader from '../components/BackHeader';
-import { fetchBookingDetails } from '../data/mockData';
+import { fetchBookingDetails, createBooking } from '../data/mockData';
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DatePicker from '../components/DatePicker';
@@ -18,7 +18,9 @@ import AddOccurrenceModal from '../components/AddOccurrenceModal';
 
 const LAST_VIEWED_BOOKING_ID = 'last_viewed_booking_id';
 
+// Replace with Services that professional offers
 const SERVICE_OPTIONS = ['Dog Walking', 'Pet Sitting', 'House Sitting', 'Drop-In Visits'];
+// Replace with Animals that the professional cares for
 const ANIMAL_OPTIONS = ['Dog', 'Cat', 'Bird', 'Small Animal'];
 const PET_OPTIONS = [
   { id: 'dog1', name: 'Max', type: 'Dog', breed: 'Golden Retriever' },
@@ -134,61 +136,56 @@ const BookingDetails = () => {
   const [isServiceSaving, setIsServiceSaving] = useState(false);
 
   useEffect(() => {
-    // Define an async function inside useEffect to fetch booking data
     const fetchBooking = async () => {
-      // Set loading state to true before starting the fetch
       setLoading(true);
       
       try {
-        // First try to get bookingId from route params
         let bookingId = route.params?.bookingId;
+        let initialData = route.params?.initialData;
 
-        // If no bookingId in route params, try to get from AsyncStorage
-        if (!bookingId) {
-          bookingId = await AsyncStorage.getItem(LAST_VIEWED_BOOKING_ID);
-        } else {
-          // If we got bookingId from route params, save it to AsyncStorage
-          await AsyncStorage.setItem(LAST_VIEWED_BOOKING_ID, bookingId);
+        if (!bookingId && initialData) {
+          // If we have initial data but no booking ID, create a new booking
+          bookingId = await createBooking(
+            'client123', // Replace with actual client ID from auth
+            'freelancer123', // Replace with actual freelancer ID
+            initialData
+          );
         }
 
         if (!bookingId) {
-          // If still no bookingId, navigate back to MyBookings
+          bookingId = await AsyncStorage.getItem(LAST_VIEWED_BOOKING_ID);
+        }
+
+        if (!bookingId) {
           navigation.replace('MyBookings');
           return;
         }
-        
-        // Call our mock API function from mockData.js
-        // await waits for the Promise to resolve
+
+        await AsyncStorage.setItem(LAST_VIEWED_BOOKING_ID, bookingId);
         const bookingData = await fetchBookingDetails(bookingId);
-        
-        // Update our component state with the fetched data
         setBooking(bookingData);
       } catch (error) {
-        // If anything goes wrong (like booking not found), log the error
         console.error('Error fetching booking details:', error);
-        navigation.replace('MyBookings');
+        Alert.alert(
+          'Error',
+          'Unable to load booking details. Please try again.',
+          [{ text: 'OK', onPress: () => navigation.replace('MyBookings') }]
+        );
       } finally {
-        // Whether successful or not, set loading to false
         setLoading(false);
       }
     };
 
-    // Only run fetchBooking if we have a bookingId in route.params
-    // This prevents unnecessary API calls if no ID is provided
     fetchBooking();
-    
-    // The dependency array [route.params?.bookingId] means this effect will run:
-    // 1. When the component first mounts
-    // 2. Any time route.params?.bookingId changes
-  }, [route.params?.bookingId]);
+  }, [route.params?.bookingId, navigation]);
 
-  // Add cleanup when component unmounts
-  useEffect(() => {
-    return () => {
-      // Clear the cached booking ID when leaving the screen
-      AsyncStorage.removeItem(LAST_VIEWED_BOOKING_ID);
-    };
-  }, []);
+  // Add helper function to safely display data
+  const getDisplayValue = (value, placeholder = 'TBD') => {
+    if (value === null || value === undefined || value === '') {
+      return placeholder;
+    }
+    return value;
+  };
 
   // Reset edit mode when component mounts or reloads
   useEffect(() => {
@@ -447,8 +444,8 @@ const BookingDetails = () => {
 
   const renderDateTimeSection = () => (
     <View>
-      <Text style={styles.sectionTitle}>Date & Time</Text>
-      {booking?.occurrences?.map((occurrence, index) => (
+      <Text style={styles.sectionTitle}>{IS_PROFESSIONAL ? "Dates & Times (Set Rates for Dates)" : "Dates & Times"}</Text>
+      {(booking?.occurrences || []).map((occurrence, index) => (
         IS_PROFESSIONAL ? (
           <TouchableOpacity 
             key={index}
@@ -507,7 +504,7 @@ const BookingDetails = () => {
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Cost Breakdown</Text>
       
-      {booking?.occurrences?.map((occurrence, index) => (
+      {(booking?.occurrences || []).map((occurrence, index) => (
         <TouchableOpacity 
           key={index}
           style={styles.occurrenceCostRow}
@@ -571,24 +568,20 @@ const BookingDetails = () => {
       <View style={styles.costSummary}>
         <View style={styles.summaryRow}>
           <Text>Subtotal:</Text>
-          <Text>${booking.occurrences.reduce((sum, occ) => 
-            sum + calculateOccurrenceCost(occ), 0).toFixed(2)}</Text>
+          <Text>${(booking?.costs?.subtotal || 0).toFixed(2)}</Text>
         </View>
         <View style={styles.summaryRow}>
           <Text>Client Fee (10%):</Text>
-          <Text>${(booking.occurrences.reduce((sum, occ) => 
-            sum + calculateOccurrenceCost(occ), 0) * 0.10).toFixed(2)}</Text>
+          <Text>${(booking?.costs?.clientFee || 0).toFixed(2)}</Text>
         </View>
         <View style={styles.summaryRow}>
           <Text>Taxes (9%):</Text>
-          <Text>${(booking.occurrences.reduce((sum, occ) => 
-            sum + calculateOccurrenceCost(occ), 0) * 0.09).toFixed(2)}</Text>
+          <Text>${(booking?.costs?.taxes || 0).toFixed(2)}</Text>
         </View>
         <View style={[styles.summaryRow, styles.totalRow]}>
           <Text style={styles.totalLabel}>Total:</Text>
           <Text style={styles.totalAmount}>
-            ${(booking.occurrences.reduce((sum, occ) => 
-              sum + calculateOccurrenceCost(occ), 0) * 1.19).toFixed(2)}
+            ${(booking?.costs?.totalClientCost || 0).toFixed(2)}
           </Text>
         </View>
       </View>
@@ -603,338 +596,320 @@ const BookingDetails = () => {
     return format(date, 'h:mm a');
   };
 
-  if (loading) {
-    return (
-      <CrossPlatformView fullWidthHeader={true}>
-        <BackHeader
-          title="Booking Details"
-          onBackPress={() => navigation.navigate('MyBookings')}
-        />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-        </View>
-      </CrossPlatformView>
-    );
-  }
-
-  if (!booking) {
-    return (
-      <CrossPlatformView fullWidthHeader={true}>
-        <BackHeader
-          title="Booking Details"
-          onBackPress={() => navigation.navigate('MyBookings')}
-        />
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Booking not found</Text>
-        </View>
-      </CrossPlatformView>
-    );
-  }
-
   return (
     <CrossPlatformView fullWidthHeader={true}>
       <BackHeader
         title="Booking Details"
         onBackPress={() => navigation.navigate('MyBookings')}
       />
-      <ScrollView style={styles.container}>
-        <StatusBadge status={booking.status} />
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Booking Parties</Text>
-          <Text style={styles.label}>Client:</Text>
-          <Text style={styles.text}>{booking.clientName}</Text>
-          <Text style={styles.label}>Professional:</Text>
-          <Text style={styles.text}>{booking.professionalName}</Text>
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
-
-        <View style={[styles.section, styles.petsSection]}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Booking Pets</Text>
-            {IS_PROFESSIONAL && (
-              <TouchableOpacity 
-                onPress={togglePetsEditMode}
-                style={styles.sectionEditButton}
-                disabled={isPetsSaving}
-              >
-                {isPetsSaving ? (
-                  <ActivityIndicator size="small" color={theme.colors.primary} />
-                ) : (
-                  <MaterialCommunityIcons 
-                    name={isPetsEditMode ? "check" : "pencil"} 
-                    size={24} 
-                    color={theme.colors.primary} 
-                  />
-                )}
-              </TouchableOpacity>
-            )}
-          </View>
+      ) : !booking ? (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Unable to load booking details</Text>
+        </View>
+      ) : (
+        <ScrollView style={styles.container}>
+          <StatusBadge status={getDisplayValue(booking?.status, 'Pending')} />
           
-          {isPetsEditMode ? (
-            <View>
-              {selectedPets.map((pet, index) => (
-                <View key={pet.id} style={styles.petItem}>
-                  <View style={styles.petInfo}>
-                    <Text style={styles.petName}>{pet.name}</Text>
-                    <Text style={styles.petDetails}>{pet.type} • {pet.breed}</Text>
-                  </View>
-                  <TouchableOpacity
-                    onPress={() => {
-                      setSelectedPets(prev => prev.filter(p => p.id !== pet.id));
-                    }}
-                  >
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Booking Parties</Text>
+            <Text style={styles.label}>Client:</Text>
+            <Text style={styles.text}>{getDisplayValue(booking?.clientName)}</Text>
+            <Text style={styles.label}>Professional:</Text>
+            <Text style={styles.text}>{getDisplayValue(booking?.professionalName)}</Text>
+          </View>
+
+          <View style={[styles.section, styles.petsSection]}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Booking Pets</Text>
+              {IS_PROFESSIONAL && (
+                <TouchableOpacity 
+                  onPress={togglePetsEditMode}
+                  style={styles.sectionEditButton}
+                  disabled={isPetsSaving}
+                >
+                  {isPetsSaving ? (
+                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                  ) : (
                     <MaterialCommunityIcons 
-                      name="close" 
+                      name={isPetsEditMode ? "check" : "pencil"} 
                       size={24} 
-                      color={theme.colors.error} 
+                      color={theme.colors.primary} 
                     />
-                  </TouchableOpacity>
-                </View>
-              ))}
-              
-              <TouchableOpacity
-                style={styles.addPetButton}
-                onPress={() => setShowPetDropdown(!showPetDropdown)}
-              >
-                <MaterialCommunityIcons 
-                  name={showPetDropdown ? "chevron-up" : "chevron-down"} 
-                  size={20} 
-                  color={theme.colors.primary} 
-                />
-                <Text style={styles.addPetText}>Add Pet</Text>
-              </TouchableOpacity>
-              
-              {showPetDropdown && (
-                <View style={styles.dropdownList}>
-                  <ScrollView nestedScrollEnabled={true} style={styles.petDropdown}>
-                    {PET_OPTIONS
-                      .filter(pet => !selectedPets.find(p => p.id === pet.id))
-                      .map((pet) => (
-                        <TouchableOpacity
-                          key={pet.id}
-                          style={styles.dropdownItem}
-                          onPress={() => {
-                            setSelectedPets(prev => [...prev, pet]);
-                            setShowPetDropdown(false);
-                          }}
-                        >
-                          <View>
-                            <Text style={styles.dropdownPetName}>{pet.name}</Text>
-                            <Text style={styles.dropdownPetDetails}>
-                              {pet.type} • {pet.breed}
-                            </Text>
-                          </View>
-                        </TouchableOpacity>
-                      ))}
-                  </ScrollView>
-                </View>
+                  )}
+                </TouchableOpacity>
               )}
             </View>
-          ) : (
-            <View>
-              {selectedPets.length > 0 ? (
-                selectedPets.map((pet) => (
+            
+            {isPetsEditMode ? (
+              <View>
+                {selectedPets.map((pet, index) => (
                   <View key={pet.id} style={styles.petItem}>
                     <View style={styles.petInfo}>
                       <Text style={styles.petName}>{pet.name}</Text>
                       <Text style={styles.petDetails}>{pet.type} • {pet.breed}</Text>
                     </View>
+                    <TouchableOpacity
+                      onPress={() => {
+                        setSelectedPets(prev => prev.filter(p => p.id !== pet.id));
+                      }}
+                    >
+                      <MaterialCommunityIcons 
+                        name="close" 
+                        size={24} 
+                        color={theme.colors.error} 
+                      />
+                    </TouchableOpacity>
                   </View>
-                ))
-              ) : (
-                <Text style={styles.noPetsText}>No pets added to this booking</Text>
-              )}
-            </View>
-          )}
-        </View>
-
-        <View style={[styles.section, styles.dateTimeSection]}>
-          {renderDateTimeSection()}
-        </View>
-
-        <View style={[styles.section, { zIndex: 2 }]}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Service Details</Text>
-            {IS_PROFESSIONAL && (
-              <TouchableOpacity 
-                onPress={toggleServiceEditMode}
-                style={styles.sectionEditButton}
-                disabled={isServiceSaving}
-                testID="edit-button"
-              >
-                {isServiceSaving ? (
-                  <ActivityIndicator size="small" color={theme.colors.primary} />
-                ) : (
+                ))}
+                
+                <TouchableOpacity
+                  style={styles.addPetButton}
+                  onPress={() => setShowPetDropdown(!showPetDropdown)}
+                >
                   <MaterialCommunityIcons 
-                    name={isServiceEditMode ? "check" : "pencil"} 
-                    size={24} 
+                    name={showPetDropdown ? "chevron-up" : "chevron-down"} 
+                    size={20} 
                     color={theme.colors.primary} 
                   />
+                  <Text style={styles.addPetText}>Add Pet</Text>
+                </TouchableOpacity>
+                
+                {showPetDropdown && (
+                  <View style={styles.dropdownList}>
+                    <ScrollView nestedScrollEnabled={true} style={styles.petDropdown}>
+                      {PET_OPTIONS
+                        .filter(pet => !selectedPets.find(p => p.id === pet.id))
+                        .map((pet) => (
+                          <TouchableOpacity
+                            key={pet.id}
+                            style={styles.dropdownItem}
+                            onPress={() => {
+                              setSelectedPets(prev => [...prev, pet]);
+                              setShowPetDropdown(false);
+                            }}
+                          >
+                            <View>
+                              <Text style={styles.dropdownPetName}>{pet.name}</Text>
+                              <Text style={styles.dropdownPetDetails}>
+                                {pet.type} • {pet.breed}
+                              </Text>
+                            </View>
+                          </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                  </View>
                 )}
-              </TouchableOpacity>
+              </View>
+            ) : (
+              <View>
+                {selectedPets.length > 0 ? (
+                  selectedPets.map((pet) => (
+                    <View key={pet.id} style={styles.petItem}>
+                      <View style={styles.petInfo}>
+                        <Text style={styles.petName}>{pet.name}</Text>
+                        <Text style={styles.petDetails}>{pet.type} • {pet.breed}</Text>
+                      </View>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={styles.noPetsText}>No pets added to this booking</Text>
+                )}
+              </View>
             )}
           </View>
-          {isServiceEditMode ? (
-            <View style={{ zIndex: 3 }}>
-              <View style={[styles.editRow, { zIndex: 3 }]}>
-                <Text style={styles.label}>Service Type:</Text>
-                <View style={[styles.dropdownContainer, { zIndex: 3 }]}>
-                  <TouchableOpacity
-                    style={styles.dropdownInput}
-                    onPress={() => {
-                      setShowServiceDropdown(!showServiceDropdown);
-                      setShowAnimalDropdown(false);
-                    }}
-                  >
-                    <Text>{editedBooking.serviceType || 'Select Service'}</Text>
-                    <MaterialCommunityIcons 
-                      name={showServiceDropdown ? "chevron-up" : "chevron-down"} 
-                      size={24} 
-                      color={theme.colors.text} 
-                    />
-                  </TouchableOpacity>
 
-                  {showServiceDropdown && (
-                    <View style={styles.dropdownList}>
-                      <ScrollView nestedScrollEnabled={true}>
-                        {SERVICE_OPTIONS.map((service) => (
-                          <TouchableOpacity
-                            key={service}
-                            style={styles.dropdownItem}
-                            onPress={() => {
-                              setEditedBooking(prev => ({
-                                ...prev,
-                                serviceType: service
-                              }));
-                              setShowServiceDropdown(false);
-                            }}
-                          >
-                            <Text style={[
-                              styles.dropdownText,
-                              editedBooking.serviceType === service && styles.selectedOption
-                            ]}>
-                              {service}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
-                      </ScrollView>
-                    </View>
+          <View style={[styles.section, { zIndex: 2 }]}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Service Details</Text>
+              {IS_PROFESSIONAL && (
+                <TouchableOpacity 
+                  onPress={toggleServiceEditMode}
+                  style={styles.sectionEditButton}
+                  disabled={isServiceSaving}
+                  testID="edit-button"
+                >
+                  {isServiceSaving ? (
+                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                  ) : (
+                    <MaterialCommunityIcons 
+                      name={isServiceEditMode ? "check" : "pencil"} 
+                      size={24} 
+                      color={theme.colors.primary} 
+                    />
                   )}
+                </TouchableOpacity>
+              )}
+            </View>
+            {isServiceEditMode ? (
+              <View style={{ zIndex: 3 }}>
+                <View style={[styles.editRow, { zIndex: 3 }]}>
+                  <Text style={styles.label}>Service Type:</Text>
+                  <View style={[styles.dropdownContainer, { zIndex: 3 }]}>
+                    <TouchableOpacity
+                      style={styles.dropdownInput}
+                      onPress={() => {
+                        setShowServiceDropdown(!showServiceDropdown);
+                        setShowAnimalDropdown(false);
+                      }}
+                    >
+                      <Text>{editedBooking.serviceType || 'Select Service'}</Text>
+                      <MaterialCommunityIcons 
+                        name={showServiceDropdown ? "chevron-up" : "chevron-down"} 
+                        size={24} 
+                        color={theme.colors.text} 
+                      />
+                    </TouchableOpacity>
+
+                    {showServiceDropdown && (
+                      <View style={[styles.dropdownList, { zIndex: 1000 }]}>
+                        <ScrollView nestedScrollEnabled={true}>
+                          {SERVICE_OPTIONS.map((service) => (
+                            <TouchableOpacity
+                              key={service}
+                              style={styles.dropdownItem}
+                              onPress={() => {
+                                setEditedBooking(prev => ({
+                                  ...prev,
+                                  serviceType: service
+                                }));
+                                setShowServiceDropdown(false);
+                              }}
+                            >
+                              <Text style={[
+                                styles.dropdownText,
+                                editedBooking.serviceType === service && styles.selectedOption
+                              ]}>
+                                {service}
+                              </Text>
+                            </TouchableOpacity>
+                          ))}
+                        </ScrollView>
+                      </View>
+                    )}
+                  </View>
+                </View>
+
+                <View style={[styles.editRow, { zIndex: 2 }]}>
+                  <Text style={styles.label}>Animal Type:</Text>
+                  <View style={[styles.dropdownContainer, { zIndex: 2 }]}>
+                    <TouchableOpacity
+                      style={styles.dropdownInput}
+                      onPress={() => {
+                        setShowAnimalDropdown(!showAnimalDropdown);
+                        setShowServiceDropdown(false);
+                      }}
+                    >
+                      <Text>{editedBooking.animalType || 'Select Animal'}</Text>
+                      <MaterialCommunityIcons 
+                        name={showAnimalDropdown ? "chevron-up" : "chevron-down"} 
+                        size={24} 
+                        color={theme.colors.text} 
+                      />
+                    </TouchableOpacity>
+
+                    {showAnimalDropdown && (
+                      <View style={[styles.dropdownList, { zIndex: 1000 }]}>
+                        <ScrollView nestedScrollEnabled={true}>
+                          {ANIMAL_OPTIONS.map((animal) => (
+                            <TouchableOpacity
+                              key={animal}
+                              style={styles.dropdownItem}
+                              onPress={() => {
+                                setEditedBooking(prev => ({
+                                  ...prev,
+                                  animalType: animal
+                                }));
+                                setShowAnimalDropdown(false);
+                              }}
+                            >
+                              <Text style={[
+                                styles.dropdownText,
+                                editedBooking.animalType === animal && styles.selectedOption
+                              ]}>
+                                {animal}
+                              </Text>
+                            </TouchableOpacity>
+                          ))}
+                        </ScrollView>
+                      </View>
+                    )}
+                  </View>
+                </View>
+
+                <View style={[styles.editRow, { zIndex: 1 }]}>
+                  <Text style={styles.label}>Number of Pets:</Text>
+                  <TextInput
+                    style={styles.editInput}
+                    value={editedBooking.numberOfPets.toString()}
+                    onChangeText={(text) => {
+                      const number = parseInt(text) || 1;
+                      setEditedBooking(prev => ({
+                        ...prev,
+                        numberOfPets: number
+                      }));
+                    }}
+                    keyboardType="numeric"
+                    maxLength={2}
+                  />
                 </View>
               </View>
-
-              <View style={[styles.editRow, { zIndex: 2 }]}>
-                <Text style={styles.label}>Animal Type:</Text>
-                <View style={[styles.dropdownContainer, { zIndex: 2 }]}>
-                  <TouchableOpacity
-                    style={styles.dropdownInput}
-                    onPress={() => {
-                      setShowAnimalDropdown(!showAnimalDropdown);
-                      setShowServiceDropdown(false);
-                    }}
-                  >
-                    <Text>{editedBooking.animalType || 'Select Animal'}</Text>
-                    <MaterialCommunityIcons 
-                      name={showAnimalDropdown ? "chevron-up" : "chevron-down"} 
-                      size={24} 
-                      color={theme.colors.text} 
-                    />
-                  </TouchableOpacity>
-
-                  {showAnimalDropdown && (
-                    <View style={styles.dropdownList}>
-                      <ScrollView nestedScrollEnabled={true}>
-                        {ANIMAL_OPTIONS.map((animal) => (
-                          <TouchableOpacity
-                            key={animal}
-                            style={styles.dropdownItem}
-                            onPress={() => {
-                              setEditedBooking(prev => ({
-                                ...prev,
-                                animalType: animal
-                              }));
-                              setShowAnimalDropdown(false);
-                            }}
-                          >
-                            <Text style={[
-                              styles.dropdownText,
-                              editedBooking.animalType === animal && styles.selectedOption
-                            ]}>
-                              {animal}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
-                      </ScrollView>
-                    </View>
-                  )}
-                </View>
+            ) : (
+              <View>
+                <Text style={[styles.label, {fontSize: 14}]}>Service Type:</Text>
+                <Text style={styles.text}>{booking.serviceType}</Text>
+                <Text style={[styles.label, {fontSize: 14}]}>Animal Type:</Text>
+                <Text style={styles.text}>{booking.animalType}</Text>
+                <Text style={[styles.label, {fontSize: 14}]}>Number of Pets:</Text>
+                <Text style={styles.text}>{booking.numberOfPets}</Text>
               </View>
+            )}
+          </View>
 
-              <View style={[styles.editRow, { zIndex: 1 }]}>
-                <Text style={styles.label}>Number of Pets:</Text>
-                <TextInput
-                  style={styles.editInput}
-                  value={editedBooking.numberOfPets.toString()}
-                  onChangeText={(text) => {
-                    const number = parseInt(text) || 1;
-                    setEditedBooking(prev => ({
-                      ...prev,
-                      numberOfPets: number
-                    }));
-                  }}
-                  keyboardType="numeric"
-                  maxLength={2}
-                />
-              </View>
-            </View>
-          ) : (
-            <View>
-              <Text style={[styles.label, {fontSize: 14}]}>Service Type:</Text>
-              <Text style={styles.text}>{booking.serviceType}</Text>
-              <Text style={[styles.label, {fontSize: 14}]}>Animal Type:</Text>
-              <Text style={styles.text}>{booking.animalType}</Text>
-              <Text style={[styles.label, {fontSize: 14}]}>Number of Pets:</Text>
-              <Text style={styles.text}>{booking.numberOfPets}</Text>
-            </View>
-          )}
-        </View>
+          <View style={[styles.section, styles.dateTimeSection]}>
+            {renderDateTimeSection()}
+          </View>
 
-        {renderCostBreakdown()}
+          {renderCostBreakdown()}
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Cancellation Policy</Text>
-          <Text style={styles.policyText}>
-            • No refund if canceled within 1 hour of booking start time{'\n'}
-            • 50% refund if canceled between 1-24 hours before start time{'\n'}
-            • Full refund if canceled more than 24 hours before the booking
-          </Text>
-        </View>
-
-        <View style={styles.actionButtons}>
-          {booking.status === 'Pending' && (
-            <TouchableOpacity
-              style={[styles.button, styles.approveButton]}
-              onPress={handleApprove}
-            >
-              <Text style={styles.buttonText}>Approve Details</Text>
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity
-            style={[styles.button, styles.modifyButton]}
-            onPress={handleModify}
-          >
-            <Text style={styles.buttonText}>Modify Details</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.button, styles.cancelButton]}
-            onPress={handleCancel}
-          >
-            <Text style={[styles.buttonText, styles.cancelButtonText]}>
-              Cancel Booking
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Cancellation Policy</Text>
+            <Text style={styles.policyText}>
+              • No refund if canceled within 1 hour of booking start time{'\n'}
+              • 50% refund if canceled between 1-24 hours before start time{'\n'}
+              • Full refund if canceled more than 24 hours before the booking
             </Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+          </View>
+
+          <View style={styles.actionButtons}>
+            {booking.status === 'Pending' && (
+              <TouchableOpacity
+                style={[styles.button, styles.approveButton]}
+                onPress={handleApprove}
+              >
+                <Text style={styles.buttonText}>Approve Details</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              style={[styles.button, styles.modifyButton]}
+              onPress={handleModify}
+            >
+              <Text style={styles.buttonText}>Modify Details</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.button, styles.cancelButton]}
+              onPress={handleCancel}
+            >
+              <Text style={[styles.buttonText, styles.cancelButtonText]}>
+                Cancel Booking
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      )}
       <AddRateModal
         visible={showAddRateModal}
         onClose={() => setShowAddRateModal(false)}
@@ -1254,8 +1229,15 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     top: '100%',
-    zIndex: 1000,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 4,
     elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   rateSection: {
     marginBottom: 20,

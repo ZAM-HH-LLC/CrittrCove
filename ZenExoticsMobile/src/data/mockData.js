@@ -416,25 +416,104 @@ const sharedBookingDetails = {
   },
 };
 
+// Initialize mockBookingDetails with existing mock data
 const mockBookingDetails = {
   'bk1': sharedBookingDetails,
-  '1234': { ...sharedBookingDetails, id: 'bk2' }, // Use same properties but override ID
-  '5678': { ...sharedBookingDetails, id: 'bk3' },
-  '91011': { ...sharedBookingDetails, id: 'bk3' },
-  '91012': { ...sharedBookingDetails, id: 'bk3' },
-  // Add more mock booking details for other IDs...
+  '1234': { 
+    ...sharedBookingDetails, 
+    id: '1234',
+    clientName: 'John Doe',
+    status: 'Confirmed',
+    startDate: '2024-02-20',
+    startTime: '14:00',
+  },
+  '5678': { 
+    ...sharedBookingDetails, 
+    id: '5678',
+    clientName: 'Jane Smith',
+    status: 'Pending',
+    startDate: '2024-02-21',
+    startTime: '15:30',
+  },
+  '91011': { 
+    ...sharedBookingDetails, 
+    id: '91011',
+    professionalName: 'Sarah Wilson',
+    status: 'Confirmed',
+    startDate: '2024-02-22',
+    startTime: '10:00',
+  },
+  '91012': { 
+    ...sharedBookingDetails, 
+    id: '91012',
+    professionalName: 'Mike Johnson',
+    status: 'Pending',
+    startDate: '2024-02-23',
+    startTime: '11:00',
+  },
 };
 
-export const fetchBookingDetails = (bookingId) => {
-  console.log("fetchBookingDetails", bookingId);
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      const bookingDetails = mockBookingDetails[bookingId];
-      if (bookingDetails) {
-        resolve(bookingDetails);
-      } else {
-        reject(new Error('Booking not found'));
-      }
-    }, 1000);
-  });
+// Add the createBooking function
+export const createBooking = async (clientId, freelancerId, initialData = {}) => {
+  const newBookingId = Math.floor(Math.random() * 10000).toString();
+  
+  const blankBooking = {
+    id: newBookingId,
+    status: 'Pending',
+    clientId,
+    freelancerId,
+    clientName: initialData.clientName || 'TBD',
+    professionalName: initialData.professionalName || 'TBD',
+    serviceType: initialData.serviceType || 'TBD',
+    animalType: initialData.animalType || 'TBD',
+    numberOfPets: initialData.numberOfPets || 0,
+    duration: initialData.duration || 0,
+    occurrences: initialData.occurrences || [],
+    rates: {
+      baseRate: 0,
+      additionalPetRate: 0,
+      extraServices: []
+    },
+    costs: {
+      baseTotal: 0,
+      additionalPetTotal: 0,
+      extraServicesTotal: 0,
+      subtotal: 0,
+      clientFee: 0,
+      taxes: 0,
+      totalClientCost: 0,
+      professionalPayout: 0
+    },
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    ...initialData
+  };
+
+  // Add to mock database
+  mockBookingDetails[newBookingId] = blankBooking;
+  console.log('Created new booking:', newBookingId, mockBookingDetails[newBookingId]);
+
+  // Simulate API delay
+  await new Promise(resolve => setTimeout(resolve, 500));
+  return newBookingId;
 };
+
+// Update fetchBookingDetails to handle missing bookings better and add logging
+export const fetchBookingDetails = async (bookingId) => {
+  console.log("Fetching booking details for ID:", bookingId);
+  console.log("Available bookings:", Object.keys(mockBookingDetails));
+  
+  // Simulate API delay
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  
+  const bookingDetails = mockBookingDetails[bookingId];
+  if (!bookingDetails) {
+    console.error(`Booking not found for ID: ${bookingId}`);
+    throw new Error('Booking not found');
+  }
+  
+  return bookingDetails;
+};
+
+// Export mockBookingDetails for debugging
+export const _mockBookingDetails = mockBookingDetails;

@@ -3,6 +3,9 @@ import { View, StyleSheet, FlatList, KeyboardAvoidingView, Platform, SafeAreaVie
 import { Button, Card, Paragraph, useTheme, ActivityIndicator } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons'; // Import the icon library
 import { theme } from '../styles/theme';
+import RequestBookingModal from '../components/RequestBookingModal';
+import { mockPets } from '../data/mockData';
+import { createBooking } from '../data/mockData';
 
 const MessageHistory = ({ route, navigation }) => {
   const { colors } = useTheme();
@@ -10,6 +13,8 @@ const MessageHistory = ({ route, navigation }) => {
   const [newMessage, setNewMessage] = useState('');
   const inputRef = useRef(null);
   const [isSending, setIsSending] = useState(false);
+  const [showRequestModal, setShowRequestModal] = useState(false);
+  const IS_CLIENT = false; // This should come from your auth context
 
   useEffect(() => {
     if (!messageId) {
@@ -181,14 +186,91 @@ const MessageHistory = ({ route, navigation }) => {
 
   const MessageInput = Platform.OS === 'web' ? <WebInput /> : <MobileInput />;
   
+  const handleRequestBooking = async () => {
+    if (IS_CLIENT) {
+      setShowRequestModal(true);
+    } else {
+      // For professionals, create a new booking and navigate
+      try {
+        // Create new booking with minimal info
+        const bookingId = await createBooking(
+          'client123', // Replace with actual client ID
+          'freelancer123', // Replace with actual freelancer ID
+          {
+            professionalName: senderName,
+            clientName: 'Me', // Should come from auth context
+            status: 'Pending',
+            serviceType: services[0], // Default to first service
+          }
+        );
+
+        console.log('Created booking with ID:', bookingId);
+        
+        navigation.navigate('BookingDetails', {
+          bookingId: bookingId,
+          initialData: null // We don't need initialData since the booking is already created
+        });
+      } catch (error) {
+        console.error('Error creating booking:', error);
+        Alert.alert(
+          'Error',
+          'Unable to create booking. Please try again.',
+          [{ text: 'OK' }]
+        );
+      }
+    }
+  };
+
+  const handleModalSubmit = async (modalData) => {
+    try {
+      // Create new booking
+      const bookingId = await createBooking(
+        'client123', // Replace with actual client ID
+        'freelancer123', // Replace with actual freelancer ID
+        {
+          ...modalData,
+          professionalName: senderName,
+          clientName: 'Me', // Should come from auth context
+          status: 'Pending',
+        }
+      );
+
+      console.log('Created booking with ID:', bookingId);
+
+      setShowRequestModal(false);
+      navigation.navigate('BookingDetails', {
+        bookingId: bookingId,
+        initialData: null // We don't need initialData since the booking is already created
+      });
+    } catch (error) {
+      console.error('Error creating booking:', error);
+      Alert.alert(
+        'Error',
+        'Unable to create booking. Please try again.',
+        [{ text: 'OK' }]
+      );
+    }
+  };
+
   const renderHeader = () => (
-    <View style={styles.header}>
-      <Button onPress={() => navigation.navigate('Messages')} style={styles.backButton}>
-        <MaterialCommunityIcons name="arrow-left" size={24} color={theme.colors.primary} />
-      </Button>
-      {console.log(senderName)}
-      <Text style={styles.headerText}>{senderName} - {services.join(', ')}</Text>
-    </View>
+    <>
+      <View style={styles.header}>
+        <Button onPress={() => navigation.navigate('Messages')} style={styles.backButton}>
+          <MaterialCommunityIcons name="arrow-left" size={24} color={theme.colors.primary} />
+        </Button>
+        <Text style={styles.headerText}>{senderName} - {services.join(', ')}</Text>
+      </View>
+      <View style={styles.bookingHeaderContainer}>
+        <Button 
+          mode="contained"
+          style={styles.requestBookingButton}
+          labelStyle={styles.requestBookingButtonText}
+          onPress={handleRequestBooking}
+        >
+          Request Booking
+        </Button>
+      </View>
+    </>
   );
 
   return (
@@ -207,6 +289,14 @@ const MessageHistory = ({ route, navigation }) => {
         />
         {MessageInput}
       </KeyboardAvoidingView>
+      
+      <RequestBookingModal
+        visible={showRequestModal}
+        onClose={() => setShowRequestModal(false)}
+        onSubmit={handleModalSubmit}
+        services={services}
+        pets={mockPets} // Replace with actual pets from your auth context
+      />
     </SafeAreaView>
   );
 };
@@ -329,6 +419,25 @@ const styles = StyleSheet.create({
     color: theme.colors.primary,
     flex: 1, // This will allow the text to take up available space
     textAlign: 'center', // Center the text within its flex container
+  },
+  bookingHeaderContainer: {
+    width: '100%',
+    backgroundColor: theme.colors.background,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    padding: 12,
+    alignItems: 'center',
+  },
+  requestBookingButton: {
+    maxWidth: 500,
+    width: '100%',
+    borderRadius: 25, // Makes it more rounded
+    height: 45,
+    justifyContent: 'center',
+  },
+  requestBookingButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 
