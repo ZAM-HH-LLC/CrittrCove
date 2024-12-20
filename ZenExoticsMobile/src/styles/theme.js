@@ -8,6 +8,7 @@ export const theme = {
     primary: '#6A6C51', // Primary color for buttons and header background
     secondary: '#516C61',
     background: '#f6f6f6',
+    backgroundContrast: '#F6F3FC',
     calendarColor: '#A99E6B', // Olive (yellowish) color for calendar (partially unavailable, available)
     calendarColorYellowBrown: '#8A8C6D', // Yellow-brown color for calendar (booked today, but time is available)
     text: 'black', // Text color for text bodies

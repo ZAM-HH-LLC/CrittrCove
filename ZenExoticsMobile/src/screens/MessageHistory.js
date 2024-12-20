@@ -1,14 +1,21 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { View, StyleSheet, FlatList, KeyboardAvoidingView, Platform, SafeAreaView, StatusBar, TextInput, Text } from 'react-native';
-import { Button, Card, Paragraph, useTheme } from 'react-native-paper';
+import { Button, Card, Paragraph, useTheme, ActivityIndicator } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons'; // Import the icon library
 import { theme } from '../styles/theme';
 
 const MessageHistory = ({ route, navigation }) => {
   const { colors } = useTheme();
-  const { messageId, senderName } = route.params; // Assuming senderName is passed in route params
+  const { messageId = null, senderName = 'Unknown User', services = ['Pet Sitting','Pet Walking', 'Pet Grooming'] } = route?.params || {};
   const [newMessage, setNewMessage] = useState('');
   const inputRef = useRef(null);
+  const [isSending, setIsSending] = useState(false);
+
+  useEffect(() => {
+    if (!messageId) {
+      navigation.replace('Messages');
+    }
+  }, [messageId, navigation]);
 
   // Mock data - replace with actual data from your backend
   const [messages, setMessages] = useState([
@@ -18,35 +25,78 @@ const MessageHistory = ({ route, navigation }) => {
   ]);
 
   const renderMessage = useCallback(({ item }) => (
-    <Card style={[styles.messageCard, item.sender === 'Me' ? styles.sentMessage : styles.receivedMessage]}>
-      <Card.Content>
-        <Paragraph style={styles.sender}>{item.sender === 'Me' ? 'Me' : senderName}</Paragraph>
-        <Paragraph>{item.content}</Paragraph>
-        <Paragraph style={styles.timestamp}>{item.timestamp}</Paragraph>
-      </Card.Content>
-    </Card>
+    <View style={item.sender === 'Me' ? styles.sentMessageContainer : styles.receivedMessageContainer}>
+      <Text style={[
+        styles.senderAbove,
+        item.sender === 'Me' ? styles.sentSenderName : styles.receivedSenderName
+      ]}>
+        {item.sender === 'Me' ? 'Me' : senderName}
+      </Text>
+      <Card style={[styles.messageCard, item.sender === 'Me' ? styles.sentMessage : styles.receivedMessage]}>
+        <Card.Content>
+          <Paragraph style={item.sender === 'Me' ? styles.sentMessageText : styles.receivedMessageText}>
+            {item.content}
+          </Paragraph>
+        </Card.Content>
+      </Card>
+      <Text style={[
+        styles.timestampBelow,
+        item.sender === 'Me' ? styles.sentTimestamp : styles.receivedTimestamp
+      ]}>
+        {item.timestamp}
+      </Text>
+    </View>
   ), []);
+
+  const simulateMessageSend = async (messageContent) => {
+    try {
+      // Simulate API call
+      const messageData = {
+        messageId: messageId,
+        content: messageContent,
+        sender: 'Me',
+        timestamp: new Date().toISOString(),
+        recipientName: senderName
+      };
+
+      // Simulated API call
+      const response = await new Promise((resolve) => {
+        setTimeout(() => {
+          resolve({ status: 200, data: messageData });
+        }, 1000);
+      });
+
+      console.log('Message sent:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error sending message:', error);
+      throw error;
+    }
+  };
 
   const WebInput = () => {
     const [newMessage, setNewMessage] = useState('');
     const inputRef = useRef(null);
 
-    useEffect(() => {
-      if (inputRef.current) {
-        inputRef.current.focus();
-      }
-    }, []);
-
-    const handleSend = () => {
-      if (newMessage.trim()) {
-        const newMsg = {
-          id: Date.now().toString(),
-          sender: 'Me',
-          content: newMessage.trim(),
-          timestamp: new Date().toLocaleString(),
-        };
-        setMessages(prevMessages => [...prevMessages, newMsg]);
-        setNewMessage('');
+    const handleSend = async () => {
+      if (newMessage.trim() && !isSending) {
+        setIsSending(true);
+        try {
+          await simulateMessageSend(newMessage.trim());
+          const newMsg = {
+            id: Date.now().toString(),
+            sender: 'Me',
+            content: newMessage.trim(),
+            timestamp: new Date().toLocaleString(),
+          };
+          setMessages(prevMessages => [...prevMessages, newMsg]);
+          setNewMessage('');
+        } catch (error) {
+          // Handle error (could add error state/toast here)
+          console.error('Failed to send message:', error);
+        } finally {
+          setIsSending(false);
+        }
       }
     };
 
@@ -59,8 +109,19 @@ const MessageHistory = ({ route, navigation }) => {
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
           rows={1}
+          disabled={isSending}
         />
-        <Button mode="contained" onPress={handleSend}>Send</Button>
+        <Button 
+          mode="contained" 
+          onPress={handleSend} 
+          disabled={isSending}
+        >
+          {isSending ? (
+            <ActivityIndicator color={theme.colors.whiteText} size="small" />
+          ) : (
+            'Send'
+          )}
+        </Button>
       </View>
     );
   };
@@ -69,16 +130,25 @@ const MessageHistory = ({ route, navigation }) => {
     const [newMessage, setNewMessage] = useState('');
     const inputRef = useRef(null);
 
-    const handleSend = () => {
-      if (newMessage.trim()) {
-        const newMsg = {
-          id: Date.now().toString(),
-          sender: 'Me',
-          content: newMessage.trim(),
-          timestamp: new Date().toLocaleString(),
-        };
-        setMessages(prevMessages => [...prevMessages, newMsg]);
-        setNewMessage('');
+    const handleSend = async () => {
+      if (newMessage.trim() && !isSending) {
+        setIsSending(true);
+        try {
+          await simulateMessageSend(newMessage.trim());
+          const newMsg = {
+            id: Date.now().toString(),
+            sender: 'Me',
+            content: newMessage.trim(),
+            timestamp: new Date().toLocaleString(),
+          };
+          setMessages(prevMessages => [...prevMessages, newMsg]);
+          setNewMessage('');
+        } catch (error) {
+          // Handle error (could add error state/toast here)
+          console.error('Failed to send message:', error);
+        } finally {
+          setIsSending(false);
+        }
       }
     };
 
@@ -92,8 +162,19 @@ const MessageHistory = ({ route, navigation }) => {
           onChangeText={setNewMessage}
           multiline
           blurOnSubmit={false}
+          editable={!isSending}
         />
-        <Button mode="contained" onPress={handleSend}>Send</Button>
+        <Button 
+          mode="contained" 
+          onPress={handleSend}
+          disabled={isSending}
+        >
+          {isSending ? (
+            <ActivityIndicator color={theme.colors.primary} size="small" />
+          ) : (
+            'Send'
+          )}
+        </Button>
       </View>
     );
   };
@@ -106,7 +187,7 @@ const MessageHistory = ({ route, navigation }) => {
         <MaterialCommunityIcons name="arrow-left" size={24} color={theme.colors.primary} />
       </Button>
       {console.log(senderName)}
-      <Text style={styles.headerText}>{senderName}</Text>
+      <Text style={styles.headerText}>{senderName} - {services.join(', ')}</Text>
     </View>
   );
 
@@ -134,6 +215,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
+    paddingBottom: 10,
   },
   androidSafeArea: {
     paddingTop: StatusBar.currentHeight,
@@ -144,9 +226,14 @@ const styles = StyleSheet.create({
   messageList: {
     padding: 16,
     paddingBottom: 80,
+    maxWidth: 600,
+    alignSelf: 'center',
+    width: '100%',
+    backgroundColor: theme.colors.backgroundContrast,
+    height: '100%',
   },
   messageCard: {
-    marginBottom: 8,
+    marginVertical: 4,
     maxWidth: '80%',
   },
   sentMessage: {
@@ -157,20 +244,49 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     backgroundColor: theme.colors.surface,
   },
-  sender: {
+  sentMessageContainer: {
+    alignItems: 'flex-end',
+    marginBottom: 16,
+  },
+  receivedMessageContainer: {
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  senderAbove: {
     fontWeight: 'bold',
     marginBottom: 4,
+    fontSize: 12,
   },
-  timestamp: {
+  sentSenderName: {
+    alignSelf: 'flex-end',
+  },
+  receivedSenderName: {
+    alignSelf: 'flex-start',
+  },
+  timestampBelow: {
     fontSize: 12,
     color: theme.colors.placeholder,
     marginTop: 4,
+  },
+  sentTimestamp: {
     alignSelf: 'flex-end',
+  },
+  receivedTimestamp: {
+    alignSelf: 'flex-start',
+  },
+  sentMessageText: {
+    color: theme.colors.whiteText,
+  },
+  receivedMessageText: {
+    color: theme.colors.text,
   },
   inputContainer: {
     flexDirection: 'row',
+    maxWidth: 600,
+    alignSelf: 'center',
+    width: '100%',
     padding: 8,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.colors.backgroundContrast,
     borderTopWidth: 1,
     borderTopColor: theme.colors.disabled,
   },

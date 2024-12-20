@@ -3,12 +3,15 @@ import { View, Text, Modal, TextInput, TouchableOpacity, StyleSheet, ScrollView 
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
 import { format } from 'date-fns';
+import { TIME_OPTIONS } from '../data/mockData';
 
 const EditOccurrenceModal = ({ visible, onClose, onSave, occurrence }) => {
   const [rates, setRates] = useState({
     baseRate: occurrence?.rates?.baseRate || 0,
     additionalRates: occurrence?.rates?.additionalRates || [],
   });
+
+  const [timeUnit, setTimeUnit] = useState(occurrence?.rates?.timeUnit || 'per visit');
 
   useEffect(() => {
     if (occurrence) {
@@ -40,7 +43,8 @@ const EditOccurrenceModal = ({ visible, onClose, onSave, occurrence }) => {
       additionalRates: rates.additionalRates.map(rate => ({
         name: rate.name,
         amount: parseFloat(rate.amount) || 0
-      }))
+      })),
+      timeUnit,
     };
 
     onSave({
@@ -196,7 +200,7 @@ const styles = StyleSheet.create({
     padding: 20,
     width: '90%',
     maxWidth: 500,
-    maxHeight: '80%',
+    maxHeight: '60%',
     position: 'relative',
     overflow: 'hidden',
   },

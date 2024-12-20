@@ -20,13 +20,90 @@ const LAST_VIEWED_BOOKING_ID = 'last_viewed_booking_id';
 
 const SERVICE_OPTIONS = ['Dog Walking', 'Pet Sitting', 'House Sitting', 'Drop-In Visits'];
 const ANIMAL_OPTIONS = ['Dog', 'Cat', 'Bird', 'Small Animal'];
+const PET_OPTIONS = [
+  { id: 'dog1', name: 'Max', type: 'Dog', breed: 'Golden Retriever' },
+  { id: 'cat1', name: 'Luna', type: 'Cat', breed: 'Siamese' },
+  // Add more default options or fetch from an API
+];
+
+const IS_PROFESSIONAL = true; // Set to false to hide edit buttons
+
+const mockUpdateBookingPets = async (bookingId, pets) => {
+  // Simulate API delay
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  console.log('Updating booking pets:', { bookingId, pets });
+  return { success: true };
+};
+
+const mockUpdateBookingService = async (bookingId, serviceDetails) => {
+  // Simulate API delay
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  console.log('Updating booking service:', { bookingId, serviceDetails });
+  return { success: true };
+};
+
+const formatDateWithoutTimezone = (dateString) => {
+  const date = new Date(dateString);
+  // Adjust for timezone offset
+  date.setMinutes(date.getMinutes() + date.getTimezoneOffset());
+  return date;
+};
+
+const calculateTimeUnits = (startDate, endDate, startTime, endTime, timeUnit) => {
+  const start = new Date(`${startDate}T${startTime}`);
+  const end = new Date(`${endDate}T${endTime}`);
+  const diffMs = end - start;
+  
+  switch(timeUnit) {
+    case '15 min':
+      return Math.ceil(diffMs / (15 * 60 * 1000));
+    case '30 min':
+      return Math.ceil(diffMs / (30 * 60 * 1000));
+    case '45 min':
+      return Math.ceil(diffMs / (45 * 60 * 1000));
+    case '1 hr':
+      return Math.ceil(diffMs / (60 * 60 * 1000));
+    case '2 hr':
+      return Math.ceil(diffMs / (2 * 60 * 60 * 1000));
+    case '4 hr':
+      return Math.ceil(diffMs / (4 * 60 * 60 * 1000));
+    case '8 hr':
+      return Math.ceil(diffMs / (8 * 60 * 60 * 1000));
+    case '24 hr':
+    case 'per day':
+      return Math.ceil(diffMs / (24 * 60 * 60 * 1000));
+    case 'overnight':
+      return 1; // Overnight is typically counted as one unit
+    case 'per visit':
+      return 1; // Per visit is counted as one unit
+    default:
+      return 1;
+  }
+};
+
+const calculateOccurrenceCost = (occurrence) => {
+  const timeUnits = calculateTimeUnits(
+    occurrence.startDate,
+    occurrence.endDate,
+    occurrence.startTime,
+    occurrence.endTime,
+    occurrence.rates.timeUnit
+  );
+  
+  const baseTotal = occurrence.rates.baseRate * timeUnits;
+  const additionalRatesTotal = (occurrence.rates.additionalRates || [])
+    .reduce((sum, rate) => sum + parseFloat(rate.amount || 0), 0);
+    
+  return baseTotal + additionalRatesTotal;
+};
 
 const BookingDetails = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isEditMode, setIsEditMode] = useState(false);
+  const [isPetsEditMode, setIsPetsEditMode] = useState(false);
+  const [isServiceEditMode, setIsServiceEditMode] = useState(false);
   const [editedBooking, setEditedBooking] = useState({
     rates: {
       additionalPetRate: 0,
@@ -51,7 +128,10 @@ const BookingDetails = () => {
   const [showEditOccurrenceModal, setShowEditOccurrenceModal] = useState(false);
   const [showAddOccurrenceModal, setShowAddOccurrenceModal] = useState(false);
   const [expandedOccurrenceId, setExpandedOccurrenceId] = useState(null);
-  const isProfessional = true; // TODO: Get this from auth context
+  const [selectedPets, setSelectedPets] = useState([]);
+  const [showPetDropdown, setShowPetDropdown] = useState(false);
+  const [isPetsSaving, setIsPetsSaving] = useState(false);
+  const [isServiceSaving, setIsServiceSaving] = useState(false);
 
   useEffect(() => {
     // Define an async function inside useEffect to fetch booking data
@@ -112,7 +192,8 @@ const BookingDetails = () => {
 
   // Reset edit mode when component mounts or reloads
   useEffect(() => {
-    setIsEditMode(false);
+    setIsPetsEditMode(false);
+    setIsServiceEditMode(false);
   }, []);
 
   // Add this useEffect to properly initialize editedBooking
@@ -166,21 +247,43 @@ const BookingDetails = () => {
     console.log('Booking cancelled');
   };
 
-  const toggleEditMode = () => {
-    if (isEditMode) {
-      // Save changes
-      setIsEditMode(false);
-      setEditedBooking(null);
+  const togglePetsEditMode = async () => {
+    if (isPetsEditMode) {
+      try {
+        setIsPetsSaving(true); // Start loading
+        // Save changes
+        const response = await mockUpdateBookingPets(booking.id, selectedPets);
+        if (response.success) {
+          setIsPetsEditMode(false);
+        }
+      } catch (error) {
+        console.error('Error updating pets:', error);
+        // Handle error (maybe show an alert)
+      } finally {
+        setIsPetsSaving(false); // Stop loading regardless of outcome
+      }
     } else {
-      // Enter edit mode
-      setIsEditMode(true);
-      setEditedBooking({
-        ...booking,
-        startTime: booking.startTime ? new Date(`2024-01-01T${booking.startTime}`) : new Date(),
-        endTime: booking.endTime ? new Date(`2024-01-01T${booking.endTime}`) : new Date(),
-        startDate: booking.startDate ? new Date(booking.startDate) : new Date(),
-        endDate: booking.endDate ? new Date(booking.endDate) : new Date(),
-      });
+      setIsPetsEditMode(true);
+    }
+  };
+
+  const toggleServiceEditMode = async () => {
+    if (isServiceEditMode) {
+      try {
+        setIsServiceSaving(true); // Start loading
+        // Save changes
+        const response = await mockUpdateBookingService(booking.id, editedBooking);
+        if (response.success) {
+          setIsServiceEditMode(false);
+        }
+      } catch (error) {
+        console.error('Error updating service:', error);
+        // Handle error (maybe show an alert)
+      } finally {
+        setIsServiceSaving(false); // Stop loading regardless of outcome
+      }
+    } else {
+      setIsServiceEditMode(true);
     }
   };
 
@@ -218,12 +321,12 @@ const BookingDetails = () => {
 
   const renderEditButton = () => (
     <TouchableOpacity 
-      onPress={toggleEditMode}
+      onPress={togglePetsEditMode}
       style={styles.editButton}
       testID="edit-button"
     >
       <MaterialCommunityIcons 
-        name={isEditMode ? "check" : "pencil"} 
+        name={isPetsEditMode ? "check" : "pencil"} 
         size={24} 
         color={theme.colors.primary} 
       />
@@ -343,23 +446,26 @@ const BookingDetails = () => {
   };
 
   const renderDateTimeSection = () => (
-    <View style={styles.section}>
+    <View>
       <Text style={styles.sectionTitle}>Date & Time</Text>
       {booking?.occurrences?.map((occurrence, index) => (
-        <TouchableOpacity 
-          key={index}
-          style={styles.occurrenceCard}
-          onPress={() => handleDateTimeCardPress(occurrence)}
-        >
-          <View style={styles.occurrenceDetails}>
-            <Text style={styles.dateText}>
-              {format(new Date(occurrence.startDate), 'MMM d, yyyy')}
-            </Text>
-            <Text style={styles.timeText}>
-              {`${occurrence.startTime} - ${occurrence.endTime}`}
-            </Text>
-          </View>
-          {isProfessional && (
+        IS_PROFESSIONAL ? (
+          <TouchableOpacity 
+            key={index}
+            style={styles.occurrenceCard}
+            onPress={() => handleDateTimeCardPress(occurrence)}
+          >
+            <View style={styles.occurrenceDetails}>
+              <Text style={styles.dateText}>
+                {occurrence.endDate && occurrence.startDate !== occurrence.endDate ? 
+                  `${format(formatDateWithoutTimezone(occurrence.startDate), 'MMM d, yyyy')} - ${format(formatDateWithoutTimezone(occurrence.endDate), 'MMM d, yyyy')}` :
+                  format(formatDateWithoutTimezone(occurrence.startDate), 'MMM d, yyyy')
+                }
+              </Text>
+              <Text style={styles.timeText}>
+                {`${occurrence.startTime} - ${occurrence.endTime}`}
+              </Text>
+            </View>
             <TouchableOpacity 
               style={styles.editOccurrenceButton}
               onPress={() => handleDateTimeCardPress(occurrence)}
@@ -367,11 +473,25 @@ const BookingDetails = () => {
               <MaterialCommunityIcons name="pencil" size={20} color={theme.colors.primary} />
               <Text style={styles.editOccurrenceText}>Edit</Text>
             </TouchableOpacity>
-          )}
-        </TouchableOpacity>
+          </TouchableOpacity>
+        ) : (
+          <View key={index} style={styles.occurrenceCard}>
+            <View style={styles.occurrenceDetails}>
+              <Text style={styles.dateText}>
+                {occurrence.endDate && occurrence.startDate !== occurrence.endDate ? 
+                  `${format(formatDateWithoutTimezone(occurrence.startDate), 'MMM d, yyyy')} - ${format(formatDateWithoutTimezone(occurrence.endDate), 'MMM d, yyyy')}` :
+                  format(formatDateWithoutTimezone(occurrence.startDate), 'MMM d, yyyy')
+                }
+              </Text>
+              <Text style={styles.timeText}>
+                {`${occurrence.startTime} - ${occurrence.endTime}`}
+              </Text>
+            </View>
+          </View>
+        )
       ))}
       
-      {isProfessional && (
+      {IS_PROFESSIONAL && (
         <TouchableOpacity
           style={styles.addOccurrenceButton}
           onPress={() => setShowAddOccurrenceModal(true)}
@@ -396,10 +516,15 @@ const BookingDetails = () => {
           )}
         >
           <View style={styles.occurrenceCostHeader}>
-            <Text>{format(new Date(occurrence.startDate), 'MMM d, yyyy')}</Text>
+            <Text>
+              {occurrence.endDate && occurrence.startDate !== occurrence.endDate ? 
+                `${format(formatDateWithoutTimezone(occurrence.startDate), 'MMM d, yyyy')} - ${format(formatDateWithoutTimezone(occurrence.endDate), 'MMM d, yyyy')}` :
+                format(formatDateWithoutTimezone(occurrence.startDate), 'MMM d, yyyy')
+              }
+            </Text>
             <View style={styles.costAndIcon}>
               <Text style={styles.occurrenceCost}>
-                ${occurrence.totalCost.toFixed(2)}
+                ${calculateOccurrenceCost(occurrence).toFixed(2)}
               </Text>
               <MaterialCommunityIcons 
                 name={expandedOccurrenceId === occurrence.id ? "chevron-up" : "chevron-down"}
@@ -412,8 +537,25 @@ const BookingDetails = () => {
           {expandedOccurrenceId === occurrence.id && (
             <View style={styles.expandedCostDetails}>
               <View style={styles.costDetailRow}>
-                <Text>Base Rate:</Text>
-                <Text>${occurrence.rates.baseRate.toFixed(2)}</Text>
+                <Text>Base Rate ({occurrence.rates.timeUnit || 'per visit'}):</Text>
+                <Text>
+                  ${parseFloat(occurrence.rates.baseRate).toFixed(2)} × {
+                    calculateTimeUnits(
+                      occurrence.startDate,
+                      occurrence.endDate,
+                      occurrence.startTime,
+                      occurrence.endTime,
+                      occurrence.rates.timeUnit
+                    )
+                  } = ${(parseFloat(occurrence.rates.baseRate) * 
+                        calculateTimeUnits(
+                          occurrence.startDate,
+                          occurrence.endDate,
+                          occurrence.startTime,
+                          occurrence.endTime,
+                          occurrence.rates.timeUnit
+                        )).toFixed(2)}
+                </Text>
               </View>
               {occurrence.rates.additionalRates.map((rate, idx) => (
                 <View key={idx} style={styles.costDetailRow}>
@@ -429,20 +571,24 @@ const BookingDetails = () => {
       <View style={styles.costSummary}>
         <View style={styles.summaryRow}>
           <Text>Subtotal:</Text>
-          <Text>${booking.costs.subtotal.toFixed(2)}</Text>
+          <Text>${booking.occurrences.reduce((sum, occ) => 
+            sum + calculateOccurrenceCost(occ), 0).toFixed(2)}</Text>
         </View>
         <View style={styles.summaryRow}>
           <Text>Client Fee (10%):</Text>
-          <Text>${booking.costs.clientFee.toFixed(2)}</Text>
+          <Text>${(booking.occurrences.reduce((sum, occ) => 
+            sum + calculateOccurrenceCost(occ), 0) * 0.10).toFixed(2)}</Text>
         </View>
         <View style={styles.summaryRow}>
           <Text>Taxes (9%):</Text>
-          <Text>${booking.costs.taxes.toFixed(2)}</Text>
+          <Text>${(booking.occurrences.reduce((sum, occ) => 
+            sum + calculateOccurrenceCost(occ), 0) * 0.09).toFixed(2)}</Text>
         </View>
         <View style={[styles.summaryRow, styles.totalRow]}>
           <Text style={styles.totalLabel}>Total:</Text>
           <Text style={styles.totalAmount}>
-            ${booking.costs.totalClientCost.toFixed(2)}
+            ${(booking.occurrences.reduce((sum, occ) => 
+              sum + calculateOccurrenceCost(occ), 0) * 1.19).toFixed(2)}
           </Text>
         </View>
       </View>
@@ -476,7 +622,7 @@ const BookingDetails = () => {
       <CrossPlatformView fullWidthHeader={true}>
         <BackHeader
           title="Booking Details"
-          onBackPress={() => navigation.goBack()}
+          onBackPress={() => navigation.navigate('MyBookings')}
         />
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>Booking not found</Text>
@@ -489,7 +635,7 @@ const BookingDetails = () => {
     <CrossPlatformView fullWidthHeader={true}>
       <BackHeader
         title="Booking Details"
-        onBackPress={() => navigation.goBack()}
+        onBackPress={() => navigation.navigate('MyBookings')}
       />
       <ScrollView style={styles.container}>
         <StatusBadge status={booking.status} />
@@ -502,24 +648,133 @@ const BookingDetails = () => {
           <Text style={styles.text}>{booking.professionalName}</Text>
         </View>
 
-        {renderDateTimeSection()}
+        <View style={[styles.section, styles.petsSection]}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Booking Pets</Text>
+            {IS_PROFESSIONAL && (
+              <TouchableOpacity 
+                onPress={togglePetsEditMode}
+                style={styles.sectionEditButton}
+                disabled={isPetsSaving}
+              >
+                {isPetsSaving ? (
+                  <ActivityIndicator size="small" color={theme.colors.primary} />
+                ) : (
+                  <MaterialCommunityIcons 
+                    name={isPetsEditMode ? "check" : "pencil"} 
+                    size={24} 
+                    color={theme.colors.primary} 
+                  />
+                )}
+              </TouchableOpacity>
+            )}
+          </View>
+          
+          {isPetsEditMode ? (
+            <View>
+              {selectedPets.map((pet, index) => (
+                <View key={pet.id} style={styles.petItem}>
+                  <View style={styles.petInfo}>
+                    <Text style={styles.petName}>{pet.name}</Text>
+                    <Text style={styles.petDetails}>{pet.type} • {pet.breed}</Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setSelectedPets(prev => prev.filter(p => p.id !== pet.id));
+                    }}
+                  >
+                    <MaterialCommunityIcons 
+                      name="close" 
+                      size={24} 
+                      color={theme.colors.error} 
+                    />
+                  </TouchableOpacity>
+                </View>
+              ))}
+              
+              <TouchableOpacity
+                style={styles.addPetButton}
+                onPress={() => setShowPetDropdown(!showPetDropdown)}
+              >
+                <MaterialCommunityIcons 
+                  name={showPetDropdown ? "chevron-up" : "chevron-down"} 
+                  size={20} 
+                  color={theme.colors.primary} 
+                />
+                <Text style={styles.addPetText}>Add Pet</Text>
+              </TouchableOpacity>
+              
+              {showPetDropdown && (
+                <View style={styles.dropdownList}>
+                  <ScrollView nestedScrollEnabled={true} style={styles.petDropdown}>
+                    {PET_OPTIONS
+                      .filter(pet => !selectedPets.find(p => p.id === pet.id))
+                      .map((pet) => (
+                        <TouchableOpacity
+                          key={pet.id}
+                          style={styles.dropdownItem}
+                          onPress={() => {
+                            setSelectedPets(prev => [...prev, pet]);
+                            setShowPetDropdown(false);
+                          }}
+                        >
+                          <View>
+                            <Text style={styles.dropdownPetName}>{pet.name}</Text>
+                            <Text style={styles.dropdownPetDetails}>
+                              {pet.type} • {pet.breed}
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+                      ))}
+                  </ScrollView>
+                </View>
+              )}
+            </View>
+          ) : (
+            <View>
+              {selectedPets.length > 0 ? (
+                selectedPets.map((pet) => (
+                  <View key={pet.id} style={styles.petItem}>
+                    <View style={styles.petInfo}>
+                      <Text style={styles.petName}>{pet.name}</Text>
+                      <Text style={styles.petDetails}>{pet.type} • {pet.breed}</Text>
+                    </View>
+                  </View>
+                ))
+              ) : (
+                <Text style={styles.noPetsText}>No pets added to this booking</Text>
+              )}
+            </View>
+          )}
+        </View>
+
+        <View style={[styles.section, styles.dateTimeSection]}>
+          {renderDateTimeSection()}
+        </View>
 
         <View style={[styles.section, { zIndex: 2 }]}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Service Details</Text>
-            <TouchableOpacity 
-              onPress={toggleEditMode}
-              style={styles.sectionEditButton}
-              testID="edit-button"
-            >
-              <MaterialCommunityIcons 
-                name={isEditMode ? "check" : "pencil"} 
-                size={24} 
-                color={theme.colors.primary} 
-              />
-            </TouchableOpacity>
+            {IS_PROFESSIONAL && (
+              <TouchableOpacity 
+                onPress={toggleServiceEditMode}
+                style={styles.sectionEditButton}
+                disabled={isServiceSaving}
+                testID="edit-button"
+              >
+                {isServiceSaving ? (
+                  <ActivityIndicator size="small" color={theme.colors.primary} />
+                ) : (
+                  <MaterialCommunityIcons 
+                    name={isServiceEditMode ? "check" : "pencil"} 
+                    size={24} 
+                    color={theme.colors.primary} 
+                  />
+                )}
+              </TouchableOpacity>
+            )}
           </View>
-          {isEditMode ? (
+          {isServiceEditMode ? (
             <View style={{ zIndex: 3 }}>
               <View style={[styles.editRow, { zIndex: 3 }]}>
                 <Text style={styles.label}>Service Type:</Text>
@@ -739,6 +994,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: theme.colors.border,
+    position: 'relative',
   },
   sectionTitle: {
     fontSize: 18,
@@ -995,23 +1251,11 @@ const styles = StyleSheet.create({
   },
   dropdownList: {
     position: 'absolute',
-    top: '100%',
     left: 0,
     right: 0,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: 4,
-    maxHeight: 150,
+    top: '100%',
+    zIndex: 1000,
     elevation: 5,
-    marginTop: 4,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
   },
   rateSection: {
     marginBottom: 20,
@@ -1193,6 +1437,81 @@ const styles = StyleSheet.create({
   },
   sectionEditButton: {
     padding: 8,
+  },
+  petItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  petInfo: {
+    flex: 1,
+  },
+  petName: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  petDetails: {
+    fontSize: 14,
+    color: theme.colors.placeholder,
+  },
+  addPetButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 8,
+    justifyContent: 'center',
+  },
+  addPetText: {
+    marginLeft: 8,
+    color: theme.colors.primary,
+    fontSize: 16,
+  },
+  petDropdown: {
+    maxHeight: 200,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 8,
+    marginTop: 8,
+    backgroundColor: theme.colors.surface,
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    zIndex: 1000,
+  },
+  dropdownItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  dropdownPetName: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  dropdownPetDetails: {
+    fontSize: 14,
+    color: theme.colors.placeholder,
+    marginTop: 2,
+  },
+  noPetsText: {
+    fontSize: 14,
+    color: theme.colors.placeholder,
+    fontStyle: 'italic',
+  },
+  petsSection: {
+    zIndex: 3,
+    elevation: 3,
+  },
+  dateTimeSection: {
+    zIndex: 1,
+    elevation: 1,
   },
 });
 

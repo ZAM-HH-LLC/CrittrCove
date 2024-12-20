@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, Modal, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, Modal, TextInput, TouchableOpacity, StyleSheet, ScrollView, Picker } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
 import DatePicker from './DatePicker';
 import TimePicker from './TimePicker';
 import { format } from 'date-fns';
+import { TIME_OPTIONS } from '../data/mockData';
 
 const AddOccurrenceModal = ({ visible, onClose, onAdd, defaultRates }) => {
   const [occurrence, setOccurrence] = useState({
@@ -20,6 +21,7 @@ const AddOccurrenceModal = ({ visible, onClose, onAdd, defaultRates }) => {
 
   const [showAddRate, setShowAddRate] = useState(false);
   const [newRate, setNewRate] = useState({ name: '', amount: '' });
+  const [timeUnit, setTimeUnit] = useState('per visit');
 
   const handleAdd = () => {
     const totalCost = parseFloat(occurrence.rates.baseRate) + 
@@ -29,7 +31,11 @@ const AddOccurrenceModal = ({ visible, onClose, onAdd, defaultRates }) => {
       ...occurrence,
       startTime: format(occurrence.startTime, 'HH:mm'),
       endTime: format(occurrence.endTime, 'HH:mm'),
-      totalCost
+      totalCost,
+      rates: {
+        ...occurrence.rates,
+        timeUnit,
+      }
     });
 
     // Reset the modal state
@@ -134,21 +140,34 @@ const AddOccurrenceModal = ({ visible, onClose, onAdd, defaultRates }) => {
 
             <View style={styles.rateSection}>
               <Text style={styles.label}>Base Rate</Text>
-              <View style={styles.inputContainer}>
-                <Text style={styles.dollarSign}>$</Text>
-                <TextInput
-                  style={styles.input}
-                  value={occurrence.rates.baseRate.toString()}
-                  onChangeText={(text) => setOccurrence(prev => ({
-                    ...prev,
-                    rates: {
-                      ...prev.rates,
-                      baseRate: text.replace(/[^0-9.]/g, '')
-                    }
-                  }))}
-                  keyboardType="decimal-pad"
-                  placeholder="0.00"
-                />
+              <View style={styles.rateContainer}>
+                <View style={styles.baseRateInput}>
+                  <TextInput
+                    style={styles.input}
+                    value={occurrence.rates.baseRate.toString()}
+                    onChangeText={(text) => setOccurrence(prev => ({
+                      ...prev,
+                      rates: {
+                        ...prev.rates,
+                        baseRate: text.replace(/[^0-9.]/g, '')
+                      }
+                    }))}
+                    keyboardType="decimal-pad"
+                    placeholder="0.00"
+                  />
+                </View>
+                <View style={styles.timeUnitInput}>
+                  <Text style={styles.label}>Per</Text>
+                  <Picker
+                    selectedValue={timeUnit}
+                    onValueChange={(itemValue) => setTimeUnit(itemValue)}
+                    style={styles.picker}
+                  >
+                    {TIME_OPTIONS.map((option) => (
+                      <Picker.Item key={option} label={option} value={option} />
+                    ))}
+                  </Picker>
+                </View>
               </View>
             </View>
 
@@ -337,11 +356,11 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
   input: {
-    flex: 1,
-    padding: 12,
-    fontSize: 16,
-    WebkitTapHighlightColor: 'transparent',
-    outline: 'none',
+    backgroundColor: theme.colors.surface,
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -387,6 +406,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: theme.colors.text,
     marginLeft: 10,
+  },
+  rateContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 10,
+  },
+  baseRateInput: {
+    flex: 1,
+  },
+  timeUnitInput: {
+    flex: 1,
+  },
+  picker: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
 });
 
