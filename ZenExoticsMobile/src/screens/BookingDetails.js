@@ -147,6 +147,11 @@ const BookingDetails = () => {
   const [isPetsEditMode, setIsPetsEditMode] = useState(false);
   const [isServiceEditMode, setIsServiceEditMode] = useState(false);
   const [editedBooking, setEditedBooking] = useState({
+    serviceDetails: {
+      type: '',
+      animalType: '',
+      numberOfPets: ''
+    },
     rates: {
       additionalPetRate: 0,
       holidayFee: 0,
@@ -296,8 +301,17 @@ const BookingDetails = () => {
   const handleStatusUpdateAfterEdit = () => {
     const currentPets = booking.pets || [];
     const currentOccurrences = booking.occurrences || [];
-    const currentServiceDetails = booking.serviceDetails || { type: '', animalType: '', numberOfPets: 0 };
-    const editedServiceDetails = editedBooking.serviceDetails || { type: '', animalType: '', numberOfPets: 0 };
+    // Ensure both objects are initialized with the current booking values
+    const currentServiceDetails = {
+      type: booking.serviceType || '',
+      animalType: booking.animalType || '',
+      numberOfPets: booking.numberOfPets || 0
+    };
+    const editedServiceDetails = {
+      type: editedBooking.serviceDetails?.type || booking.serviceType || '',
+      animalType: editedBooking.serviceDetails?.animalType || booking.animalType || '',
+      numberOfPets: editedBooking.serviceDetails?.numberOfPets || booking.numberOfPets || 0
+    };
 
     const petsHaveChanged = JSON.stringify(currentPets) !== JSON.stringify(selectedPets);
     const serviceDetailsHaveChanged = (
@@ -307,15 +321,9 @@ const BookingDetails = () => {
     );
     const occurrencesHaveChanged = JSON.stringify(currentOccurrences) !== JSON.stringify(editedBooking.occurrences);
 
-    console.log('petsHaveChanged:', petsHaveChanged);
+    console.log('Current Service Details:', currentServiceDetails);
+    console.log('Edited Service Details:', editedServiceDetails);
     console.log('serviceDetailsHaveChanged:', serviceDetailsHaveChanged);
-    console.log('occurrencesHaveChanged:', occurrencesHaveChanged);
-    console.log('booking.pets:', currentPets);
-    console.log('selectedPets:', selectedPets);
-    console.log('booking.serviceDetails:', currentServiceDetails);
-    console.log('editedBooking.serviceDetails:', editedServiceDetails);
-    console.log('booking.occurrences:', currentOccurrences);
-    console.log('editedBooking.occurrences:', editedBooking.occurrences);
 
     if (petsHaveChanged || serviceDetailsHaveChanged || occurrencesHaveChanged) {
       setHasUnsavedChanges(true);
@@ -374,15 +382,22 @@ const BookingDetails = () => {
         setIsServiceSaving(true);
         const response = await mockUpdateBookingService(booking.id, editedBooking);
         if (response.success) {
-          // Update the booking state with the edited values
-          setBooking(prev => ({
-            ...prev,
-            serviceType: editedBooking.serviceDetails.type,
-            animalType: editedBooking.serviceDetails.animalType,
-            numberOfPets: editedBooking.serviceDetails.numberOfPets
-          }));
+          // Check if actual changes were made before updating status
+          const serviceDetailsChanged = 
+            booking.serviceType !== editedBooking.serviceDetails?.type ||
+            booking.animalType !== editedBooking.serviceDetails?.animalType ||
+            booking.numberOfPets !== editedBooking.serviceDetails?.numberOfPets;
+
+          if (serviceDetailsChanged) {
+            setBooking(prev => ({
+              ...prev,
+              serviceType: editedBooking.serviceDetails?.type || prev.serviceType,
+              animalType: editedBooking.serviceDetails?.animalType || prev.animalType,
+              numberOfPets: editedBooking.serviceDetails?.numberOfPets || prev.numberOfPets
+            }));
+            handleStatusUpdateAfterEdit(); // Only call this if changes were made
+          }
           setIsServiceEditMode(false);
-          handleStatusUpdateAfterEdit();
         }
       } catch (error) {
         console.error('Error updating service:', error);
@@ -396,7 +411,7 @@ const BookingDetails = () => {
         serviceDetails: {
           type: booking.serviceType || '',
           animalType: booking.animalType || '',
-          numberOfPets: booking.numberOfPets || 0
+          numberOfPets: booking.numberOfPets || ''
         }
       }));
       setIsServiceEditMode(true);
@@ -474,13 +489,14 @@ const BookingDetails = () => {
     )
   );
 
-  const handleUpdatePets = (newCount) => {
+  const handleUpdatePets = (text) => {
     setEditedBooking(prev => ({
       ...prev,
-      numberOfPets: parseInt(newCount),
+      serviceDetails: {
+        ...prev.serviceDetails,
+        numberOfPets: text
+      }
     }));
-    setHasUnsavedChanges(true);
-    recalculateTotals();
   };
 
   const handleUpdateDuration = (newDuration) => {
@@ -916,12 +932,11 @@ const BookingDetails = () => {
 
   const renderServiceTypeDropdown = () => (
     <View style={styles.dropdownContainer}>
-      {/* <Text style={styles.label}>Service Type:</Text> */}
       <TouchableOpacity
         style={styles.dropdownInput}
         onPress={() => setShowServiceDropdown(!showServiceDropdown)}
       >
-        <Text>{editedBooking.serviceDetails.type || 'Select Service'}</Text>
+        <Text>{editedBooking?.serviceDetails?.type || 'Select Service Type'}</Text>
         <MaterialCommunityIcons 
           name={showServiceDropdown ? "chevron-up" : "chevron-down"} 
           size={24} 
@@ -937,13 +952,20 @@ const BookingDetails = () => {
                 key={service}
                 style={styles.dropdownItem}
                 onPress={() => {
-                  handleServiceTypeChange(service);
+                  setEditedBooking(prev => ({
+                    ...prev,
+                    serviceDetails: {
+                      ...(prev.serviceDetails || {}),
+                      type: service
+                    }
+                  }));
                   setShowServiceDropdown(false);
+                  handleStatusUpdateAfterEdit();
                 }}
               >
                 <Text style={[
                   styles.dropdownText,
-                  editedBooking.serviceDetails.type === service && styles.selectedOption
+                  editedBooking?.serviceDetails?.type === service && styles.selectedOption
                 ]}>
                   {service}
                 </Text>
@@ -961,7 +983,7 @@ const BookingDetails = () => {
         style={styles.dropdownInput}
         onPress={() => setShowAnimalDropdown(!showAnimalDropdown)}
       >
-        <Text>{editedBooking.serviceDetails.animalType || 'Select Animal Type'}</Text>
+        <Text>{editedBooking?.serviceDetails?.animalType || 'Select Animal Type'}</Text>
         <MaterialCommunityIcons 
           name={showAnimalDropdown ? "chevron-up" : "chevron-down"} 
           size={24} 
@@ -980,7 +1002,7 @@ const BookingDetails = () => {
                   setEditedBooking(prev => ({
                     ...prev,
                     serviceDetails: {
-                      ...prev.serviceDetails,
+                      ...(prev.serviceDetails || {}),
                       animalType: animal
                     }
                   }));
@@ -990,7 +1012,7 @@ const BookingDetails = () => {
               >
                 <Text style={[
                   styles.dropdownText,
-                  editedBooking.serviceDetails.animalType === animal && styles.selectedOption
+                  editedBooking?.serviceDetails?.animalType === animal && styles.selectedOption
                 ]}>
                   {animal}
                 </Text>
@@ -1152,9 +1174,10 @@ const BookingDetails = () => {
                   <Text style={styles.inputLabel}>Number of Pets:</Text>
                   <TextInput
                     style={styles.numberInput}
-                    value={String(editedBooking.serviceDetails.numberOfPets)}
-                    onChangeText={(text) => handleUpdatePets(text)}
+                    value={editedBooking.serviceDetails?.numberOfPets?.toString() || ''}
+                    onChangeText={handleUpdatePets}
                     keyboardType="numeric"
+                    maxLength={2}
                   />
                 </View>
               </View>
