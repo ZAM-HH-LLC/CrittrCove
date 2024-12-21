@@ -54,7 +54,12 @@ const Messages = ({ navigation }) => {
   }, [messages, searchQuery, selectedFilters]);
 
   const renderMessage = useCallback(({ item }) => (
-    <TouchableOpacity onPress={() => navigation.navigate('MessageHistory', { messageId: item.id, senderName: item.name })}>
+    <TouchableOpacity 
+      onPress={() => navigation.replace('MessageHistory', { 
+        messageId: item.id, 
+        senderName: item.name 
+      })}
+    >
       <Card style={styles.messageCard}>
         <Card.Content>
           <View style={styles.messageHeader}>

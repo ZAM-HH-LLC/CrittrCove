@@ -61,12 +61,12 @@ const screens = [
   { name: 'SearchSittersListing', component: SearchSittersListing },
   { name: 'ClientHistory', component: ClientHistory },
   { name: 'MessageHistory', component: MessageHistory },
+  { name: 'Messages', component: Messages },
   { name: 'SitterDashboard', component: SitterDashboard },
   { name: 'BecomeSitter', component: BecomeSitter },
   { name: 'More', component: MoreScreen },
   { name: 'Clients', component: Clients },
   { name: 'AvailabilitySettings', component: AvailabilitySettings },
-  { name: 'Messages', component: Messages },
   { name: 'MyPets', component: MyPets },
   { name: 'PaymentMethods', component: PaymentMethods },
   { name: 'Settings', component: Settings },
@@ -98,6 +98,13 @@ const linking = {
         path: 'SitterProfile',
         parse: {
           sitter: (sitter) => undefined
+        }
+      },
+      MessageHistory: {
+        path: 'MessageHistory',
+        parse: {
+          messageId: (messageId) => messageId || null,
+          senderName: (senderName) => senderName || 'Unknown User'
         }
       },
       // Add other screen paths as needed

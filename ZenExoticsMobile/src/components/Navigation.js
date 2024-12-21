@@ -46,7 +46,7 @@ export default function Navigation({ navigation }) {
       return [
         { title: 'Dashboard', icon: 'view-dashboard', onPress: () => handleNavigation('SitterDashboard') },
         { title: 'Clients', icon: 'account-group', onPress: () => handleNavigation('Clients') },
-        { title: 'Messages', icon: 'message-text', onPress: () => handleNavigation('Messages') },
+        { title: 'Messages', icon: 'message-text', onPress: () => navigation.navigate('MessageHistory') },
         { title: 'Availability', icon: 'clock-outline', onPress: () => handleNavigation('AvailabilitySettings') },
         { title: 'More', icon: 'dots-horizontal', onPress: () => handleNavigation('More') },
       ];
@@ -54,7 +54,7 @@ export default function Navigation({ navigation }) {
       return [
         { title: 'Dashboard', icon: 'view-dashboard', onPress: () => handleNavigation('Dashboard') },
         { title: sittersTitle, icon: 'magnify', onPress: () => handleNavigation('SearchSitters') },
-        { title: 'Messages', icon: 'message-text', onPress: () => handleNavigation('Messages') },
+        { title: 'Messages', icon: 'message-text', onPress: () => navigation.navigate('MessageHistory') },
         { title: 'My Pets', icon: 'paw', onPress: () => handleNavigation('MyPets') },
         { title: 'More', icon: 'dots-horizontal', onPress: () => handleNavigation('More') },
       ];

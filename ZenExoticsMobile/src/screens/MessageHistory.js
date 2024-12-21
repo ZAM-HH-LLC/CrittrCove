@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { View, StyleSheet, FlatList, KeyboardAvoidingView, Platform, SafeAreaView, StatusBar, TextInput, Text } from 'react-native';
+import { View, StyleSheet, FlatList, KeyboardAvoidingView, Platform, SafeAreaView, StatusBar, TextInput, Text, TouchableOpacity } from 'react-native';
 import { Button, Card, Paragraph, useTheme, ActivityIndicator } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons'; // Import the icon library
 import { theme } from '../styles/theme';
@@ -7,27 +7,17 @@ import RequestBookingModal from '../components/RequestBookingModal';
 import { mockPets } from '../data/mockData';
 import { createBooking } from '../data/mockData';
 
-const MessageHistory = ({ route, navigation }) => {
+const MessageHistory = ({ navigation }) => {
   const { colors } = useTheme();
-  const { messageId = null, senderName = 'Unknown User', services = ['Pet Sitting','Pet Walking', 'Pet Grooming'] } = route?.params || {};
-  const [newMessage, setNewMessage] = useState('');
-  const inputRef = useRef(null);
-  const [isSending, setIsSending] = useState(false);
-  const [showRequestModal, setShowRequestModal] = useState(false);
-  const IS_CLIENT = false; // This should come from your auth context
-
-  useEffect(() => {
-    if (!messageId) {
-      navigation.replace('Messages');
-    }
-  }, [messageId, navigation]);
-
-  // Mock data - replace with actual data from your backend
   const [messages, setMessages] = useState([
     { id: '1', sender: 'John Doe', content: 'Hello, how are you?', timestamp: '2023-05-15 14:00' },
     { id: '2', sender: 'Me', content: 'I\'m doing well, thanks! How about you?', timestamp: '2023-05-15 14:05' },
     { id: '3', sender: 'John Doe', content: 'Great! Just wondering about our next appointment.', timestamp: '2023-05-15 14:10' },
   ]);
+  
+  const [isSending, setIsSending] = useState(false);
+  const [showRequestModal, setShowRequestModal] = useState(false);
+  const IS_CLIENT = false; // This should come from your auth context
 
   const renderMessage = useCallback(({ item }) => (
     <View style={item.sender === 'Me' ? styles.sentMessageContainer : styles.receivedMessageContainer}>
@@ -35,7 +25,7 @@ const MessageHistory = ({ route, navigation }) => {
         styles.senderAbove,
         item.sender === 'Me' ? styles.sentSenderName : styles.receivedSenderName
       ]}>
-        {item.sender === 'Me' ? 'Me' : senderName}
+        {item.sender}
       </Text>
       <Card style={[styles.messageCard, item.sender === 'Me' ? styles.sentMessage : styles.receivedMessage]}>
         <Card.Content>
@@ -55,16 +45,12 @@ const MessageHistory = ({ route, navigation }) => {
 
   const simulateMessageSend = async (messageContent) => {
     try {
-      // Simulate API call
       const messageData = {
-        messageId: messageId,
         content: messageContent,
         sender: 'Me',
         timestamp: new Date().toISOString(),
-        recipientName: senderName
       };
 
-      // Simulated API call
       const response = await new Promise((resolve) => {
         setTimeout(() => {
           resolve({ status: 200, data: messageData });
@@ -80,24 +66,23 @@ const MessageHistory = ({ route, navigation }) => {
   };
 
   const WebInput = () => {
-    const [newMessage, setNewMessage] = useState('');
+    const [message, setMessage] = useState('');
     const inputRef = useRef(null);
 
     const handleSend = async () => {
-      if (newMessage.trim() && !isSending) {
+      if (message.trim() && !isSending) {
         setIsSending(true);
         try {
-          await simulateMessageSend(newMessage.trim());
+          await simulateMessageSend(message.trim());
           const newMsg = {
             id: Date.now().toString(),
             sender: 'Me',
-            content: newMessage.trim(),
+            content: message.trim(),
             timestamp: new Date().toLocaleString(),
           };
           setMessages(prevMessages => [...prevMessages, newMsg]);
-          setNewMessage('');
+          setMessage('');
         } catch (error) {
-          // Handle error (could add error state/toast here)
           console.error('Failed to send message:', error);
         } finally {
           setIsSending(false);
@@ -106,13 +91,13 @@ const MessageHistory = ({ route, navigation }) => {
     };
 
     return (
-      <View style={styles.inputContainer}>
+      <View style={styles.inputInnerContainer}>
         <textarea
           ref={inputRef}
           style={styles.webInput}
           placeholder="Type a message..."
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
           rows={1}
           disabled={isSending}
         />
@@ -120,6 +105,7 @@ const MessageHistory = ({ route, navigation }) => {
           mode="contained" 
           onPress={handleSend} 
           disabled={isSending}
+          style={styles.sendButton}
         >
           {isSending ? (
             <ActivityIndicator color={theme.colors.whiteText} size="small" />
@@ -132,24 +118,23 @@ const MessageHistory = ({ route, navigation }) => {
   };
 
   const MobileInput = () => {
-    const [newMessage, setNewMessage] = useState('');
+    const [message, setMessage] = useState('');
     const inputRef = useRef(null);
 
     const handleSend = async () => {
-      if (newMessage.trim() && !isSending) {
+      if (message.trim() && !isSending) {
         setIsSending(true);
         try {
-          await simulateMessageSend(newMessage.trim());
+          await simulateMessageSend(message.trim());
           const newMsg = {
             id: Date.now().toString(),
             sender: 'Me',
-            content: newMessage.trim(),
+            content: message.trim(),
             timestamp: new Date().toLocaleString(),
           };
           setMessages(prevMessages => [...prevMessages, newMsg]);
-          setNewMessage('');
+          setMessage('');
         } catch (error) {
-          // Handle error (could add error state/toast here)
           console.error('Failed to send message:', error);
         } finally {
           setIsSending(false);
@@ -163,8 +148,8 @@ const MessageHistory = ({ route, navigation }) => {
           ref={inputRef}
           style={styles.input}
           placeholder="Type a message..."
-          value={newMessage}
-          onChangeText={setNewMessage}
+          value={message}
+          onChangeText={setMessage}
           multiline
           blurOnSubmit={false}
           editable={!isSending}
@@ -190,17 +175,15 @@ const MessageHistory = ({ route, navigation }) => {
     if (IS_CLIENT) {
       setShowRequestModal(true);
     } else {
-      // For professionals, create a new booking and navigate
       try {
-        // Create new booking with minimal info
         const bookingId = await createBooking(
-          'client123', // Replace with actual client ID
-          'freelancer123', // Replace with actual freelancer ID
+          'client123',
+          'freelancer123',
           {
-            professionalName: senderName,
-            clientName: 'Me', // Should come from auth context
+            professionalName: 'Professional Name',
+            clientName: 'Me',
             status: 'Pending',
-            serviceType: services[0], // Default to first service
+            serviceType: 'Pet Sitting',
           }
         );
 
@@ -208,7 +191,7 @@ const MessageHistory = ({ route, navigation }) => {
         
         navigation.navigate('BookingDetails', {
           bookingId: bookingId,
-          initialData: null // We don't need initialData since the booking is already created
+          initialData: null
         });
       } catch (error) {
         console.error('Error creating booking:', error);
@@ -223,14 +206,13 @@ const MessageHistory = ({ route, navigation }) => {
 
   const handleModalSubmit = async (modalData) => {
     try {
-      // Create new booking
       const bookingId = await createBooking(
-        'client123', // Replace with actual client ID
-        'freelancer123', // Replace with actual freelancer ID
+        'client123',
+        'freelancer123',
         {
           ...modalData,
-          professionalName: senderName,
-          clientName: 'Me', // Should come from auth context
+          professionalName: 'Professional Name',
+          clientName: 'Me',
           status: 'Pending',
         }
       );
@@ -240,7 +222,7 @@ const MessageHistory = ({ route, navigation }) => {
       setShowRequestModal(false);
       navigation.navigate('BookingDetails', {
         bookingId: bookingId,
-        initialData: null // We don't need initialData since the booking is already created
+        initialData: null
       });
     } catch (error) {
       console.error('Error creating booking:', error);
@@ -252,51 +234,126 @@ const MessageHistory = ({ route, navigation }) => {
     }
   };
 
+  // Add new state for conversations list
+  const [conversations, setConversations] = useState([
+    { 
+      id: '1', 
+      name: 'John Doe', 
+      lastMessage: 'Hello, how are you?', 
+      timestamp: '2023-05-15 14:00',
+      bookingStatus: 'Pending', // Can be: null, 'Pending', 'Confirmed', 'Completed'
+      unread: true
+    },
+    { 
+      id: '2', 
+      name: 'Mary J', 
+      lastMessage: 'See you tomorrow!', 
+      timestamp: '2023-05-15 13:30',
+      bookingStatus: 'Confirmed',
+      unread: false
+    },
+    { 
+      id: '3', 
+      name: 'Bitch', 
+      lastMessage: 'Thanks for the update', 
+      timestamp: '2023-05-14 15:20',
+      bookingStatus: null,
+      unread: false
+    },
+  ]);
+  const [selectedConversation, setSelectedConversation] = useState('1');
+
+  // Add new header component
   const renderHeader = () => (
-    <>
-      <View style={styles.header}>
-        <Button onPress={() => navigation.navigate('Messages')} style={styles.backButton}>
-          <MaterialCommunityIcons name="arrow-left" size={24} color={theme.colors.primary} />
-        </Button>
-        <Text style={styles.headerText}>{senderName} - {services.join(', ')}</Text>
-      </View>
-      <View style={styles.bookingHeaderContainer}>
-        <Button 
-          mode="contained"
-          style={styles.requestBookingButton}
-          labelStyle={styles.requestBookingButtonText}
-          onPress={handleRequestBooking}
-        >
-          Request Booking
-        </Button>
-      </View>
-    </>
+    <View style={styles.headerContainer}>
+      <Text style={styles.headerTitle}>Conversations</Text>
+      <Button 
+        mode="text" 
+        onPress={() => {/* Handle filter */}}
+        style={styles.filterButton}
+      >
+        Filter
+      </Button>
+    </View>
   );
 
-  return (
-    <SafeAreaView style={[styles.container, Platform.OS === 'android' && styles.androidSafeArea]}>
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.keyboardAvoidingView}
-        keyboardVerticalOffset={Platform.OS === "web" ? 0 : 80}
-      >
-        {renderHeader()}
+  // Add conversation list component
+  const renderConversationList = () => (
+    <View style={styles.conversationListContainer}>
+      {conversations.map((conv) => (
+        <TouchableOpacity
+          key={conv.id}
+          style={[
+            styles.conversationItem,
+            selectedConversation === conv.id && styles.selectedConversation
+          ]}
+          onPress={() => setSelectedConversation(conv.id)}
+        >
+          <View style={styles.conversationContent}>
+            <View style={styles.conversationHeader}>
+              <Text style={styles.conversationName}>{conv.name}</Text>
+              <Text style={styles.conversationTime}>{conv.timestamp}</Text>
+            </View>
+            <Text 
+              style={[
+                styles.conversationLastMessage,
+                conv.unread && styles.unreadMessage
+              ]} 
+              numberOfLines={1}
+            >
+              {conv.lastMessage}
+            </Text>
+            {conv.bookingStatus ? (
+              <View style={styles.bookingStatusContainer}>
+                <Text style={styles.bookingStatus}>{conv.bookingStatus}</Text>
+              </View>
+            ) : (
+              <Button 
+                mode="outlined" 
+                onPress={() => handleRequestBooking(conv.id)}
+                style={styles.requestBookingButton}
+                labelStyle={styles.requestBookingLabel}
+              >
+                Request Booking
+              </Button>
+            )}
+          </View>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+
+  // Update the message section to have a fixed input bar
+  const renderMessageSection = () => (
+    <View style={styles.messageSection}>
+      <View style={styles.messagesContainer}>
         <FlatList
           data={messages}
           renderItem={renderMessage}
           keyExtractor={item => item.id}
           contentContainerStyle={styles.messageList}
+          inverted={false}
+          showsVerticalScrollIndicator={true}
         />
-        {MessageInput}
-      </KeyboardAvoidingView>
-      
-      <RequestBookingModal
-        visible={showRequestModal}
-        onClose={() => setShowRequestModal(false)}
-        onSubmit={handleModalSubmit}
-        services={services}
-        pets={mockPets} // Replace with actual pets from your auth context
-      />
+      </View>
+      <View style={styles.inputWrapper}>
+        <TouchableOpacity style={styles.attachButton}>
+          <MaterialCommunityIcons name="plus" size={24} color={theme.colors.primary} />
+        </TouchableOpacity>
+        <View style={styles.inputContainer}>
+          {Platform.OS === 'web' ? <WebInput /> : <MobileInput />}
+        </View>
+      </View>
+    </View>
+  );
+
+  return (
+    <SafeAreaView style={styles.container}>
+      {renderHeader()}
+      <View style={styles.contentContainer}>
+        {renderConversationList()}
+        {renderMessageSection()}
+      </View>
     </SafeAreaView>
   );
 };
@@ -305,22 +362,88 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
-    paddingBottom: 10,
+    paddingTop: 50,
+    // paddingBottom: 0,
+    paddingRight: 100,
+    paddingLeft: 100,
+    // maxWidth: 1200,
+    // alignSelf: 'center',
   },
-  androidSafeArea: {
-    paddingTop: StatusBar.currentHeight,
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
   },
-  keyboardAvoidingView: {
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: theme.colors.primary,
+  },
+  filterButton: {
+    marginLeft: 'auto',
+  },
+  contentContainer: {
     flex: 1,
+    flexDirection: 'row',
+  },
+  conversationListContainer: {
+    width: '30%',
+    borderRightWidth: 1,
+    borderRightColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+  },
+  conversationItem: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  selectedConversation: {
+    backgroundColor: theme.colors.primary + '20',
+    borderLeftWidth: 3,
+    borderLeftColor: theme.colors.primary,
+  },
+  conversationName: {
+    fontSize: 16,
+  },
+  messageSection: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    position: 'relative',
+    height: '100%',
+  },
+  messagesContainer: {
+    flex: 1,
+    overflow: 'hidden',
   },
   messageList: {
     padding: 16,
-    paddingBottom: 80,
-    maxWidth: 600,
-    alignSelf: 'center',
-    width: '100%',
-    backgroundColor: theme.colors.backgroundContrast,
-    height: '100%',
+    paddingBottom: 80, // Add padding to prevent messages from being hidden behind input
+  },
+  messageInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 8,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+  },
+  attachButton: {
+    padding: 8,
+  },
+  messageInput: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginHorizontal: 8,
+  },
+  sendButton: {
+    borderRadius: 20,
   },
   messageCard: {
     marginVertical: 4,
@@ -372,13 +495,13 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     flexDirection: 'row',
-    maxWidth: 600,
-    alignSelf: 'center',
+    // maxWidth: 600,
+    // alignSelf: 'center',
     width: '100%',
     padding: 8,
-    backgroundColor: theme.colors.backgroundContrast,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.disabled,
+    // backgroundColor: theme.colors.backgroundContrast,
+    // borderTopWidth: 1,
+    // borderTopColor: theme.colors.disabled,
   },
   input: {
     flex: 1,
@@ -389,55 +512,98 @@ const styles = StyleSheet.create({
   },
   webInput: {
     flex: 1,
-    backgroundColor: theme.colors.background,
-    paddingHorizontal: 8,
+    backgroundColor: 'transparent',
     paddingVertical: 8,
     maxHeight: 100,
+    minHeight: 40,
     overflowY: 'auto',
-    border: '1px solid #ccc',
-    borderRadius: 4,
+    border: 'none',
     outline: 'none',
     fontFamily: 'inherit',
     fontSize: 'inherit',
     resize: 'none',
   },
-  header: {
+  conversationContent: {
+    flex: 1,
+  },
+  conversationHeader: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-    justifyContent: 'space-between', // This will help in centering the text
+    marginBottom: 4,
   },
-  backButton: {
-    marginLeft: -16,
+  conversationTime: {
+    fontSize: 12,
+    color: theme.colors.placeholder,
   },
-  headerText: {
-    fontSize: 20,
+  conversationLastMessage: {
+    fontSize: 14,
+    color: theme.colors.placeholder,
+    marginBottom: 8,
+  },
+  unreadMessage: {
+    color: theme.colors.text,
     fontWeight: 'bold',
-    marginRight: 50, 
-    color: theme.colors.primary,
-    flex: 1, // This will allow the text to take up available space
-    textAlign: 'center', // Center the text within its flex container
   },
-  bookingHeaderContainer: {
-    width: '100%',
-    backgroundColor: theme.colors.background,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-    padding: 12,
-    alignItems: 'center',
+  bookingStatusContainer: {
+    backgroundColor: theme.colors.primary + '20',
+    padding: 4,
+    borderRadius: 4,
+    alignSelf: 'flex-start',
+  },
+  bookingStatus: {
+    fontSize: 12,
+    color: theme.colors.primary,
   },
   requestBookingButton: {
-    maxWidth: 500,
-    width: '100%',
-    borderRadius: 25, // Makes it more rounded
-    height: 45,
-    justifyContent: 'center',
+    marginTop: 4,
+    height: 28,
+    alignSelf: 'flex-start',
   },
-  requestBookingButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
+  requestBookingLabel: {
+    fontSize: 12,
+    marginVertical: 0,
+  },
+  messageListContainer: {
+    flex: 1,
+  },
+  inputWrapper: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+    padding: 8,
+    zIndex: 1,
+  },
+  inputInnerContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.background,
+    borderRadius: 20,
+    paddingLeft: 16,
+    marginRight: 8,
+  },
+  attachButton: {
+    padding: 8,
+    marginRight: 8,
+    backgroundColor: theme.colors.background,
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sendButton: {
+    marginLeft: 8,
+    borderRadius: 20,
+    height: 40,
+    justifyContent: 'center',
   },
 });
 
