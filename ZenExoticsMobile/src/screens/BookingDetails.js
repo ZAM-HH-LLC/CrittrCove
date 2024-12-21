@@ -585,6 +585,7 @@ const BookingDetails = () => {
       costs: calculateTotalCosts(updatedOccurrences)
     }));
     
+    handleStatusUpdateAfterEdit();
     setShowEditOccurrenceModal(false);
   };
 
@@ -600,6 +601,7 @@ const BookingDetails = () => {
       costs: calculateTotalCosts(updatedOccurrences)
     }));
     
+    handleStatusUpdateAfterEdit();
     setShowAddOccurrenceModal(false);
   };
 
