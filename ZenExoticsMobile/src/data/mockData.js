@@ -517,3 +517,32 @@ export const fetchBookingDetails = async (bookingId) => {
 
 // Export mockBookingDetails for debugging
 export const _mockBookingDetails = mockBookingDetails;
+
+// Add these constants at the top of the file
+export const BOOKING_STATES = {
+  PENDING: 'Pending',
+  CONFIRMED: 'Confirmed',
+  PENDING_CLIENT_APPROVAL: 'Pending Client Approval',
+  PENDING_PROFESSIONAL_CHANGES: 'Pending Professional Changes',
+  DENIED: 'Denied',
+  CANCELLED: 'Cancelled'
+};
+
+// Add new mock function for updating booking status
+export const updateBookingStatus = async (bookingId, newStatus, reason = '') => {
+  // Simulate API delay
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  
+  if (!mockBookingDetails[bookingId]) {
+    throw new Error('Booking not found');
+  }
+  
+  mockBookingDetails[bookingId] = {
+    ...mockBookingDetails[bookingId],
+    status: newStatus,
+    statusReason: reason,
+    updated_at: new Date().toISOString()
+  };
+  
+  return mockBookingDetails[bookingId];
+};

@@ -38,7 +38,7 @@ const TimePicker = ({ label, value, onChange, fullWidth = false, containerStyle 
       borderRadius: 8,
       backgroundColor: theme.colors.whiteText,
       fontSize: 16,
-      width: fullWidth ? 150 : '90%',
+      width: fullWidth ? '' : '90%',
     };
 
     return (

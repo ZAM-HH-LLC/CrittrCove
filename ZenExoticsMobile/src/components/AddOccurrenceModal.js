@@ -34,6 +34,11 @@ const AddOccurrenceModal = ({ visible, onClose, onAdd, defaultRates }) => {
       totalCost,
       rates: {
         ...occurrence.rates,
+        baseRate: parseFloat(occurrence.rates.baseRate),
+        additionalRates: occurrence.rates.additionalRates.map(rate => ({
+          ...rate,
+          amount: parseFloat(rate.amount)
+        })),
         timeUnit,
       }
     });
@@ -61,7 +66,10 @@ const AddOccurrenceModal = ({ visible, onClose, onAdd, defaultRates }) => {
         ...prev,
         rates: {
           ...prev.rates,
-          additionalRates: [...prev.rates.additionalRates, newRate]
+          additionalRates: [...prev.rates.additionalRates, {
+            ...newRate,
+            amount: parseFloat(newRate.amount)
+          }]
         }
       }));
       setNewRate({ name: '', amount: '' });
@@ -139,9 +147,9 @@ const AddOccurrenceModal = ({ visible, onClose, onAdd, defaultRates }) => {
             </View>
 
             <View style={styles.rateSection}>
-              <Text style={styles.label}>Base Rate</Text>
               <View style={styles.rateContainer}>
                 <View style={styles.baseRateInput}>
+                <Text style={styles.label}>Base Rate</Text>
                   <TextInput
                     style={styles.input}
                     value={occurrence.rates.baseRate.toString()}
@@ -180,8 +188,8 @@ const AddOccurrenceModal = ({ visible, onClose, onAdd, defaultRates }) => {
                     value={rate.name}
                     editable={false}
                   />
-                  <View style={[styles.inputContainer, styles.rateAmountContainer]}>
-                    <Text style={styles.dollarSign}>$</Text>
+                  <View style={[styles.rateAmountContainer]}>
+                    {/* <Text style={styles.dollarSign}>$</Text> */}
                     <TextInput
                       style={[styles.input, styles.rateAmountInput]}
                       value={rate.amount}
@@ -207,8 +215,8 @@ const AddOccurrenceModal = ({ visible, onClose, onAdd, defaultRates }) => {
                       onChangeText={(text) => setNewRate(prev => ({ ...prev, name: text }))}
                       placeholder="Rate Title"
                     />
-                    <View style={[styles.inputContainer, styles.rateAmountContainer]}>
-                      <Text style={styles.dollarSign}>$</Text>
+                    <View style={[styles.rateAmountContainer]}>
+                      {/* <Text style={styles.dollarSign}>$</Text> */}
                       <TextInput
                         style={[styles.input, styles.rateAmountInput]}
                         value={newRate.amount}
@@ -421,6 +429,7 @@ const styles = StyleSheet.create({
   picker: {
     backgroundColor: theme.colors.surface,
     borderRadius: 8,
+    height: 39,
     borderWidth: 1,
     borderColor: theme.colors.border,
   },

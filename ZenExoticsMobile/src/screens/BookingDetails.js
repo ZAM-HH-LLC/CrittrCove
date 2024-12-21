@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, Alert, Platform, Modal } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { theme } from '../styles/theme';
 import CrossPlatformView from '../components/CrossPlatformView';
 import BackHeader from '../components/BackHeader';
-import { fetchBookingDetails, createBooking } from '../data/mockData';
+import { fetchBookingDetails, createBooking, BOOKING_STATES, updateBookingStatus } from '../data/mockData';
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DatePicker from '../components/DatePicker';
@@ -99,6 +99,47 @@ const calculateOccurrenceCost = (occurrence) => {
   return baseTotal + additionalRatesTotal;
 };
 
+const RequestChangesModal = ({ visible, onClose, onSubmit, loading }) => {
+  const [reason, setReason] = useState('');
+
+  return (
+    <Modal visible={visible} transparent animationType="fade">
+      <View style={styles.modalContainer}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Request Changes</Text>
+          <TextInput
+            style={styles.reasonInput}
+            placeholder="Enter reason for changes..."
+            value={reason}
+            onChangeText={setReason}
+            multiline
+            numberOfLines={4}
+          />
+          <View style={styles.modalButtons}>
+            <TouchableOpacity 
+              style={[styles.modalButton, styles.cancelButton]}
+              onPress={onClose}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.modalButton, styles.submitButton]}
+              onPress={() => onSubmit(reason)}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={styles.submitButtonText}>Submit</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
 const BookingDetails = () => {
   const navigation = useNavigation();
   const route = useRoute();
@@ -134,6 +175,8 @@ const BookingDetails = () => {
   const [showPetDropdown, setShowPetDropdown] = useState(false);
   const [isPetsSaving, setIsPetsSaving] = useState(false);
   const [isServiceSaving, setIsServiceSaving] = useState(false);
+  const [showRequestChangesModal, setShowRequestChangesModal] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     const fetchBooking = async () => {
@@ -596,6 +639,115 @@ const BookingDetails = () => {
     return format(date, 'h:mm a');
   };
 
+  const canEditBooking = () => {
+    return IS_PROFESSIONAL && [
+      BOOKING_STATES.PENDING,
+      BOOKING_STATES.PENDING_CLIENT_APPROVAL,
+      BOOKING_STATES.CONFIRMED
+    ].includes(booking?.status);
+  };
+
+  const handleStatusUpdate = async (newStatus, reason = '') => {
+    setActionLoading(true);
+    try {
+      const updatedBooking = await updateBookingStatus(booking.id, newStatus, reason);
+      setBooking(updatedBooking);
+      Alert.alert('Success', `Booking ${newStatus.toLowerCase()} successfully`);
+    } catch (error) {
+      console.error('Error updating booking status:', error);
+      Alert.alert('Error', 'Failed to update booking status');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRequestChanges = async (reason) => {
+    await handleStatusUpdate(BOOKING_STATES.PENDING_PROFESSIONAL_CHANGES, reason);
+    setShowRequestChangesModal(false);
+  };
+
+  const renderActionButtons = () => {
+    if (!booking) return null;
+
+    const buttons = [];
+
+    if (IS_PROFESSIONAL) {
+      if ([BOOKING_STATES.PENDING, BOOKING_STATES.PENDING_CLIENT_APPROVAL].includes(booking.status)) {
+        buttons.push(
+          <TouchableOpacity
+            key="send"
+            style={[styles.button, styles.primaryButton]}
+            onPress={() => handleStatusUpdate(BOOKING_STATES.PENDING_CLIENT_APPROVAL)}
+            disabled={actionLoading}
+          >
+            {actionLoading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Send to Client</Text>
+            )}
+          </TouchableOpacity>
+        );
+
+        buttons.push(
+          <TouchableOpacity
+            key="deny"
+            style={[styles.button, styles.denyButton]}
+            onPress={() => handleStatusUpdate(BOOKING_STATES.DENIED)}
+            disabled={actionLoading}
+          >
+            <Text style={styles.buttonText}>Deny</Text>
+          </TouchableOpacity>
+        );
+      }
+
+      if (booking.status === BOOKING_STATES.CONFIRMED) {
+        buttons.push(
+          <TouchableOpacity
+            key="cancel"
+            style={[styles.button, styles.cancelButton]}
+            onPress={() => handleStatusUpdate(BOOKING_STATES.CANCELLED)}
+            disabled={actionLoading}
+          >
+            <Text style={styles.cancelButtonText}>Cancel Booking</Text>
+          </TouchableOpacity>
+        );
+      }
+    } else {
+      // Client buttons
+      if (booking.status === BOOKING_STATES.PENDING_CLIENT_APPROVAL) {
+        buttons.push(
+          <TouchableOpacity
+            key="approve"
+            style={[styles.button, styles.approveButton]}
+            onPress={() => handleStatusUpdate(BOOKING_STATES.CONFIRMED)}
+            disabled={actionLoading}
+          >
+            <Text style={styles.buttonText}>Approve</Text>
+          </TouchableOpacity>
+        );
+      }
+
+      if ([BOOKING_STATES.PENDING, BOOKING_STATES.PENDING_CLIENT_APPROVAL].includes(booking.status)) {
+        buttons.push(
+          <TouchableOpacity
+            key="requestChanges"
+            style={[styles.button, styles.modifyButton]}
+            onPress={() => setShowRequestChangesModal(true)}
+            disabled={actionLoading}
+          >
+            <Text style={styles.buttonText}>Request Changes</Text>
+          </TouchableOpacity>
+        );
+      }
+    }
+
+    return (
+      <View style={styles.actionButtonsContainer}>
+        {buttons}
+      </View>
+    );
+  };
+
   return (
     <CrossPlatformView fullWidthHeader={true}>
       <BackHeader
@@ -884,30 +1036,14 @@ const BookingDetails = () => {
             </Text>
           </View>
 
-          <View style={styles.actionButtons}>
-            {booking.status === 'Pending' && (
-              <TouchableOpacity
-                style={[styles.button, styles.approveButton]}
-                onPress={handleApprove}
-              >
-                <Text style={styles.buttonText}>Approve Details</Text>
-              </TouchableOpacity>
-            )}
-            <TouchableOpacity
-              style={[styles.button, styles.modifyButton]}
-              onPress={handleModify}
-            >
-              <Text style={styles.buttonText}>Modify Details</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.button, styles.cancelButton]}
-              onPress={handleCancel}
-            >
-              <Text style={[styles.buttonText, styles.cancelButtonText]}>
-                Cancel Booking
-              </Text>
-            </TouchableOpacity>
-          </View>
+          {renderActionButtons()}
+
+          <RequestChangesModal
+            visible={showRequestChangesModal}
+            onClose={() => setShowRequestChangesModal(false)}
+            onSubmit={handleRequestChanges}
+            loading={actionLoading}
+          />
         </ScrollView>
       )}
       <AddRateModal
@@ -1494,6 +1630,61 @@ const styles = StyleSheet.create({
   dateTimeSection: {
     zIndex: 1,
     elevation: 1,
+  },
+  actionButtonsContainer: {
+    padding: 16,
+    backgroundColor: theme.colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+    gap: 12,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    padding: 16,
+  },
+  modalContent: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: 8,
+    padding: 16,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  reasonInput: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    minHeight: 100,
+    textAlignVertical: 'top',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+  },
+  modalButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+  },
+  submitButton: {
+    backgroundColor: theme.colors.primary,
+  },
+  submitButtonText: {
+    color: theme.colors.surface,
+    fontWeight: '500',
+  },
+  primaryButton: {
+    backgroundColor: theme.colors.primary,
+  },
+  denyButton: {
+    backgroundColor: theme.colors.error,
   },
 });
 
