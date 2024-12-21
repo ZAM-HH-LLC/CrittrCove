@@ -1,3 +1,14 @@
+// First, declare the BOOKING_STATES constant
+export const BOOKING_STATES = {
+  PENDING_INITIAL_PROFESSIONAL_CHANGES: 'Pending Initial Professional Changes',
+  PENDING_PROFESSIONAL_CHANGES: 'Pending Professional Changes',
+  PENDING_CLIENT_APPROVAL: 'Pending Client Approval',
+  CONFIRMED_PENDING_PROFESSIONAL_CHANGES: 'Confirmed Pending Professional Changes',
+  CONFIRMED: 'Confirmed',
+  DENIED: 'Denied',
+  CANCELLED: 'Cancelled'
+};
+
 export const ALL_SERVICES = "All Services";
 export const SERVICE_TYPES = [
   ALL_SERVICES,
@@ -354,7 +365,7 @@ export const updateBooking = (bookingData) => {
 
 const sharedBookingDetails = {
   id: 'bk1',
-  status: 'Pending',
+  status: 'Pending Professional Changes',
   startDate: '2024-12-06',
   startTime: '14:00',
   endDate: '2024-12-06',
@@ -418,40 +429,73 @@ const sharedBookingDetails = {
 
 // Initialize mockBookingDetails with existing mock data
 const mockBookingDetails = {
-  'bk1': sharedBookingDetails,
-  '1234': { 
-    ...sharedBookingDetails, 
+  '1234': {
+    ...sharedBookingDetails,
     id: '1234',
     clientName: 'John Doe',
-    status: 'Confirmed',
+    status: BOOKING_STATES.CONFIRMED,
     startDate: '2024-02-20',
     startTime: '14:00',
   },
-  '5678': { 
-    ...sharedBookingDetails, 
+  '5678': {
+    ...sharedBookingDetails,
     id: '5678',
-    clientName: 'Jane Smith',
-    status: 'Pending',
+    clientName: 'Margarett Laporte',
+    status: BOOKING_STATES.CANCELLED,
     startDate: '2024-02-21',
     startTime: '15:30',
   },
-  '91011': { 
-    ...sharedBookingDetails, 
-    id: '91011',
-    professionalName: 'Sarah Wilson',
-    status: 'Confirmed',
-    startDate: '2024-02-22',
-    startTime: '10:00',
+  '56782': {
+    ...sharedBookingDetails,
+    id: '56782',
+    clientName: 'Zoe Neale',
+    status: BOOKING_STATES.DENIED,
+    startDate: '2024-02-21',
+    startTime: '15:30',
   },
-  '91012': { 
-    ...sharedBookingDetails, 
-    id: '91012',
-    professionalName: 'Mike Johnson',
-    status: 'Pending',
-    startDate: '2024-02-23',
-    startTime: '11:00',
+  '5673': {
+    ...sharedBookingDetails,
+    id: '5673',
+    clientName: 'Matt Aertker',
+    status: BOOKING_STATES.PENDING_INITIAL_PROFESSIONAL_CHANGES,
+    startDate: '2024-02-21',
+    startTime: '15:30',
+  },
+  '5674': {
+    ...sharedBookingDetails,
+    id: '5674',
+    clientName: 'Mark Smith',
+    status: BOOKING_STATES.PENDING_CLIENT_APPROVAL,
+    startDate: '2024-02-21',
+    startTime: '15:30',
+  },
+  '5675': {
+    ...sharedBookingDetails,
+    id: '5675',
+    clientName: 'Booty Smith',
+    status: BOOKING_STATES.PENDING_PROFESSIONAL_CHANGES,
+    startDate: '2024-02-21',
+    startTime: '15:30',
+  },
+  '5675': {
+    ...sharedBookingDetails,
+    id: '56712',
+    clientName: 'Booty Butt Licker',
+    status: BOOKING_STATES.CONFIRMED_PENDING_PROFESSIONAL_CHANGES,
+    startDate: '2024-02-21',
+    startTime: '15:30',
   },
 };
+
+// Map mockProfessionalBookings from mockBookingDetails
+export const mockProfessionalBookings = Object.values(mockBookingDetails)
+  .map(booking => ({
+    id: booking.id,
+    clientName: booking.clientName,
+    status: booking.status,
+    date: booking.startDate,
+    time: booking.startTime,
+  }));
 
 // Add the createBooking function
 export const createBooking = async (clientId, freelancerId, initialData = {}) => {
@@ -459,7 +503,7 @@ export const createBooking = async (clientId, freelancerId, initialData = {}) =>
   
   const blankBooking = {
     id: newBookingId,
-    status: 'Pending',
+    status: 'Pending Initial Professional Changes',
     clientId,
     freelancerId,
     clientName: initialData.clientName || 'TBD',
@@ -518,18 +562,8 @@ export const fetchBookingDetails = async (bookingId) => {
 // Export mockBookingDetails for debugging
 export const _mockBookingDetails = mockBookingDetails;
 
-// Add these constants at the top of the file
-export const BOOKING_STATES = {
-  PENDING: 'Pending',
-  CONFIRMED: 'Confirmed',
-  PENDING_CLIENT_APPROVAL: 'Pending Client Approval',
-  PENDING_PROFESSIONAL_CHANGES: 'Pending Professional Changes',
-  DENIED: 'Denied',
-  CANCELLED: 'Cancelled'
-};
-
 // Add new mock function for updating booking status
-export const updateBookingStatus = async (bookingId, newStatus, reason = '') => {
+export const updateBookingStatus = async (bookingId, newStatus, reason = '', metadata = {}) => {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 1000));
   
@@ -541,8 +575,27 @@ export const updateBookingStatus = async (bookingId, newStatus, reason = '') => 
     ...mockBookingDetails[bookingId],
     status: newStatus,
     statusReason: reason,
-    updated_at: new Date().toISOString()
+    updated_at: new Date().toISOString(),
+    ...metadata
   };
   
   return mockBookingDetails[bookingId];
 };
+
+// Make sure to update MyBookings.js to use the same BOOKING_STATES constant
+export const mockClientBookings = [
+  {
+    id: '91011',
+    professionalName: 'Sarah Wilson',
+    status: BOOKING_STATES.CONFIRMED,
+    date: '2024-02-22',
+    time: '10:00',
+  },
+  {
+    id: '91012',
+    professionalName: 'Mike Johnson',
+    status: BOOKING_STATES.PENDING_CLIENT_APPROVAL,
+    date: '2024-02-23',
+    time: '11:00',
+  },
+];

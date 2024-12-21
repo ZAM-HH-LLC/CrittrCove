@@ -15,20 +15,19 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import TimePicker from '../components/TimePicker';
 import EditOccurrenceModal from '../components/EditOccurrenceModal';
 import AddOccurrenceModal from '../components/AddOccurrenceModal';
+import ConfirmationModal from '../components/ConfirmationModal';
 
 const LAST_VIEWED_BOOKING_ID = 'last_viewed_booking_id';
 
 // Replace with Services that professional offers
 const SERVICE_OPTIONS = ['Dog Walking', 'Pet Sitting', 'House Sitting', 'Drop-In Visits'];
-// Replace with Animals that the professional cares for
+// Replace with Animals that the client owns
 const ANIMAL_OPTIONS = ['Dog', 'Cat', 'Bird', 'Small Animal'];
 const PET_OPTIONS = [
   { id: 'dog1', name: 'Max', type: 'Dog', breed: 'Golden Retriever' },
   { id: 'cat1', name: 'Luna', type: 'Cat', breed: 'Siamese' },
   // Add more default options or fetch from an API
 ];
-
-const IS_PROFESSIONAL = true; // Set to false to hide edit buttons
 
 const mockUpdateBookingPets = async (bookingId, pets) => {
   // Simulate API delay
@@ -177,6 +176,12 @@ const BookingDetails = () => {
   const [isServiceSaving, setIsServiceSaving] = useState(false);
   const [showRequestChangesModal, setShowRequestChangesModal] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [confirmationModal, setConfirmationModal] = useState({
+    visible: false,
+    actionText: '',
+    onConfirm: null,
+  });
 
   useEffect(() => {
     const fetchBooking = async () => {
@@ -287,40 +292,70 @@ const BookingDetails = () => {
     console.log('Booking cancelled');
   };
 
+  const handleStatusUpdateAfterEdit = () => {
+    setHasUnsavedChanges(true);
+    
+    // If the booking is in CONFIRMED state, change it to CONFIRMED_PENDING_PROFESSIONAL_CHANGES
+    if (booking.status === BOOKING_STATES.CONFIRMED) {
+      setBooking(prev => ({
+        ...prev,
+        status: BOOKING_STATES.CONFIRMED_PENDING_PROFESSIONAL_CHANGES
+      }));
+    }
+  };
+
   const togglePetsEditMode = async () => {
     if (isPetsEditMode) {
       try {
-        setIsPetsSaving(true); // Start loading
-        // Save changes
+        setIsPetsSaving(true);
         const response = await mockUpdateBookingPets(booking.id, selectedPets);
         if (response.success) {
+          setBooking(prev => ({
+            ...prev,
+            pets: selectedPets
+          }));
           setIsPetsEditMode(false);
+          handleStatusUpdateAfterEdit();
         }
       } catch (error) {
         console.error('Error updating pets:', error);
-        // Handle error (maybe show an alert)
+        Alert.alert('Error', 'Failed to update pets');
       } finally {
-        setIsPetsSaving(false); // Stop loading regardless of outcome
+        setIsPetsSaving(false);
       }
     } else {
       setIsPetsEditMode(true);
     }
   };
 
+  const handleAddPet = (pet) => {
+    setSelectedPets(prev => [...prev, pet]);
+    handleStatusUpdateAfterEdit();
+  };
+
+  const handleRemovePet = (petId) => {
+    setSelectedPets(prev => prev.filter(p => p.id !== petId));
+    handleStatusUpdateAfterEdit();
+  };
+
   const toggleServiceEditMode = async () => {
     if (isServiceEditMode) {
       try {
-        setIsServiceSaving(true); // Start loading
-        // Save changes
+        setIsServiceSaving(true);
         const response = await mockUpdateBookingService(booking.id, editedBooking);
         if (response.success) {
+          setBooking(prev => ({
+            ...prev,
+            ...editedBooking
+          }));
           setIsServiceEditMode(false);
+          handleStatusUpdateAfterEdit();
         }
       } catch (error) {
         console.error('Error updating service:', error);
-        // Handle error (maybe show an alert)
+        Alert.alert('Error', 'Failed to update service details');
       } finally {
-        setIsServiceSaving(false); // Stop loading regardless of outcome
+        setIsServiceSaving(false);
       }
     } else {
       setIsServiceEditMode(true);
@@ -359,18 +394,38 @@ const BookingDetails = () => {
     console.log('Removing service at index:', index);
   };
 
+  const canEdit = () => {
+    // First check if user is a professional (you might want to get this from auth/context later)
+    const userIsProfessional = true; // This can be replaced with actual auth check
+
+    // If not a professional, can't edit
+    if (!userIsProfessional) return false;
+
+    // If no booking or status is cancelled/denied, can't edit
+    if (!booking || [
+      BOOKING_STATES.CANCELLED,
+      BOOKING_STATES.DENIED
+    ].includes(booking?.status)) {
+      return false;
+    }
+
+    return true;
+  };
+
   const renderEditButton = () => (
-    <TouchableOpacity 
-      onPress={togglePetsEditMode}
-      style={styles.editButton}
-      testID="edit-button"
-    >
-      <MaterialCommunityIcons 
-        name={isPetsEditMode ? "check" : "pencil"} 
-        size={24} 
-        color={theme.colors.primary} 
-      />
-    </TouchableOpacity>
+    canEdit() && (
+      <TouchableOpacity 
+        onPress={togglePetsEditMode}
+        style={styles.editButton}
+        testID="edit-button"
+      >
+        <MaterialCommunityIcons 
+          name={isPetsEditMode ? "check" : "pencil"} 
+          size={24} 
+          color={theme.colors.primary} 
+        />
+      </TouchableOpacity>
+    )
   );
 
   const handleUpdatePets = (newCount) => {
@@ -378,6 +433,7 @@ const BookingDetails = () => {
       ...prev,
       numberOfPets: parseInt(newCount),
     }));
+    setHasUnsavedChanges(true);
     recalculateTotals();
   };
 
@@ -386,6 +442,7 @@ const BookingDetails = () => {
       ...prev,
       duration: parseInt(newDuration),
     }));
+    setHasUnsavedChanges(true);
     recalculateTotals();
   };
 
@@ -400,6 +457,7 @@ const BookingDetails = () => {
         extraServices: updatedRates
       }
     }));
+    setHasUnsavedChanges(true);
     recalculateTotals();
   };
 
@@ -487,9 +545,11 @@ const BookingDetails = () => {
 
   const renderDateTimeSection = () => (
     <View>
-      <Text style={styles.sectionTitle}>{IS_PROFESSIONAL ? "Dates & Times (Set Rates for Dates)" : "Dates & Times"}</Text>
+      <Text style={styles.sectionTitle}>
+        {canEdit() ? "Dates & Times (Set Rates for Dates)" : "Dates & Times"}
+      </Text>
       {(booking?.occurrences || []).map((occurrence, index) => (
-        IS_PROFESSIONAL ? (
+        canEdit() ? (
           <TouchableOpacity 
             key={index}
             style={styles.occurrenceCard}
@@ -531,7 +591,7 @@ const BookingDetails = () => {
         )
       ))}
       
-      {IS_PROFESSIONAL && (
+      {canEdit() && (
         <TouchableOpacity
           style={styles.addOccurrenceButton}
           onPress={() => setShowAddOccurrenceModal(true)}
@@ -639,19 +699,12 @@ const BookingDetails = () => {
     return format(date, 'h:mm a');
   };
 
-  const canEditBooking = () => {
-    return IS_PROFESSIONAL && [
-      BOOKING_STATES.PENDING,
-      BOOKING_STATES.PENDING_CLIENT_APPROVAL,
-      BOOKING_STATES.CONFIRMED
-    ].includes(booking?.status);
-  };
-
-  const handleStatusUpdate = async (newStatus, reason = '') => {
+  const handleStatusUpdate = async (newStatus, reason = '', metadata = {}) => {
     setActionLoading(true);
     try {
-      const updatedBooking = await updateBookingStatus(booking.id, newStatus, reason);
+      const updatedBooking = await updateBookingStatus(booking.id, newStatus, reason, metadata);
       setBooking(updatedBooking);
+      setHasUnsavedChanges(false); // Reset hasUnsavedChanges after status update
       Alert.alert('Success', `Booking ${newStatus.toLowerCase()} successfully`);
     } catch (error) {
       console.error('Error updating booking status:', error);
@@ -666,18 +719,45 @@ const BookingDetails = () => {
     setShowRequestChangesModal(false);
   };
 
+  const showConfirmation = (actionText, onConfirm) => {
+    setConfirmationModal({
+      visible: true,
+      actionText,
+      onConfirm,
+    });
+  };
+
+  const hideConfirmation = () => {
+    setConfirmationModal({
+      visible: false,
+      actionText: '',
+      onConfirm: null,
+    });
+  };
+
   const renderActionButtons = () => {
     if (!booking) return null;
 
     const buttons = [];
 
-    if (IS_PROFESSIONAL) {
-      if ([BOOKING_STATES.PENDING, BOOKING_STATES.PENDING_CLIENT_APPROVAL].includes(booking.status)) {
+    if (canEdit()) {
+      // Send to Client button
+      if (([
+        BOOKING_STATES.PENDING_INITIAL_PROFESSIONAL_CHANGES,
+        BOOKING_STATES.PENDING_PROFESSIONAL_CHANGES
+      ].includes(booking.status) || hasUnsavedChanges) && 
+      ![BOOKING_STATES.CANCELLED, BOOKING_STATES.DENIED].includes(booking.status)) {
         buttons.push(
           <TouchableOpacity
             key="send"
             style={[styles.button, styles.primaryButton]}
-            onPress={() => handleStatusUpdate(BOOKING_STATES.PENDING_CLIENT_APPROVAL)}
+            onPress={() => showConfirmation(
+              'send these changes to the client',
+              () => {
+                hideConfirmation();
+                handleStatusUpdate(BOOKING_STATES.PENDING_CLIENT_APPROVAL);
+              }
+            )}
             disabled={actionLoading}
           >
             {actionLoading ? (
@@ -687,12 +767,23 @@ const BookingDetails = () => {
             )}
           </TouchableOpacity>
         );
+      }
 
+      // Deny button
+      if (booking.status === BOOKING_STATES.PENDING_INITIAL_PROFESSIONAL_CHANGES) {
         buttons.push(
           <TouchableOpacity
             key="deny"
             style={[styles.button, styles.denyButton]}
-            onPress={() => handleStatusUpdate(BOOKING_STATES.DENIED)}
+            onPress={() => showConfirmation(
+              'deny this booking',
+              () => {
+                hideConfirmation();
+                handleStatusUpdate(BOOKING_STATES.DENIED, '', {
+                  deniedBy: 'professional_id_here'
+                });
+              }
+            )}
             disabled={actionLoading}
           >
             <Text style={styles.buttonText}>Deny</Text>
@@ -700,12 +791,22 @@ const BookingDetails = () => {
         );
       }
 
-      if (booking.status === BOOKING_STATES.CONFIRMED) {
+      // Cancel button
+      if ([
+        BOOKING_STATES.PENDING_PROFESSIONAL_CHANGES,
+        BOOKING_STATES.CONFIRMED
+      ].includes(booking.status)) {
         buttons.push(
           <TouchableOpacity
             key="cancel"
             style={[styles.button, styles.cancelButton]}
-            onPress={() => handleStatusUpdate(BOOKING_STATES.CANCELLED)}
+            onPress={() => showConfirmation(
+              'cancel this booking',
+              () => {
+                hideConfirmation();
+                handleStatusUpdate(BOOKING_STATES.CANCELLED);
+              }
+            )}
             disabled={actionLoading}
           >
             <Text style={styles.cancelButtonText}>Cancel Booking</Text>
@@ -715,30 +816,25 @@ const BookingDetails = () => {
     } else {
       // Client buttons
       if (booking.status === BOOKING_STATES.PENDING_CLIENT_APPROVAL) {
+        // Approve button
         buttons.push(
           <TouchableOpacity
             key="approve"
             style={[styles.button, styles.approveButton]}
-            onPress={() => handleStatusUpdate(BOOKING_STATES.CONFIRMED)}
+            onPress={() => showConfirmation(
+              'approve this booking',
+              () => {
+                hideConfirmation();
+                handleStatusUpdate(BOOKING_STATES.CONFIRMED);
+              }
+            )}
             disabled={actionLoading}
           >
             <Text style={styles.buttonText}>Approve</Text>
           </TouchableOpacity>
         );
       }
-
-      if ([BOOKING_STATES.PENDING, BOOKING_STATES.PENDING_CLIENT_APPROVAL].includes(booking.status)) {
-        buttons.push(
-          <TouchableOpacity
-            key="requestChanges"
-            style={[styles.button, styles.modifyButton]}
-            onPress={() => setShowRequestChangesModal(true)}
-            disabled={actionLoading}
-          >
-            <Text style={styles.buttonText}>Request Changes</Text>
-          </TouchableOpacity>
-        );
-      }
+      // ... rest of client buttons ...
     }
 
     return (
@@ -747,6 +843,13 @@ const BookingDetails = () => {
       </View>
     );
   };
+
+  // Add this effect to update editedBooking when booking changes
+  useEffect(() => {
+    if (booking) {
+      setEditedBooking(booking);
+    }
+  }, [booking]);
 
   return (
     <CrossPlatformView fullWidthHeader={true}>
@@ -764,7 +867,7 @@ const BookingDetails = () => {
         </View>
       ) : (
         <ScrollView style={styles.container}>
-          <StatusBadge status={getDisplayValue(booking?.status, 'Pending')} />
+          <StatusBadge status={getDisplayValue(booking?.status, 'Pending Professional Changes')} />
           
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Booking Parties</Text>
@@ -777,23 +880,7 @@ const BookingDetails = () => {
           <View style={[styles.section, styles.petsSection]}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Booking Pets</Text>
-              {IS_PROFESSIONAL && (
-                <TouchableOpacity 
-                  onPress={togglePetsEditMode}
-                  style={styles.sectionEditButton}
-                  disabled={isPetsSaving}
-                >
-                  {isPetsSaving ? (
-                    <ActivityIndicator size="small" color={theme.colors.primary} />
-                  ) : (
-                    <MaterialCommunityIcons 
-                      name={isPetsEditMode ? "check" : "pencil"} 
-                      size={24} 
-                      color={theme.colors.primary} 
-                    />
-                  )}
-                </TouchableOpacity>
-              )}
+              {renderEditButton()}
             </View>
             
             {isPetsEditMode ? (
@@ -877,7 +964,7 @@ const BookingDetails = () => {
           <View style={[styles.section, { zIndex: 2 }]}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Service Details</Text>
-              {IS_PROFESSIONAL && (
+              {canEdit() && (
                 <TouchableOpacity 
                   onPress={toggleServiceEditMode}
                   style={styles.sectionEditButton}
@@ -1073,6 +1160,13 @@ const BookingDetails = () => {
         onAdd={handleAddOccurrence}
         defaultRates={booking?.rates}
       />
+      <ConfirmationModal
+        visible={confirmationModal.visible}
+        actionText={confirmationModal.actionText}
+        onClose={hideConfirmation}
+        onConfirm={confirmationModal.onConfirm}
+        isLoading={actionLoading}
+      />
     </CrossPlatformView>
   );
 };
@@ -1238,7 +1332,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   editButton: {
-    marginRight: 16,
     padding: 8,
   },
   editField: {

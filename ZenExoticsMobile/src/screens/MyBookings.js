@@ -6,41 +6,8 @@ import { theme } from '../styles/theme';
 import CrossPlatformView from '../components/CrossPlatformView';
 import BackHeader from '../components/BackHeader';
 import BookingCard from '../components/BookingCard';
+import { mockProfessionalBookings, mockClientBookings } from '../data/mockData';
 
-// Mock data sets
-const mockProfessionalBookings = [
-  {
-    id: '1234',
-    clientName: 'John Doe',
-    status: 'Confirmed',
-    date: '2024-02-20',
-    time: '14:00',
-  },
-  {
-    id: '5678',
-    clientName: 'Jane Smith',
-    status: 'Pending',
-    date: '2024-02-21',
-    time: '15:30',
-  },
-];
-
-const mockClientBookings = [
-  {
-    id: '91011',
-    professionalName: 'Sarah Wilson',
-    status: 'Confirmed',
-    date: '2024-02-22',
-    time: '10:00',
-  },
-  {
-    id: '91012',
-    professionalName: 'Mike Johnson',
-    status: 'Pending',
-    date: '2024-02-23',
-    time: '11:00',
-  },
-];
 
 const MyBookings = () => {
   const navigation = useNavigation();
