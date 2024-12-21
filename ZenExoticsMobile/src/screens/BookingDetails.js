@@ -374,9 +374,12 @@ const BookingDetails = () => {
         setIsServiceSaving(true);
         const response = await mockUpdateBookingService(booking.id, editedBooking);
         if (response.success) {
+          // Update the booking state with the edited values
           setBooking(prev => ({
             ...prev,
-            ...editedBooking
+            serviceType: editedBooking.serviceDetails.type,
+            animalType: editedBooking.serviceDetails.animalType,
+            numberOfPets: editedBooking.serviceDetails.numberOfPets
           }));
           setIsServiceEditMode(false);
           handleStatusUpdateAfterEdit();
@@ -388,6 +391,14 @@ const BookingDetails = () => {
         setIsServiceSaving(false);
       }
     } else {
+      setEditedBooking(prev => ({
+        ...prev,
+        serviceDetails: {
+          type: booking.serviceType || '',
+          animalType: booking.animalType || '',
+          numberOfPets: booking.numberOfPets || 0
+        }
+      }));
       setIsServiceEditMode(true);
     }
   };
@@ -887,19 +898,25 @@ const BookingDetails = () => {
   }, [booking]);
 
   const handleServiceTypeChange = (newServiceType) => {
-    setEditedBooking(prev => ({
-      ...prev,
-      serviceDetails: {
-        ...prev.serviceDetails,
-        type: newServiceType
-      }
-    }));
-    handleStatusUpdateAfterEdit();
+    console.log('Previous editedBooking:', editedBooking);
+    console.log('New service type:', newServiceType);
+    
+    setEditedBooking(prev => {
+      const updated = {
+        ...prev,
+        serviceDetails: {
+          ...prev.serviceDetails,
+          type: newServiceType
+        }
+      };
+      console.log('Updated editedBooking:', updated);
+      return updated;
+    });
   };
 
   const renderServiceTypeDropdown = () => (
     <View style={styles.dropdownContainer}>
-      <Text style={styles.label}>Service Type:</Text>
+      {/* <Text style={styles.label}>Service Type:</Text> */}
       <TouchableOpacity
         style={styles.dropdownInput}
         onPress={() => setShowServiceDropdown(!showServiceDropdown)}
@@ -929,6 +946,53 @@ const BookingDetails = () => {
                   editedBooking.serviceDetails.type === service && styles.selectedOption
                 ]}>
                   {service}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+    </View>
+  );
+
+  const renderAnimalTypeDropdown = () => (
+    <View style={styles.dropdownContainer}>
+      <TouchableOpacity
+        style={styles.dropdownInput}
+        onPress={() => setShowAnimalDropdown(!showAnimalDropdown)}
+      >
+        <Text>{editedBooking.serviceDetails.animalType || 'Select Animal Type'}</Text>
+        <MaterialCommunityIcons 
+          name={showAnimalDropdown ? "chevron-up" : "chevron-down"} 
+          size={24} 
+          color={theme.colors.text} 
+        />
+      </TouchableOpacity>
+
+      {showAnimalDropdown && (
+        <View style={styles.dropdownList}>
+          <ScrollView nestedScrollEnabled={true}>
+            {ANIMAL_OPTIONS.map((animal) => (
+              <TouchableOpacity
+                key={animal}
+                style={styles.dropdownItem}
+                onPress={() => {
+                  setEditedBooking(prev => ({
+                    ...prev,
+                    serviceDetails: {
+                      ...prev.serviceDetails,
+                      animalType: animal
+                    }
+                  }));
+                  setShowAnimalDropdown(false);
+                  handleStatusUpdateAfterEdit();
+                }}
+              >
+                <Text style={[
+                  styles.dropdownText,
+                  editedBooking.serviceDetails.animalType === animal && styles.selectedOption
+                ]}>
+                  {animal}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -1071,126 +1135,43 @@ const BookingDetails = () => {
               )}
             </View>
             {isServiceEditMode ? (
-              <View style={{ zIndex: 3 }}>
-                <View style={[styles.editRow, { zIndex: 3 }]}>
-                  <Text style={styles.label}>Service Type:</Text>
-                  <View style={[styles.dropdownContainer, { zIndex: 3 }]}>
-                    <TouchableOpacity
-                      style={styles.dropdownInput}
-                      onPress={() => {
-                        setShowServiceDropdown(!showServiceDropdown);
-                        setShowAnimalDropdown(false);
-                      }}
-                    >
-                      <Text>{editedBooking.serviceType || 'Select Service'}</Text>
-                      <MaterialCommunityIcons 
-                        name={showServiceDropdown ? "chevron-up" : "chevron-down"} 
-                        size={24} 
-                        color={theme.colors.text} 
-                      />
-                    </TouchableOpacity>
-
-                    {showServiceDropdown && (
-                      <View style={[styles.dropdownList, { zIndex: 1000 }]}>
-                        <ScrollView nestedScrollEnabled={true}>
-                          {SERVICE_OPTIONS.map((service) => (
-                            <TouchableOpacity
-                              key={service}
-                              style={styles.dropdownItem}
-                              onPress={() => {
-                                setEditedBooking(prev => ({
-                                  ...prev,
-                                  serviceType: service
-                                }));
-                                setShowServiceDropdown(false);
-                              }}
-                            >
-                              <Text style={[
-                                styles.dropdownText,
-                                editedBooking.serviceType === service && styles.selectedOption
-                              ]}>
-                                {service}
-                              </Text>
-                            </TouchableOpacity>
-                          ))}
-                        </ScrollView>
-                      </View>
-                    )}
+              <View style={styles.serviceEditContainer}>
+                <View style={[styles.serviceInputRow, { zIndex: 3 }]}>
+                  <Text style={styles.inputLabel}>Service Type:</Text>
+                  <View style={styles.inputContainer}>
+                    {renderServiceTypeDropdown()}
                   </View>
                 </View>
-
-                <View style={[styles.editRow, { zIndex: 2 }]}>
-                  <Text style={styles.label}>Animal Type:</Text>
-                  <View style={[styles.dropdownContainer, { zIndex: 2 }]}>
-                    <TouchableOpacity
-                      style={styles.dropdownInput}
-                      onPress={() => {
-                        setShowAnimalDropdown(!showAnimalDropdown);
-                        setShowServiceDropdown(false);
-                      }}
-                    >
-                      <Text>{editedBooking.animalType || 'Select Animal'}</Text>
-                      <MaterialCommunityIcons 
-                        name={showAnimalDropdown ? "chevron-up" : "chevron-down"} 
-                        size={24} 
-                        color={theme.colors.text} 
-                      />
-                    </TouchableOpacity>
-
-                    {showAnimalDropdown && (
-                      <View style={[styles.dropdownList, { zIndex: 1000 }]}>
-                        <ScrollView nestedScrollEnabled={true}>
-                          {ANIMAL_OPTIONS.map((animal) => (
-                            <TouchableOpacity
-                              key={animal}
-                              style={styles.dropdownItem}
-                              onPress={() => {
-                                setEditedBooking(prev => ({
-                                  ...prev,
-                                  animalType: animal
-                                }));
-                                setShowAnimalDropdown(false);
-                              }}
-                            >
-                              <Text style={[
-                                styles.dropdownText,
-                                editedBooking.animalType === animal && styles.selectedOption
-                              ]}>
-                                {animal}
-                              </Text>
-                            </TouchableOpacity>
-                          ))}
-                        </ScrollView>
-                      </View>
-                    )}
+                <View style={[styles.serviceInputRow, { zIndex: 2 }]}>
+                  <Text style={styles.inputLabel}>Animal Type:</Text>
+                  <View style={styles.inputContainer}>
+                    {renderAnimalTypeDropdown()}
                   </View>
                 </View>
-
-                <View style={[styles.editRow, { zIndex: 1 }]}>
-                  <Text style={styles.label}>Number of Pets:</Text>
+                <View style={[styles.serviceInputRow, { zIndex: 1 }]}>
+                  <Text style={styles.inputLabel}>Number of Pets:</Text>
                   <TextInput
-                    style={styles.editInput}
-                    value={editedBooking.numberOfPets.toString()}
-                    onChangeText={(text) => {
-                      const number = parseInt(text) || 1;
-                      setEditedBooking(prev => ({
-                        ...prev,
-                        numberOfPets: number
-                      }));
-                    }}
+                    style={styles.numberInput}
+                    value={String(editedBooking.serviceDetails.numberOfPets)}
+                    onChangeText={(text) => handleUpdatePets(text)}
                     keyboardType="numeric"
-                    maxLength={2}
                   />
                 </View>
               </View>
             ) : (
-              <View>
-                <Text style={[styles.label, {fontSize: 14}]}>Service Type:</Text>
-                <Text style={styles.text}>{booking.serviceType}</Text>
-                <Text style={[styles.label, {fontSize: 14}]}>Animal Type:</Text>
-                <Text style={styles.text}>{booking.animalType}</Text>
-                <Text style={[styles.label, {fontSize: 14}]}>Number of Pets:</Text>
-                <Text style={styles.text}>{booking.numberOfPets}</Text>
+              <View style={styles.serviceDetailsContainer}>
+                <View style={styles.serviceDetailRow}>
+                  <Text style={styles.label}>Service Type:</Text>
+                  <Text style={styles.value}>{booking.serviceType}</Text>
+                </View>
+                <View style={styles.serviceDetailRow}>
+                  <Text style={styles.label}>Animal Type:</Text>
+                  <Text style={styles.value}>{booking.animalType}</Text>
+                </View>
+                <View style={styles.serviceDetailRow}>
+                  <Text style={styles.label}>Number of Pets:</Text>
+                  <Text style={styles.value}>{booking.numberOfPets}</Text>
+                </View>
               </View>
             )}
           </View>
@@ -1864,6 +1845,49 @@ const styles = StyleSheet.create({
   },
   denyButton: {
     backgroundColor: theme.colors.error,
+  },
+  serviceEditContainer: {
+    gap: 16,
+  },
+  serviceInputRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  inputLabel: {
+    fontSize: 16,
+    color: theme.colors.text,
+    flex: 1,
+  },
+  inputContainer: {
+    width: 150, // Fixed width for dropdowns and number input
+  },
+  numberInput: {
+    height: 40,
+    width: 150, // Match the width of dropdowns
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    fontSize: 16,
+  },
+  serviceDetailsContainer: {
+    gap: 12,
+  },
+  serviceDetailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  label: {
+    fontSize: 16,
+    color: theme.colors.text,
+  },
+  value: {
+    fontSize: 16,
+    color: theme.colors.text,
+    fontWeight: '500',
   },
 });
 
