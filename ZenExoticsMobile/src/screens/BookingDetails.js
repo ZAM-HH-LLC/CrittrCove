@@ -246,6 +246,7 @@ const BookingDetails = () => {
     if (booking) {
       setEditedBooking({
         ...booking,
+        serviceDetails: booking.serviceDetails || {},
         rates: {
           additionalPetRate: booking.rates?.additionalPetRate ?? 0,
           holidayFee: booking.rates?.holidayFee ?? 0,
@@ -293,14 +294,38 @@ const BookingDetails = () => {
   };
 
   const handleStatusUpdateAfterEdit = () => {
-    setHasUnsavedChanges(true);
-    
-    // If the booking is in CONFIRMED state, change it to CONFIRMED_PENDING_PROFESSIONAL_CHANGES
-    if (booking.status === BOOKING_STATES.CONFIRMED) {
-      setBooking(prev => ({
-        ...prev,
-        status: BOOKING_STATES.CONFIRMED_PENDING_PROFESSIONAL_CHANGES
-      }));
+    const currentPets = booking.pets || [];
+    const currentOccurrences = booking.occurrences || [];
+    const currentServiceDetails = booking.serviceDetails || { type: '', animalType: '', numberOfPets: 0 };
+    const editedServiceDetails = editedBooking.serviceDetails || { type: '', animalType: '', numberOfPets: 0 };
+
+    const petsHaveChanged = JSON.stringify(currentPets) !== JSON.stringify(selectedPets);
+    const serviceDetailsHaveChanged = (
+      currentServiceDetails.type !== editedServiceDetails.type ||
+      currentServiceDetails.animalType !== editedServiceDetails.animalType ||
+      currentServiceDetails.numberOfPets !== editedServiceDetails.numberOfPets
+    );
+    const occurrencesHaveChanged = JSON.stringify(currentOccurrences) !== JSON.stringify(editedBooking.occurrences);
+
+    console.log('petsHaveChanged:', petsHaveChanged);
+    console.log('serviceDetailsHaveChanged:', serviceDetailsHaveChanged);
+    console.log('occurrencesHaveChanged:', occurrencesHaveChanged);
+    console.log('booking.pets:', currentPets);
+    console.log('selectedPets:', selectedPets);
+    console.log('booking.serviceDetails:', currentServiceDetails);
+    console.log('editedBooking.serviceDetails:', editedServiceDetails);
+    console.log('booking.occurrences:', currentOccurrences);
+    console.log('editedBooking.occurrences:', editedBooking.occurrences);
+
+    if (petsHaveChanged || serviceDetailsHaveChanged || occurrencesHaveChanged) {
+      setHasUnsavedChanges(true);
+
+      if (booking.status === BOOKING_STATES.CONFIRMED) {
+        setBooking(prev => ({
+          ...prev,
+          status: BOOKING_STATES.CONFIRMED_PENDING_PROFESSIONAL_CHANGES
+        }));
+      }
     }
   };
 
@@ -308,15 +333,19 @@ const BookingDetails = () => {
     if (isPetsEditMode) {
       try {
         setIsPetsSaving(true);
-        const response = await mockUpdateBookingPets(booking.id, selectedPets);
-        if (response.success) {
-          setBooking(prev => ({
-            ...prev,
-            pets: selectedPets
-          }));
-          setIsPetsEditMode(false);
-          handleStatusUpdateAfterEdit();
+        const petsHaveChanged = JSON.stringify(booking.pets) !== JSON.stringify(selectedPets);
+
+        if (petsHaveChanged) {
+          const response = await mockUpdateBookingPets(booking.id, selectedPets);
+          if (response.success) {
+            setBooking(prev => ({
+              ...prev,
+              pets: selectedPets
+            }));
+            handleStatusUpdateAfterEdit();
+          }
         }
+        setIsPetsEditMode(false);
       } catch (error) {
         console.error('Error updating pets:', error);
         Alert.alert('Error', 'Failed to update pets');
@@ -324,6 +353,7 @@ const BookingDetails = () => {
         setIsPetsSaving(false);
       }
     } else {
+      setSelectedPets(booking.pets || []);
       setIsPetsEditMode(true);
     }
   };
@@ -418,12 +448,17 @@ const BookingDetails = () => {
         onPress={togglePetsEditMode}
         style={styles.editButton}
         testID="edit-button"
+        disabled={isPetsSaving}
       >
-        <MaterialCommunityIcons 
-          name={isPetsEditMode ? "check" : "pencil"} 
-          size={24} 
-          color={theme.colors.primary} 
-        />
+        {isPetsSaving ? (
+          <ActivityIndicator size="small" color={theme.colors.primary} />
+        ) : (
+          <MaterialCommunityIcons 
+            name={isPetsEditMode ? "check" : "pencil"} 
+            size={24} 
+            color={theme.colors.primary} 
+          />
+        )}
       </TouchableOpacity>
     )
   );
@@ -850,6 +885,58 @@ const BookingDetails = () => {
       setEditedBooking(booking);
     }
   }, [booking]);
+
+  const handleServiceTypeChange = (newServiceType) => {
+    setEditedBooking(prev => ({
+      ...prev,
+      serviceDetails: {
+        ...prev.serviceDetails,
+        type: newServiceType
+      }
+    }));
+    handleStatusUpdateAfterEdit();
+  };
+
+  const renderServiceTypeDropdown = () => (
+    <View style={styles.dropdownContainer}>
+      <Text style={styles.label}>Service Type:</Text>
+      <TouchableOpacity
+        style={styles.dropdownInput}
+        onPress={() => setShowServiceDropdown(!showServiceDropdown)}
+      >
+        <Text>{editedBooking.serviceDetails.type || 'Select Service'}</Text>
+        <MaterialCommunityIcons 
+          name={showServiceDropdown ? "chevron-up" : "chevron-down"} 
+          size={24} 
+          color={theme.colors.text} 
+        />
+      </TouchableOpacity>
+
+      {showServiceDropdown && (
+        <View style={styles.dropdownList}>
+          <ScrollView nestedScrollEnabled={true}>
+            {SERVICE_OPTIONS.map((service) => (
+              <TouchableOpacity
+                key={service}
+                style={styles.dropdownItem}
+                onPress={() => {
+                  handleServiceTypeChange(service);
+                  setShowServiceDropdown(false);
+                }}
+              >
+                <Text style={[
+                  styles.dropdownText,
+                  editedBooking.serviceDetails.type === service && styles.selectedOption
+                ]}>
+                  {service}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+    </View>
+  );
 
   return (
     <CrossPlatformView fullWidthHeader={true}>
@@ -1332,7 +1419,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   editButton: {
-    padding: 8,
   },
   editField: {
     padding: 16,
