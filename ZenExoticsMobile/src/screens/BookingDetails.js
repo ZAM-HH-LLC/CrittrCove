@@ -301,23 +301,26 @@ const BookingDetails = () => {
   const handleStatusUpdateAfterEdit = () => {
     const currentPets = booking.pets || [];
     const currentOccurrences = booking.occurrences || [];
+    
     // Ensure both objects are initialized with the current booking values
     const currentServiceDetails = {
       type: booking.serviceType || '',
       animalType: booking.animalType || '',
       numberOfPets: booking.numberOfPets || 0
     };
+    
     const editedServiceDetails = {
       type: editedBooking.serviceDetails?.type || booking.serviceType || '',
       animalType: editedBooking.serviceDetails?.animalType || booking.animalType || '',
-      numberOfPets: editedBooking.serviceDetails?.numberOfPets || booking.numberOfPets || 0
+      // Convert to number for comparison
+      numberOfPets: Number(editedBooking.serviceDetails?.numberOfPets) || 0
     };
 
     const petsHaveChanged = JSON.stringify(currentPets) !== JSON.stringify(selectedPets);
     const serviceDetailsHaveChanged = (
       currentServiceDetails.type !== editedServiceDetails.type ||
       currentServiceDetails.animalType !== editedServiceDetails.animalType ||
-      currentServiceDetails.numberOfPets !== editedServiceDetails.numberOfPets
+      Number(currentServiceDetails.numberOfPets) !== Number(editedServiceDetails.numberOfPets)  // Compare as numbers
     );
     const occurrencesHaveChanged = JSON.stringify(currentOccurrences) !== JSON.stringify(editedBooking.occurrences);
 
