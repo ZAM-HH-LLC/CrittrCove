@@ -27,7 +27,7 @@ export default function Navigation({ navigation }) {
     };
   }, []);
 
-  const sittersTitle = Platform.OS === 'web' ? 'Search Sitters' : 'Sitters';
+  const sittersTitle = Platform.OS === 'web' ? 'Search Pros' : 'Professionals';
 
   const handleNavigation = (screenName) => {
     closeMenu();
@@ -45,7 +45,7 @@ export default function Navigation({ navigation }) {
     } else if (userRole === 'sitter') {
       return [
         { title: 'Dashboard', icon: 'view-dashboard', onPress: () => handleNavigation('SitterDashboard') },
-        { title: 'Clients', icon: 'account-group', onPress: () => handleNavigation('Clients') },
+        { title: 'MyBookings', icon: 'account-group', onPress: () => handleNavigation('MyBookings') },
         { title: 'Messages', icon: 'message-text', onPress: () => navigation.navigate('MessageHistory') },
         { title: 'Availability', icon: 'clock-outline', onPress: () => handleNavigation('AvailabilitySettings') },
         { title: 'More', icon: 'dots-horizontal', onPress: () => handleNavigation('More') },

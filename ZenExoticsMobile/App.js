@@ -24,7 +24,7 @@ import SitterDashboard from './src/screens/SitterDashboard';
 import BecomeSitter from './src/screens/BecomeSitter';
 import MoreScreen from './src/screens/MoreScreen';
 import AvailabilitySettings from './src/screens/AvailabilitySettings';
-import Messages from './src/screens/Messages';
+// import Messages from './src/screens/Messages';
 import MyPets from './src/screens/MyPets';
 import ClientHistory from './src/screens/ClientHistory';
 import MessageHistory from './src/screens/MessageHistory';
@@ -61,7 +61,7 @@ const screens = [
   { name: 'SearchSittersListing', component: SearchSittersListing },
   { name: 'ClientHistory', component: ClientHistory },
   { name: 'MessageHistory', component: MessageHistory },
-  { name: 'Messages', component: Messages },
+  // { name: 'Messages', component: Messages },
   { name: 'SitterDashboard', component: SitterDashboard },
   { name: 'BecomeSitter', component: BecomeSitter },
   { name: 'More', component: MoreScreen },

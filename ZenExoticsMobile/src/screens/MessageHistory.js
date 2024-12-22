@@ -1,20 +1,28 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { View, StyleSheet, FlatList, KeyboardAvoidingView, Platform, SafeAreaView, StatusBar, TextInput, Text, TouchableOpacity, Dimensions } from 'react-native';
+import { View, StyleSheet, FlatList, KeyboardAvoidingView, Platform, SafeAreaView, StatusBar, TextInput, Text, TouchableOpacity, Dimensions, Alert } from 'react-native';
 import { Button, Card, Paragraph, useTheme, ActivityIndicator } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons'; // Import the icon library
 import { theme } from '../styles/theme';
 import RequestBookingModal from '../components/RequestBookingModal';
 import { mockPets } from '../data/mockData';
 import { createBooking } from '../data/mockData';
+import { BOOKING_STATES } from '../data/mockData';
 
 // First, create a function to generate dynamic styles
 const createStyles = (screenWidth) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
-    paddingTop: 50,
+    paddingTop: screenWidth > 1000 ? 50 : 0,
     paddingRight: screenWidth > 1000 ? 100 : 0,
     paddingLeft: screenWidth > 1000 ? 100 : 0,
+    height: 'calc(100vh - 64px)',
+    overflow: 'hidden',
+    position: 'fixed',
+    top: 64,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   headerContainer: {
     flexDirection: 'row',
@@ -39,12 +47,15 @@ const createStyles = (screenWidth) => StyleSheet.create({
     maxWidth: screenWidth > 1000 ? '100%' : 1000,
     alignSelf: 'center',
     width: '100%',
+    overflow: 'hidden',
+    height: '100%',
   },
   conversationListContainer: {
     width: screenWidth <= 1000 ? '100%' : '30%',
     maxWidth: 600,
     borderRightWidth: 0,
     backgroundColor: theme.colors.surface,
+    overflow: 'auto',
   },
   conversationItem: {
     padding: 16,
@@ -73,16 +84,24 @@ const createStyles = (screenWidth) => StyleSheet.create({
       '100%',
     alignSelf: screenWidth <= 1000 ? 'stretch' : 'flex-start',
     width: screenWidth <= 1000 ? '100%' : 'auto',
+    overflow: 'hidden',
+    paddingRight: screenWidth > 1000 ? 100 : 0,
+    paddingBottom: 60,
   },
   messagesContainer: {
     flex: 1,
-    overflow: 'hidden',
+    overflow: 'auto',
     width: '100%',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   messageList: {
     padding: 16,
-    paddingBottom: 80,
     width: '100%',
+    paddingBottom: 80,
   },
   messageInputContainer: {
     flexDirection: 'row',
@@ -156,8 +175,9 @@ const createStyles = (screenWidth) => StyleSheet.create({
   },
   inputContainer: {
     flexDirection: 'row',
-    width:  screenWidth <= 600 ? '90%' : '95%',
-    padding: 8,
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 8,
   },
   input: {
     flex: 1,
@@ -169,18 +189,18 @@ const createStyles = (screenWidth) => StyleSheet.create({
   webInput: {
     flex: 1,
     backgroundColor: 'transparent',
-    paddingVertical: 8,
-    maxHeight: 100,
-    minHeight: 40,
-    overflowY: 'auto',
-    border: 'none',
-    // outline: 'none',
+    paddingVertical: '8px',
+    paddingLeft: '12px',
+    height: screenWidth <= 600 ? 36 : 40,
+    border: '1px solid ' + theme.colors.border,
+    borderRadius: 20,
     fontFamily: 'inherit',
-    fontSize: 'inherit',
-    resize: 'none',
-    WebkitAppearance: 'none',
-    MozAppearance: 'none',
+    fontSize: screenWidth <= 600 ? '14px' : 'inherit',
     appearance: 'none',
+    touchAction: 'manipulation',
+    WebkitTapHighlightColor: 'transparent',
+    WebkitUserSelect: 'none',
+    userSelect: 'none',
   },
   conversationContent: {
     flex: 1,
@@ -236,9 +256,9 @@ const createStyles = (screenWidth) => StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: theme.colors.border,
     backgroundColor: theme.colors.surface,
-    padding: screenWidth <= 1000 ? 8 : 16,
     zIndex: 1,
     width: '100%',
+    padding: screenWidth > 600 ? 16 : 8,
   },
   inputInnerContainer: {
     flex: 1,
@@ -246,9 +266,7 @@ const createStyles = (screenWidth) => StyleSheet.create({
     alignItems: 'center',
     backgroundColor: theme.colors.background,
     borderRadius: 20,
-    paddingLeft: 16,
-    marginRight: 8,
-    width: '100%',
+    marginRight: screenWidth <= 600 ? 4 : 8,
   },
   attachButton: {
     padding: 8,
@@ -265,6 +283,8 @@ const createStyles = (screenWidth) => StyleSheet.create({
     borderRadius: 20,
     height: 40,
     justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 16,
   },
   attachButtonContainer: {
     position: 'relative',
@@ -297,41 +317,54 @@ const createStyles = (screenWidth) => StyleSheet.create({
     marginLeft: 8,
   },
   activeConversationText: {
-    fontWeight: 'bold',
+    // fontWeight: 'bold',
     color: theme.colors.text,
   },
   mobileMessageView: {
     flex: 1,
     width: '100%',
     height: '100%',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    position: 'relative',
     backgroundColor: theme.colors.background,
-    zIndex: 2,
-    padding: 0,
+    display: 'flex',
+    flexDirection: 'column',
   },
   backButton: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
   },
   backButtonText: {
     marginLeft: 8,
     color: theme.colors.primary,
     fontSize: 16,
   },
+  mobileHeader: {
+    width: '100%',
+    backgroundColor: theme.colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    position: 'relative',
+    zIndex: 10,
+  },
+  mobileContent: {
+    flex: 1,
+    position: 'relative',
+    height: 'calc(100% - 56px)',
+  },
   mobileContainer: {
     paddingTop: 0,
     paddingLeft: 0,
     paddingRight: 0,
   },
-  mobileContent: {
+  sendButtonMobile: {
+    width: 24,
+    height: 24,
+    minWidth: 0,
     padding: 0,
+    marginLeft: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 
@@ -341,6 +374,14 @@ const MessageHistory = ({ navigation }) => {
     { id: '1', sender: 'John Doe', content: 'Hello, how are you bittttttchhhhhhhhhhhh bro?', timestamp: '2023-05-15 14:00' },
     { id: '2', sender: 'Me', content: 'I\'m doing well, thanks! How about you?', timestamp: '2023-05-15 14:05' },
     { id: '3', sender: 'John Doe', content: 'Great! Just wondering about our next appointment.', timestamp: '2023-05-15 14:10' },
+    { id: '4', sender: 'Me', content: 'Hello, how are you bittttttchhhhhhhhhhhh bro?', timestamp: '2023-05-15 14:00' },
+    { id: '5', sender: 'John Doe', content: 'I\'m doing well, thanks! How about you?', timestamp: '2023-05-15 14:05' },
+    { id: '6', sender: 'Me', content: 'Great! Just wondering about our next appointment.', timestamp: '2023-05-15 14:10' },
+    { id: '7', sender: 'Me', content: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.', timestamp: '2023-05-15 14:10' },
+    { id: '8', sender: 'John Doe', content: 'Lorem ipsum dolor sit', timestamp: '2023-05-15 14:10' },
+    { id: '9', sender: 'John Doe', content: 'Great! Just wondering about our next appointment. Great! Just wondering about our next appointment.Great! Just wondering about our next appointment.', timestamp: '2023-05-15 14:10' },
+    { id: '10', sender: 'Me', content: 'Great! Just wondering about our next appointment.', timestamp: '2023-05-15 14:10' },
+    { id: '11', sender: 'John Doe', content: 'Great! Just wondering about our next appointment.', timestamp: '2023-05-15 14:10' },
   ]);
   
   const [isSending, setIsSending] = useState(false);
@@ -420,23 +461,31 @@ const MessageHistory = ({ navigation }) => {
 
     return (
       <View style={styles.inputInnerContainer}>
-        <textarea
+        <input
           ref={inputRef}
+          type="text"
           style={styles.webInput}
           placeholder="Type a message..."
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          rows={1}
+          onKeyPress={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              handleSend();
+            }
+          }}
           disabled={isSending}
         />
         <Button 
           mode="contained" 
           onPress={handleSend} 
           disabled={isSending}
-          style={styles.sendButton}
+          style={[styles.sendButton, screenWidth <= 600 && styles.sendButtonMobile]}
         >
           {isSending ? (
             <ActivityIndicator color={theme.colors.whiteText} size="small" />
+          ) : screenWidth <= 600 ? (
+            <MaterialCommunityIcons name="arrow-up" size={16} color={theme.colors.whiteText} />
           ) : (
             'Send'
           )}
@@ -504,32 +553,54 @@ const MessageHistory = ({ navigation }) => {
       setShowRequestModal(true);
     } else {
       try {
+        // Get the current conversation details
+        const currentConversation = conversations.find(c => c.id === selectedConversation);
+        
         const bookingId = await createBooking(
-          'client123',
-          'freelancer123',
+          'client123', // This should come from auth context
+          'freelancer123', // This should come from the conversation
           {
-            professionalName: 'Professional Name',
-            clientName: 'Me',
-            status: 'Pending',
+            clientName: currentConversation?.name || 'Unknown Client',
+            professionalName: 'Me', // This should be the logged-in user's name
+            status: BOOKING_STATES.PENDING_INITIAL_PROFESSIONAL_CHANGES,
             serviceType: 'Pet Sitting',
+            animalType: 'Dog',
+            numberOfPets: 1,
+            occurrences: [{
+              startDate: new Date().toISOString().split('T')[0],
+              endDate: new Date().toISOString().split('T')[0],
+              startTime: '09:00',
+              endTime: '17:00',
+              rates: {
+                baseRate: 20.00,
+                additionalRates: []
+              }
+            }]
           }
         );
 
-        console.log('Created booking with ID:', bookingId);
-        
-        navigation.navigate('BookingDetails', {
-          bookingId: bookingId,
-          initialData: null
-        });
+        if (bookingId) {
+          console.log('Created booking with ID:', bookingId);
+          navigation.navigate('BookingDetails', {
+            bookingId: bookingId,
+            initialData: null
+          });
+        }
       } catch (error) {
         console.error('Error creating booking:', error);
-        Alert.alert(
-          'Error',
-          'Unable to create booking. Please try again.',
-          [{ text: 'OK' }]
-        );
+        if (Platform.OS === 'web') {
+          // For web, use window.alert instead of Alert
+          window.alert('Unable to create booking. Please try again.');
+        } else {
+          Alert.alert(
+            'Error',
+            'Unable to create booking. Please try again.',
+            [{ text: 'OK' }]
+          );
+        }
       }
     }
+    setShowDropdown(false);
   };
 
   const handleModalSubmit = async (modalData) => {
@@ -701,7 +772,8 @@ const MessageHistory = ({ navigation }) => {
                 />
                 <Text style={styles.dropdownText}>Request Booking</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
+              {/* TODO: Add attachment after MVP Release */}
+              {/* <TouchableOpacity 
                 style={styles.dropdownItem}
                 onPress={() => {
                   // Handle attachment
@@ -714,7 +786,7 @@ const MessageHistory = ({ navigation }) => {
                   color={theme.colors.primary} 
                 />
                 <Text style={styles.dropdownText}>Add Attachment</Text>
-              </TouchableOpacity>
+              </TouchableOpacity> */}
             </View>
           )}
         </View>
@@ -729,15 +801,24 @@ const MessageHistory = ({ navigation }) => {
   const [screenWidth, setScreenWidth] = useState(Dimensions.get('window').width);
   const styles = createStyles(screenWidth);
 
-  // Add useEffect to handle window resize
+  // Update the useEffect for window resize
   useEffect(() => {
     const handleResize = () => {
-      setScreenWidth(Dimensions.get('window').width);
+      const width = Dimensions.get('window').width;
+      setScreenWidth(width);
     };
 
     if (Platform.OS === 'web') {
       window.addEventListener('resize', handleResize);
-      return () => window.removeEventListener('resize', handleResize);
+      handleResize(); // Call immediately to set initial width
+      
+      // Also listen for orientation changes
+      window.addEventListener('orientationchange', handleResize);
+      
+      return () => {
+        window.removeEventListener('resize', handleResize);
+        window.removeEventListener('orientationchange', handleResize);
+      };
     }
   }, []);
 
@@ -754,14 +835,18 @@ const MessageHistory = ({ navigation }) => {
         {screenWidth <= 1000 ? (
           selectedConversation ? (
             <View style={styles.mobileMessageView}>
-              <TouchableOpacity 
-                style={styles.backButton}
-                onPress={() => setSelectedConversation(null)}
-              >
-                <MaterialCommunityIcons name="arrow-left" size={24} color={theme.colors.primary} />
-                <Text style={styles.backButtonText}>Back to Conversations</Text>
-              </TouchableOpacity>
-              {renderMessageSection()}
+              <View style={styles.mobileHeader}>
+                <TouchableOpacity 
+                  style={styles.backButton}
+                  onPress={() => setSelectedConversation(null)}
+                >
+                  <MaterialCommunityIcons name="arrow-left" size={24} color={theme.colors.primary} />
+                  <Text style={styles.backButtonText}>Back to Conversations</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.mobileContent}>
+                {renderMessageSection()}
+              </View>
             </View>
           ) : (
             renderConversationList()

@@ -168,17 +168,21 @@ const DefaultSettingsModal = ({ isVisible, onClose, onSave, defaultSettings }) =
   };
 
   const renderDaySettings = () => {
-    if (selectedDays.length === 0) return null;
-    
-    const daySettings = settings[selectedDays[0]];
+    const daySettings = settings[selectedDays[0]] || {
+      isAllDay: false,
+      startTime: '09:00',
+      endTime: '17:00',
+      endDate: null
+    };
     
     return (
       <View style={styles.daySettingsContainer}>
         <View style={styles.settingRow}>
-          <Text>All Day:</Text>
+          <Text style={selectedDays.length === 0 ? styles.disabledText : styles.enabledText}>All Day:</Text>
           <Switch
             value={daySettings.isAllDay}
             onValueChange={(value) => {
+              if (selectedDays.length === 0) return;
               const newSettings = { ...settings };
               selectedDays.forEach(day => {
                 newSettings[day] = {
@@ -188,62 +192,73 @@ const DefaultSettingsModal = ({ isVisible, onClose, onSave, defaultSettings }) =
               });
               setSettings(newSettings);
             }}
+            disabled={selectedDays.length === 0}
           />
         </View>
         {!daySettings.isAllDay && (
           <>
             <View style={styles.settingRow}>
-              <Text>Start Time:</Text>
-              {renderTimePicker(
-                'startTime',
-                daySettings.startTime,
-                (newTime) => {
-                  const newSettings = { ...settings };
-                  selectedDays.forEach(day => {
-                    newSettings[day] = {
-                      ...newSettings[day],
-                      startTime: newTime
-                    };
-                  });
-                  setSettings(newSettings);
-                }
-              )}
+              <Text style={selectedDays.length === 0 ? styles.disabledText : styles.enabledText}>Start Time:</Text>
+              <View pointerEvents={selectedDays.length === 0 ? 'none' : 'auto'}>
+                {renderTimePicker(
+                  'startTime',
+                  daySettings.startTime,
+                  (newTime) => {
+                    if (selectedDays.length === 0) return;
+                    const newSettings = { ...settings };
+                    selectedDays.forEach(day => {
+                      newSettings[day] = {
+                        ...newSettings[day],
+                        startTime: newTime
+                      };
+                    });
+                    setSettings(newSettings);
+                  }
+                )}
+              </View>
             </View>
             <View style={styles.settingRow}>
-              <Text>End Time:</Text>
-              {renderTimePicker(
-                'endTime',
-                daySettings.endTime,
-                (newTime) => {
-                  const newSettings = { ...settings };
-                  selectedDays.forEach(day => {
-                    newSettings[day] = {
-                      ...newSettings[day],
-                      endTime: newTime
-                    };
-                  });
-                  setSettings(newSettings);
-                }
-              )}
+              <Text style={selectedDays.length === 0 ? styles.disabledText : styles.enabledText}>End Time:</Text>
+              <View pointerEvents={selectedDays.length === 0 ? 'none' : 'auto'}>
+                {renderTimePicker(
+                  'endTime',
+                  daySettings.endTime,
+                  (newTime) => {
+                    if (selectedDays.length === 0) return;
+                    const newSettings = { ...settings };
+                    selectedDays.forEach(day => {
+                      newSettings[day] = {
+                        ...newSettings[day],
+                        endTime: newTime
+                      };
+                    });
+                    setSettings(newSettings);
+                  }
+                )}
+              </View>
             </View>
           </>
         )}
         <View style={styles.settingRow}>
-          <Text>End Date:</Text>
-          <DatePicker
-            value={daySettings.endDate}
-            onChange={(date) => {
-              const newSettings = { ...settings };
-              selectedDays.forEach(day => {
-                newSettings[day] = {
-                  ...newSettings[day],
-                  endDate: date
-                };
-              });
-              setSettings(newSettings);
-            }}
-            placeholder="Select End Date"
-          />
+          <Text style={selectedDays.length === 0 ? styles.disabledText : styles.enabledText}>End Date:</Text>
+          <View pointerEvents={selectedDays.length === 0 ? 'none' : 'auto'}>
+            <DatePicker
+              value={daySettings.endDate}
+              onChange={(date) => {
+                if (selectedDays.length === 0) return;
+                const newSettings = { ...settings };
+                selectedDays.forEach(day => {
+                  newSettings[day] = {
+                    ...newSettings[day],
+                    endDate: date
+                  };
+                });
+                setSettings(newSettings);
+              }}
+              placeholder="Select End Date"
+              disabled={selectedDays.length === 0}
+            />
+          </View>
         </View>
       </View>
     );
@@ -542,6 +557,12 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     opacity: 0.5,
+  },
+  disabledText: {
+    color: theme.colors.placeHolderText,
+  },
+  enabledText: {
+    color: theme.colors.text,
   },
 });
 
