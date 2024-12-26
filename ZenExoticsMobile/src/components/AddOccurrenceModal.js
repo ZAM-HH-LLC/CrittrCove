@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Modal, TextInput, TouchableOpacity, StyleSheet, ScrollView, Picker } from 'react-native';
+import { View, Text, Modal, TextInput, TouchableOpacity, StyleSheet, ScrollView, Picker, ActivityIndicator } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
 import DatePicker from './DatePicker';
@@ -22,42 +22,59 @@ const AddOccurrenceModal = ({ visible, onClose, onAdd, defaultRates }) => {
   const [showAddRate, setShowAddRate] = useState(false);
   const [newRate, setNewRate] = useState({ name: '', amount: '' });
   const [timeUnit, setTimeUnit] = useState('per visit');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleAdd = () => {
-    const totalCost = parseFloat(occurrence.rates.baseRate) + 
-      occurrence.rates.additionalRates.reduce((sum, rate) => sum + parseFloat(rate.amount || 0), 0);
+  const handleAdd = async () => {
+    try {
+      setIsLoading(true);
+      
+      const totalCost = parseFloat(occurrence.rates.baseRate) + 
+        occurrence.rates.additionalRates.reduce((sum, rate) => sum + parseFloat(rate.amount || 0), 0);
 
-    onAdd({
-      ...occurrence,
-      startTime: format(occurrence.startTime, 'HH:mm'),
-      endTime: format(occurrence.endTime, 'HH:mm'),
-      totalCost,
-      rates: {
-        ...occurrence.rates,
-        baseRate: parseFloat(occurrence.rates.baseRate),
-        additionalRates: occurrence.rates.additionalRates.map(rate => ({
-          ...rate,
-          amount: parseFloat(rate.amount)
-        })),
-        timeUnit,
-      }
-    });
+      const occurrenceData = {
+        ...occurrence,
+        startTime: format(occurrence.startTime, 'HH:mm'),
+        endTime: format(occurrence.endTime, 'HH:mm'),
+        totalCost,
+        rates: {
+          ...occurrence.rates,
+          baseRate: parseFloat(occurrence.rates.baseRate),
+          additionalRates: occurrence.rates.additionalRates.map(rate => ({
+            ...rate,
+            amount: parseFloat(rate.amount)
+          })),
+          timeUnit,
+        }
+      };
 
-    // Reset the modal state
-    setOccurrence({
-      startDate: new Date().toISOString().split('T')[0],
-      endDate: new Date().toISOString().split('T')[0],
-      startTime: new Date(),
-      endTime: new Date(new Date().setHours(new Date().getHours() + 1)),
-      rates: {
-        baseRate: defaultRates?.baseRate || 0,
-        additionalRates: []
-      }
-    });
-    setShowAddRate(false);
-    setNewRate({ name: '', amount: '' });
-    
-    onClose();
+      // Add a delay before calling onAdd to ensure loading state is visible
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      await onAdd(occurrenceData);
+
+      // Reset the modal state
+      setOccurrence({
+        startDate: new Date().toISOString().split('T')[0],
+        endDate: new Date().toISOString().split('T')[0],
+        startTime: new Date(),
+        endTime: new Date(new Date().setHours(new Date().getHours() + 1)),
+        rates: {
+          baseRate: defaultRates?.baseRate || 0,
+          additionalRates: []
+        }
+      });
+      setShowAddRate(false);
+      setNewRate({ name: '', amount: '' });
+      
+      // Add another delay before closing
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+    } catch (error) {
+      console.error('Error adding occurrence:', error);
+    } finally {
+      setIsLoading(false);
+      onClose(); // Move onClose() here to ensure it happens after loading is complete
+    }
   };
 
   const handleAddRate = () => {
@@ -253,8 +270,13 @@ const AddOccurrenceModal = ({ visible, onClose, onAdd, defaultRates }) => {
               <TouchableOpacity
                 style={[styles.button, styles.addButton]}
                 onPress={handleAdd}
+                disabled={isLoading}
               >
-                <Text style={styles.addButtonText}>Add</Text>
+                {isLoading ? (
+                  <ActivityIndicator color={theme.colors.surface} />
+                ) : (
+                  <Text style={styles.addButtonText}>Add</Text>
+                )}
               </TouchableOpacity>
             </View>
           </ScrollView>

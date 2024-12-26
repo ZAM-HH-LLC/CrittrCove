@@ -769,9 +769,28 @@ const BookingDetails = () => {
   const handleStatusUpdate = async (newStatus, reason = '', metadata = {}) => {
     setActionLoading(true);
     try {
-      const updatedBooking = await updateBookingStatus(booking.id, newStatus, reason, metadata);
+      // Create a copy of the current booking with all its data
+      const bookingDataToUpdate = {
+        ...booking,
+        status: newStatus,
+        reason,
+        ...metadata
+      };
+
+      // Pass the complete booking data to updateBookingStatus
+      const updatedBooking = await updateBookingStatus(
+        booking.id, 
+        newStatus, 
+        reason, 
+        {
+          ...metadata,
+          occurrences: booking.occurrences, // Explicitly include occurrences
+          costs: booking.costs // Include costs as well
+        }
+      );
+
       setBooking(updatedBooking);
-      setHasUnsavedChanges(false); // Reset hasUnsavedChanges after status update
+      setHasUnsavedChanges(false);
       Alert.alert('Success', `Booking ${newStatus.toLowerCase()} successfully`);
     } catch (error) {
       console.error('Error updating booking status:', error);

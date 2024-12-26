@@ -599,3 +599,129 @@ export const mockClientBookings = [
     time: '11:00',
   },
 ];
+
+// Add these mock conversations and messages
+export const mockConversations = [
+  {
+    id: 'conv1',
+    name: 'John Smith',
+    lastMessage: 'Looking forward to meeting your pets!',
+    timestamp: '2024-02-21 15:30',
+    unread: true,
+    bookingStatus: 'Pending',
+  },
+  {
+    id: 'conv2',
+    name: 'Sarah Wilson',
+    lastMessage: 'The cats are doing great!',
+    timestamp: '2024-02-21 14:20',
+    unread: false,
+    bookingStatus: 'Confirmed',
+  },
+  {
+    id: 'conv3',
+    name: 'Mike Johnson',
+    lastMessage: 'Perfect, see you tomorrow then!',
+    timestamp: '2024-02-21 13:15',
+    unread: false,
+    bookingStatus: null,
+  },
+  {
+    id: 'conv4',
+    name: 'Emma Davis',
+    lastMessage: 'Your reptiles are fascinating!',
+    timestamp: '2024-02-21 12:30',
+    unread: true,
+    bookingStatus: 'Confirmed',
+  },
+  // Add more conversations...
+];
+
+// Messages for each conversation
+const mockMessages = {
+  'conv1': [
+    {
+      id: 'msg1',
+      sender: 'John Smith',
+      content: 'Hi, I saw your profile and would love to help with your pets!',
+      timestamp: '2024-02-21 15:00',
+    },
+    {
+      id: 'msg2',
+      sender: 'Me',
+      content: 'Thanks for reaching out! What experience do you have with exotic pets?',
+      timestamp: '2024-02-21 15:15',
+    },
+    {
+      id: 'msg3',
+      sender: 'John Smith',
+      content: 'Looking forward to meeting your pets!',
+      timestamp: '2024-02-21 15:30',
+    },
+  ],
+  'conv2': [
+    {
+      id: 'msg1',
+      sender: 'Sarah Wilson',
+      content: 'Just checking in on your cats',
+      timestamp: '2024-02-21 14:00',
+    },
+    {
+      id: 'msg2',
+      sender: 'Me',
+      content: 'How are they doing?',
+      timestamp: '2024-02-21 14:10',
+    },
+    {
+      id: 'msg3',
+      sender: 'Sarah Wilson',
+      content: 'The cats are doing great!',
+      timestamp: '2024-02-21 14:20',
+    },
+  ],
+  // Add messages for other conversations...
+};
+
+// Mock API functions
+export const fetchConversations = async () => {
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  return mockConversations;
+};
+
+export const fetchMessagesByConversationId = async (conversationId) => {
+  await new Promise(resolve => setTimeout(resolve, 800));
+  const messages = mockMessages[conversationId];
+  if (!messages) {
+    throw new Error('Conversation not found');
+  }
+  return messages;
+};
+
+export const sendMessage = async (conversationId, content) => {
+  await new Promise(resolve => setTimeout(resolve, 500));
+  const newMessage = {
+    id: `msg_${Date.now()}`,
+    sender: 'Me',
+    content,
+    timestamp: new Date().toISOString(),
+  };
+  
+  // Update mock data
+  if (!mockMessages[conversationId]) {
+    mockMessages[conversationId] = [];
+  }
+  
+  mockMessages[conversationId].push(newMessage);
+  
+  // Update conversation last message
+  const conversationIndex = mockConversations.findIndex(c => c.id === conversationId);
+  if (conversationIndex !== -1) {
+    mockConversations[conversationIndex] = {
+      ...mockConversations[conversationIndex],
+      lastMessage: content,
+      timestamp: newMessage.timestamp,
+    };
+  }
+  
+  return newMessage;
+};

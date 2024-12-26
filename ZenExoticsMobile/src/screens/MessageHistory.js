@@ -4,9 +4,7 @@ import { Button, Card, Paragraph, useTheme, ActivityIndicator } from 'react-nati
 import { MaterialCommunityIcons } from '@expo/vector-icons'; // Import the icon library
 import { theme } from '../styles/theme';
 import RequestBookingModal from '../components/RequestBookingModal';
-import { mockPets } from '../data/mockData';
-import { createBooking } from '../data/mockData';
-import { BOOKING_STATES } from '../data/mockData';
+import { createBooking, BOOKING_STATES, mockConversations, mockMessages } from '../data/mockData';
 
 // First, create a function to generate dynamic styles
 const createStyles = (screenWidth) => StyleSheet.create({
@@ -267,6 +265,7 @@ const createStyles = (screenWidth) => StyleSheet.create({
     backgroundColor: theme.colors.background,
     borderRadius: 20,
     marginRight: screenWidth <= 600 ? 4 : 8,
+    
   },
   attachButton: {
     padding: 8,
