@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Modal, View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { theme } from '../styles/theme';
 
 const ConfirmationModal = ({ 
@@ -28,15 +28,28 @@ const ConfirmationModal = ({
               onPress={onClose}
               disabled={isLoading}
             >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+              <Text style={[
+                styles.cancelButtonText,
+                isLoading && styles.disabledText
+              ]}>
+                Cancel
+              </Text>
             </TouchableOpacity>
             
             <TouchableOpacity
-              style={[styles.button, styles.confirmButton]}
+              style={[
+                styles.button, 
+                styles.confirmButton,
+                isLoading && styles.disabledButton
+              ]}
               onPress={onConfirm}
               disabled={isLoading}
             >
-              <Text style={styles.confirmButtonText}>Confirm</Text>
+              {isLoading ? (
+                <ActivityIndicator size="small" color={theme.colors.surface} />
+              ) : (
+                <Text style={styles.confirmButtonText}>Confirm</Text>
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -91,6 +104,12 @@ const styles = StyleSheet.create({
   confirmButtonText: {
     color: theme.colors.surface,
     fontWeight: '500',
+  },
+  disabledButton: {
+    opacity: 0.7,
+  },
+  disabledText: {
+    opacity: 0.5,
   },
 });
 

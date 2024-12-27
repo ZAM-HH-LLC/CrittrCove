@@ -186,6 +186,7 @@ const BookingDetails = () => {
     visible: false,
     actionText: '',
     onConfirm: null,
+    isLoading: false
   });
 
   useEffect(() => {
@@ -610,6 +611,54 @@ const BookingDetails = () => {
     setShowEditOccurrenceModal(true);
   };
 
+  const handleDeleteOccurrence = async (occurrenceId) => {
+    setConfirmationModal(prev => ({ ...prev, isLoading: true }));
+    
+    try {
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const updatedOccurrences = booking.occurrences.filter(occ => occ.id !== occurrenceId);
+      
+      setBooking(prev => ({
+        ...prev,
+        occurrences: updatedOccurrences,
+        costs: calculateTotalCosts(updatedOccurrences)
+      }));
+      
+      handleStatusUpdateAfterEdit();
+    } catch (error) {
+      console.error('Error deleting occurrence:', error);
+      Alert.alert('Error', 'Failed to delete occurrence');
+    } finally {
+      // First set loading to false but keep the modal visible and text
+      setConfirmationModal(prev => ({ 
+        ...prev, 
+        isLoading: false,
+        visible: false  // This will trigger the modal's animation to close
+      }));
+      
+      // After a short delay to allow the modal to animate out, clear the rest of the state
+      setTimeout(() => {
+        setConfirmationModal({ 
+          visible: false, 
+          actionText: '', 
+          onConfirm: null, 
+          isLoading: false 
+        });
+      }, 300); // Adjust timing to match modal animation duration
+    }
+  };
+
+  const confirmDeleteOccurrence = (occurrenceId) => {
+    setConfirmationModal({
+      visible: true,
+      actionText: 'delete this occurrence',
+      onConfirm: () => handleDeleteOccurrence(occurrenceId),
+      isLoading: false
+    });
+  };
+
   const renderDateTimeSection = () => (
     <View>
       <Text style={styles.sectionTitle}>
@@ -633,13 +682,20 @@ const BookingDetails = () => {
                 {`${occurrence.startTime} - ${occurrence.endTime}`}
               </Text>
             </View>
-            <TouchableOpacity 
-              style={styles.editOccurrenceButton}
-              onPress={() => handleDateTimeCardPress(occurrence)}
-            >
-              <MaterialCommunityIcons name="pencil" size={20} color={theme.colors.primary} />
-              <Text style={styles.editOccurrenceText}>Edit</Text>
-            </TouchableOpacity>
+            <View style={styles.occurrenceActions}>
+              <TouchableOpacity 
+                style={styles.actionButton}
+                onPress={() => confirmDeleteOccurrence(occurrence.id)}
+              >
+                <MaterialCommunityIcons name="trash-can-outline" size={20} color={theme.colors.error} />
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.actionButton}
+                onPress={() => handleDateTimeCardPress(occurrence)}
+              >
+                <MaterialCommunityIcons name="pencil" size={20} color={theme.colors.primary} />
+              </TouchableOpacity>
+            </View>
           </TouchableOpacity>
         ) : (
           <View key={index} style={styles.occurrenceCard}>
@@ -667,6 +723,23 @@ const BookingDetails = () => {
           <Text style={styles.addOccurrenceText}>Add Occurrence</Text>
         </TouchableOpacity>
       )}
+      
+      <ConfirmationModal
+        visible={confirmationModal.visible}
+        actionText={confirmationModal.actionText}
+        onClose={() => {
+          if (!confirmationModal.isLoading) {
+            setConfirmationModal({ 
+              visible: false, 
+              actionText: confirmationModal.actionText, 
+              onConfirm: null, 
+              isLoading: false 
+            });
+          }
+        }}
+        onConfirm={confirmationModal.onConfirm}
+        isLoading={confirmationModal.isLoading}
+      />
     </View>
   );
 
@@ -767,8 +840,12 @@ const BookingDetails = () => {
   };
 
   const handleStatusUpdate = async (newStatus, reason = '', metadata = {}) => {
-    setActionLoading(true);
+    setConfirmationModal(prev => ({ ...prev, isLoading: true }));
+    
     try {
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       // Create a copy of the current booking with all its data
       const bookingDataToUpdate = {
         ...booking,
@@ -784,8 +861,8 @@ const BookingDetails = () => {
         reason, 
         {
           ...metadata,
-          occurrences: booking.occurrences, // Explicitly include occurrences
-          costs: booking.costs // Include costs as well
+          occurrences: booking.occurrences,
+          costs: booking.costs
         }
       );
 
@@ -796,7 +873,22 @@ const BookingDetails = () => {
       console.error('Error updating booking status:', error);
       Alert.alert('Error', 'Failed to update booking status');
     } finally {
-      setActionLoading(false);
+      // First set loading to false but keep the modal visible and text
+      setConfirmationModal(prev => ({ 
+        ...prev, 
+        isLoading: false,
+        visible: false
+      }));
+      
+      // After animation completes, clear the modal state
+      setTimeout(() => {
+        setConfirmationModal({ 
+          visible: false, 
+          actionText: '', 
+          onConfirm: null, 
+          isLoading: false 
+        });
+      }, 300);
     }
   };
 
@@ -810,6 +902,7 @@ const BookingDetails = () => {
       visible: true,
       actionText,
       onConfirm,
+      isLoading: false
     });
   };
 
@@ -818,6 +911,7 @@ const BookingDetails = () => {
       visible: false,
       actionText: '',
       onConfirm: null,
+      isLoading: false
     });
   };
 
@@ -839,18 +933,10 @@ const BookingDetails = () => {
             style={[styles.button, styles.primaryButton]}
             onPress={() => showConfirmation(
               'send these changes to the client',
-              () => {
-                hideConfirmation();
-                handleStatusUpdate(BOOKING_STATES.PENDING_CLIENT_APPROVAL);
-              }
+              () => handleStatusUpdate(BOOKING_STATES.PENDING_CLIENT_APPROVAL)
             )}
-            disabled={actionLoading}
           >
-            {actionLoading ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Text style={styles.buttonText}>Send to Client</Text>
-            )}
+            <Text style={styles.buttonText}>Send to Client</Text>
           </TouchableOpacity>
         );
       }
@@ -863,14 +949,10 @@ const BookingDetails = () => {
             style={[styles.button, styles.denyButton]}
             onPress={() => showConfirmation(
               'deny this booking',
-              () => {
-                hideConfirmation();
-                handleStatusUpdate(BOOKING_STATES.DENIED, '', {
-                  deniedBy: 'professional_id_here'
-                });
-              }
+              () => handleStatusUpdate(BOOKING_STATES.DENIED, '', {
+                deniedBy: 'professional_id_here'
+              })
             )}
-            disabled={actionLoading}
           >
             <Text style={styles.buttonText}>Deny</Text>
           </TouchableOpacity>
@@ -888,12 +970,8 @@ const BookingDetails = () => {
             style={[styles.button, styles.cancelButton]}
             onPress={() => showConfirmation(
               'cancel this booking',
-              () => {
-                hideConfirmation();
-                handleStatusUpdate(BOOKING_STATES.CANCELLED);
-              }
+              () => handleStatusUpdate(BOOKING_STATES.CANCELLED)
             )}
-            disabled={actionLoading}
           >
             <Text style={styles.cancelButtonText}>Cancel Booking</Text>
           </TouchableOpacity>
@@ -902,25 +980,19 @@ const BookingDetails = () => {
     } else {
       // Client buttons
       if (booking.status === BOOKING_STATES.PENDING_CLIENT_APPROVAL) {
-        // Approve button
         buttons.push(
           <TouchableOpacity
             key="approve"
             style={[styles.button, styles.approveButton]}
             onPress={() => showConfirmation(
               'approve this booking',
-              () => {
-                hideConfirmation();
-                handleStatusUpdate(BOOKING_STATES.CONFIRMED);
-              }
+              () => handleStatusUpdate(BOOKING_STATES.CONFIRMED)
             )}
-            disabled={actionLoading}
           >
             <Text style={styles.buttonText}>Approve</Text>
           </TouchableOpacity>
         );
       }
-      // ... rest of client buttons ...
     }
 
     return (
@@ -1278,9 +1350,18 @@ const BookingDetails = () => {
       <ConfirmationModal
         visible={confirmationModal.visible}
         actionText={confirmationModal.actionText}
-        onClose={hideConfirmation}
+        onClose={() => {
+          if (!confirmationModal.isLoading) {
+            setConfirmationModal({ 
+              visible: false, 
+              actionText: confirmationModal.actionText, 
+              onConfirm: null, 
+              isLoading: false 
+            });
+          }
+        }}
         onConfirm={confirmationModal.onConfirm}
-        isLoading={actionLoading}
+        isLoading={confirmationModal.isLoading}
       />
     </CrossPlatformView>
   );
@@ -1935,6 +2016,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: theme.colors.text,
     fontWeight: '500',
+  },
+  occurrenceActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  actionButton: {
+    padding: 8,
   },
 });
 
