@@ -38,6 +38,14 @@ export const TIME_OPTIONS = [
   'per visit'
 ];
 
+export const GENERAL_CATEGORIES = [
+  'Farm Animals', 
+  'Domestic',
+  'Exotic',
+  'Aquatic',
+  'Invertibrates',
+];
+
 export const mockPets = [
   {
     id: '1',

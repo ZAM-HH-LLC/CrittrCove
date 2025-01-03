@@ -9,6 +9,13 @@ import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplet
 import DatePicker from '../components/DatePicker';
 import { debounce } from 'lodash';
 import MultiSelect from 'react-native-element-dropdown/src/components/MultiSelect';
+import CustomMultiSelect from '../components/CustomMultiSelect';
+import { SERVICE_TYPES, GENERAL_CATEGORIES } from '../data/mockData';
+
+const generalCategoriesData = GENERAL_CATEGORIES.map(category => ({
+  label: category,
+  value: category.toLowerCase().replace(/\s+/g, '-')
+}));
 
 const LocationInput = ({ value, onChange, suggestions, onSuggestionSelect }) => {
   const locationInputRef = useRef(null);
@@ -100,15 +107,16 @@ const SearchRefiner = ({ onFiltersChange }) => {
   const [location, setLocation] = useState('');
   const [locationSuggestions, setLocationSuggestions] = useState([]);
   const [selectedServices, setSelectedServices] = useState([]);
+  const [selectedGeneralCategories, setSelectedGeneralCategories] = useState([]);
   const [selectedAnimalTypes, setSelectedAnimalTypes] = useState([]);
+  const [isServiceDropdownOpen, setIsServiceDropdownOpen] = useState(false);
+  const [isAnimalDropdownOpen, setIsAnimalDropdownOpen] = useState(false);
+  const [isGeneralDropdownOpen, setIsGeneralDropdownOpen] = useState(false);
 
-  const categories = [
-    { label: 'Pet Sitting', value: 'pet-sitting' },
-    { label: 'Dog Walking', value: 'dog-walking' },
-    { label: 'Dog Day Care', value: 'dog-daycare' },
-    { label: 'House Sitting', value: 'house-sitting' },
-    { label: 'Drop-In Visits', value: 'drop-in' }
-  ];
+  const categories = SERVICE_TYPES.map(service => ({
+    label: service,
+    value: service.toLowerCase().replace(/\s+/g, '-').replace(/[()]/g, '')
+  }));
 
   const animalTypes = [
     { label: 'Dogs', value: 'dog' },
@@ -144,7 +152,7 @@ const SearchRefiner = ({ onFiltersChange }) => {
   );
 
   const renderLocationInput = () => (
-    <View style={[styles.section, { zIndex: 2 }]}>
+    <View style={[styles.section, { zIndex: 4000 }]}>
       <Text style={styles.label}>Location</Text>
       <LocationInput
         value={location}
@@ -183,111 +191,61 @@ const SearchRefiner = ({ onFiltersChange }) => {
       
       {renderLocationInput()}
 
-      <View style={styles.section}>
-        <Text style={styles.label}>Service Categories</Text>
-        <MultiSelect
-          style={styles.dropdown}
-          data={categories}
-          labelField="label"
-          valueField="value"
-          value={selectedServices}
-          onChange={items => {
-            setSelectedServices(items);
-            handleFilterChange('services', items);
+      <View style={[styles.section, { zIndex: 3001 }]}>
+        <CustomMultiSelect
+          label="General Categories"
+          data={generalCategoriesData}
+          value={selectedGeneralCategories}
+          onChange={(newValue) => {
+            setSelectedGeneralCategories(newValue);
+            handleFilterChange('general', newValue);
           }}
-          placeholder="Select services"
-          selectedTextStyle={styles.selectedText}
-          placeholderStyle={styles.placeholderText}
-          selectedStyle={styles.selectedItem}
-          iconStyle={styles.dropdownIcon}
-          activeColor={theme.colors.background}
-          itemContainerStyle={styles.itemContainer}
-          itemTextStyle={styles.itemText}
-          containerStyle={styles.dropdownContainer}
-          renderItem={(item, selected) => (
-            <View style={[
-              styles.dropdownItem,
-              selected && styles.dropdownItemSelected
-            ]}>
-              <Text style={[
-                styles.dropdownItemText,
-                selected && styles.dropdownItemTextSelected
-              ]}>
-                {item.label}
-              </Text>
-            </View>
-          )}
-          renderSelectedItem={(item, unSelect) => (
-            <TouchableOpacity 
-              style={styles.selectedChip} 
-              onPress={() => {
-                unSelect && unSelect(item);
-                const newItems = selectedServices.filter(i => i !== item.value);
-                setSelectedServices(newItems);
-                handleFilterChange('services', newItems);
-              }}
-            >
-              <Text style={styles.selectedChipText}>{item.label}</Text>
-              <MaterialCommunityIcons name="close" size={18} color="#000" />
-            </TouchableOpacity>
-          )}
+          placeholder="Select general categories"
+          isOpen={isGeneralDropdownOpen}
+          setIsOpen={setIsGeneralDropdownOpen}
+          zIndex={3000}
         />
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.label}>Animal Types</Text>
-        <MultiSelect
-          style={styles.dropdown}
+      <View style={[styles.section, { zIndex: 3000 }]}>
+        <CustomMultiSelect
+          label="Animal Types"
           data={animalTypes}
-          labelField="label"
-          valueField="value"
           value={selectedAnimalTypes}
-          onChange={items => {
-            setSelectedAnimalTypes(items);
-            handleFilterChange('animalTypes', items);
+          onChange={(newValue) => {
+            setSelectedAnimalTypes(newValue);
+            handleFilterChange('animalTypes', newValue);
           }}
           placeholder="Select animal types"
-          selectedTextStyle={styles.selectedText}
-          placeholderStyle={styles.placeholderText}
-          selectedStyle={styles.selectedItem}
-          iconStyle={styles.dropdownIcon}
-          activeColor={theme.colors.whiteText}
-          itemContainerStyle={styles.itemContainer}
-          itemTextStyle={styles.itemText}
-          containerStyle={styles.dropdownContainer}
-          renderItem={(item, selected) => (
-            <View style={[
-              styles.dropdownItem,
-              selected && styles.dropdownItemSelected
-            ]}>
-              <Text style={[
-                styles.dropdownItemText,
-                selected && styles.dropdownItemTextSelected
-              ]}>
-                {item.label}
-              </Text>
-            </View>
-          )}
-          renderSelectedItem={(item, unSelect) => (
-            <TouchableOpacity 
-              style={styles.selectedChip} 
-              onPress={() => {
-                unSelect && unSelect(item);
-                const newItems = selectedAnimalTypes.filter(i => i !== item.value);
-                setSelectedAnimalTypes(newItems);
-                handleFilterChange('animalTypes', newItems);
-              }}
-            >
-              <Text style={styles.selectedChipText}>{item.label}</Text>
-              <MaterialCommunityIcons name="close" size={18} color="#000" />
-            </TouchableOpacity>
-          )}
+          isOpen={isAnimalDropdownOpen}
+          setIsOpen={setIsAnimalDropdownOpen}
+          zIndex={2000}
         />
       </View>
 
-      {renderDatePickers()}
+      <View style={[styles.section, { zIndex: 2000 }]}>
+        <CustomMultiSelect
+          label="Service Categories"
+          data={categories}
+          value={selectedServices}
+          onChange={(newValue) => {
+            setSelectedServices(newValue);
+            handleFilterChange('services', newValue);
+          }}
+          placeholder="Select services"
+          isOpen={isServiceDropdownOpen}
+          setIsOpen={setIsServiceDropdownOpen}
+          zIndex={3000}
+        />
+      </View>
 
-      {renderPriceRange()}
+      <View style={[styles.section, { zIndex: 1 }]}>
+        {renderDatePickers()}
+      </View>
+
+      <View style={[styles.section, { zIndex: 1 }]}>
+        {renderPriceRange()}
+      </View>
     </ScrollView>
   );
 };
@@ -308,6 +266,7 @@ const styles = StyleSheet.create({
   },
   section: {
     marginBottom: theme.spacing.large,
+    position: 'relative',
   },
   label: {
     fontSize: theme.fontSizes.medium,

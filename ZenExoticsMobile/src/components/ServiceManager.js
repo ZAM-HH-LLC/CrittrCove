@@ -16,6 +16,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
 import { Picker } from '@react-native-picker/picker';
 import { TIME_OPTIONS } from '../data/mockData';
+import { GENERAL_CATEGORIES } from '../data/mockData';
 
 const SERVICE_TYPE_SUGGESTIONS = [
   "Overnight Cat Sitting (Client's Home)",
@@ -39,14 +40,6 @@ const ANIMAL_TYPE_SUGGESTIONS = [
   'Bird',
   'Rabbit',
   'Fish',
-];
-
-const GENERAL_CATEGORIES = [
-  'Farm Animals', 
-  'Domestic',
-  'Exotic',
-  'Aquatic',
-  'Invertibrates',
 ];
 
 const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
