@@ -53,7 +53,7 @@ export default function Navigation({ navigation }) {
     } else {
       return [
         { title: 'Dashboard', icon: 'view-dashboard', onPress: () => handleNavigation('Dashboard') },
-        { title: sittersTitle, icon: 'magnify', onPress: () => handleNavigation('SearchSitters') },
+        { title: sittersTitle, icon: 'magnify', onPress: () => handleNavigation('SearchSittersListing') },
         { title: 'Messages', icon: 'message-text', onPress: () => navigation.navigate('MessageHistory') },
         { title: 'My Pets', icon: 'paw', onPress: () => handleNavigation('MyPets') },
         { title: 'More', icon: 'dots-horizontal', onPress: () => handleNavigation('More') },
