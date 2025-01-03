@@ -2,6 +2,10 @@ import React, { createContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { API_BASE_URL } from '../config/config';
+import { Dimensions } from 'react-native';
+
+export const SCREEN_WIDTH = Dimensions.get('window').width;
+export const SCREEN_HEIGHT = Dimensions.get('window').height;
 
 export const AuthContext = createContext();
 
@@ -10,6 +14,7 @@ export const AuthProvider = ({ children }) => {
   const [userRole, setUserRole] = useState(null);
   const [isApprovedSitter, setIsApprovedSitter] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [screenWidth, setScreenWidth] = useState(Dimensions.get('window').width);
 
   const checkAuthStatus = async () => {
     try {
@@ -63,6 +68,22 @@ export const AuthProvider = ({ children }) => {
     checkAuthStatus();
   }, []);
 
+  useEffect(() => {
+    const updateScreenWidth = () => {
+      setScreenWidth(Dimensions.get('window').width);
+    };
+
+    Dimensions.addEventListener('change', updateScreenWidth);
+
+    return () => {
+      // For older React Native versions:
+      // Dimensions.removeEventListener('change', updateScreenWidth);
+      
+      // For newer React Native versions:
+      // The event listener cleanup is handled automatically
+    };
+  }, []);
+
   const signIn = async (token) => {
     await AsyncStorage.setItem('userToken', token);
     setIsSignedIn(true);
@@ -96,7 +117,8 @@ export const AuthProvider = ({ children }) => {
       signIn,
       signOut,
       checkAuthStatus,
-      switchRole
+      switchRole,
+      screenWidth
     }}>
       {children}
     </AuthContext.Provider>

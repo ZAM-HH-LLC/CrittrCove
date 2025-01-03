@@ -10,9 +10,11 @@ import { AuthContext } from '../context/AuthContext';
 import { Calendar } from 'react-native-calendars';
 import { mockPets } from '../data/mockData';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import { SCREEN_WIDTH } from '../context/AuthContext';
+import ServiceCard from '../components/ServiceCard';
+import { mockServicesForCards } from '../data/mockData';
 // Conditionally import WebMap component
-const WebMap = Platform.OS === 'web' ? require('react-leaflet') : null;
+const WebMap = Platform.OS === 'web' ? require('react-leaflet').MapContainer : null;
 
 // Mock API function to fetch profile data
 const fetchProfileData = () => {
@@ -93,7 +95,26 @@ const SitterProfile = ({ route, navigation }) => {
   const [bioModalVisible, setBioModalVisible] = useState(false);
   const [reviewsModalVisible, setReviewsModalVisible] = useState(false);
   const [specialistModalVisible, setSpecialistModalVisible] = useState(false);
+  const [favoriteServices, setFavoriteServices] = useState([]);
+  const [servicesModalVisible, setServicesModalVisible] = useState(false);
   const isWideScreen = useResponsiveLayout();
+
+  const dynamicStyles = {
+    servicesBox: {
+      backgroundColor: theme.colors.surface,
+      padding: 24,
+      borderRadius: 12,
+      marginTop: 24,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+      width: '100%',
+      maxWidth: Platform.OS === 'web' ? 600 : undefined,
+      alignSelf: 'center',
+    },
+  };
 
   useEffect(() => {
     // Check if we can go back and if SearchSittersListing exists in history
@@ -157,6 +178,39 @@ const SitterProfile = ({ route, navigation }) => {
     return windowWidth - 32; // 16px padding on each side
   };
 
+  const toggleFavorite = (serviceId) => {
+    setFavoriteServices(prev => 
+      prev.includes(serviceId) 
+        ? prev.filter(id => id !== serviceId)
+        : [...prev, serviceId]
+    );
+  };
+
+  const renderServices = () => (
+    <View style={styles.servicesSection}>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Services</Text>
+        <TouchableOpacity onPress={() => setServicesModalVisible(true)}>
+          <Text style={styles.seeAllButton}>See All</Text>
+        </TouchableOpacity>
+      </View>
+      <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false}
+        style={styles.servicesScroll}
+      >
+        {mockServicesForCards.slice(0, 5).map(service => (
+          <ServiceCard 
+            key={service.id}
+            service={service}
+            onHeartPress={toggleFavorite}
+            isFavorite={favoriteServices.includes(service.id)}
+          />
+        ))}
+      </ScrollView>
+    </View>
+  );
+
   if (!sitterData) {
     return (
       <CrossPlatformView fullWidthHeader={true}>
@@ -181,6 +235,13 @@ const SitterProfile = ({ route, navigation }) => {
       </View>
     );
   };
+
+  const renderSpecialistExperience = () => (
+    <View style={styles.specialistSection}>
+      <Text style={styles.sectionTitle}>Specialist Experience</Text>
+      <TruncatedText text={sitterData?.bio || ''} />
+    </View>
+  );
 
   const renderRatingStars = () => (
     <View style={styles.ratingContainer}>
@@ -210,14 +271,24 @@ const SitterProfile = ({ route, navigation }) => {
 
   const renderMap = () => {
     if (Platform.OS === 'web' && WebMap) {
-      const { MapContainer, TileLayer, Circle } = WebMap;
+      const { MapContainer, TileLayer, Marker } = require('react-leaflet');
       return (
-        <MapContainer>
-          <TileLayer />
-          {/* ... rest of map code ... */}
-        </MapContainer>
+        <View style={styles.mapContainer}>
+          <MapContainer
+            center={[38.8339, -104.8214]} // Default coordinates
+            zoom={13}
+            style={{ height: 400, width: '100%' }}
+          >
+            <TileLayer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            />
+            <Marker position={[38.8339, -104.8214]} />
+          </MapContainer>
+        </View>
       );
     }
+    // For mobile, return null or a placeholder
     return null;
   };
 
@@ -278,6 +349,21 @@ const SitterProfile = ({ route, navigation }) => {
     </View>
   );
 
+  const renderReviews = () => (
+    <View style={styles.reviewsSection}>
+      <Text style={styles.sectionTitle}>Reviews</Text>
+      <View style={styles.reviewsGrid}>
+        {mockReviews.slice(0, 4).map(renderReview)}
+      </View>
+      <TouchableOpacity 
+        style={styles.readMoreButton}
+        onPress={() => setReviewsModalVisible(true)}
+      >
+        <Text style={styles.readMoreText}>Read more reviews</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   const renderReview = (review) => (
     <View key={review.id} style={styles.reviewItem}>
       <View style={styles.reviewHeader}>
@@ -293,6 +379,100 @@ const SitterProfile = ({ route, navigation }) => {
       <Text style={styles.reviewText}>{review.text}</Text>
     </View>
   );
+
+  const renderHomeSection = () => (
+    <View style={styles.homeSection}>
+      <Text style={styles.sectionTitle}>Home</Text>
+      <View style={styles.homeFeaturesGrid}>
+        <HomeFeature text="No children present" />
+        <HomeFeature text="Has security system" />
+        <HomeFeature text="Non-smoking household" />
+        <HomeFeature text="Has 2 dogs" />
+        <HomeFeature text="Dogs allowed on bed" />
+        <HomeFeature text="Dogs allowed on furniture" />
+        <HomeFeature text="Potty breaks every 0-2 hours" />
+      </View>
+    </View>
+
+  );
+
+  const renderAboutSection = () => (
+    <View style={styles.aboutSection}>
+      <Text style={styles.sectionTitle}>About {sitterData.name}</Text>
+      <View style={styles.aboutSubsections}>
+        <View style={styles.communicationSection}>
+          <Text style={styles.subsectionTitle}>Communication</Text>
+          <Text>22 repeat pet parents</Text>
+          <Text>100% response rate</Text>
+          <Text>Usually responds in a few minutes</Text>
+          <Text>90% bookings with photo updates</Text>
+        </View>
+        <View style={styles.skillsSection}>
+          <Text style={styles.subsectionTitle}>Skills</Text>
+          <Text>3 years of experience</Text>
+        </View>
+      </View> 
+    </View>
+  );
+
+  const renderAvailability = () => (
+    <View style={dynamicStyles.servicesBox}>
+      <View style={styles.calendarSection}>
+        <Text style={styles.sectionTitle}>Availability</Text>
+        <Calendar
+          style={styles.calendar}
+          theme={{
+            calendarBackground: theme.colors.surface,
+            selectedDayBackgroundColor: theme.colors.primary,
+            selectedDayTextColor: '#ffffff',
+            todayTextColor: theme.colors.primary,
+          }}
+        />
+      </View>
+    </View>
+  );
+
+  const renderGallery = () => (
+    <View style={styles.gallerySection}>
+      <Text style={styles.sectionTitle}>53 Photos</Text>
+      <View style={styles.photoGrid}>
+        {[1, 2, 3, 4].map((_, index) => (
+          <Image 
+            key={index}
+            source={{ uri: 'https://via.placeholder.com/150' }}
+            style={styles.galleryPhoto}
+                    />
+        ))}
+      </View>
+    </View>
+  );
+
+  const additionalStyles = StyleSheet.create({
+    servicesSection: {
+      marginBottom: 24,
+    },
+    sectionHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    seeAllButton: {
+      color: theme.colors.primary,
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    servicesScroll: {
+      marginHorizontal: -24, // To counteract parent padding
+      paddingHorizontal: 24,
+    },
+    modalServicesGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 16,
+      padding: 16,
+    },
+  });
 
   return (
     <CrossPlatformView fullWidthHeader={true} contentWidth="1200px">
@@ -322,111 +502,38 @@ const SitterProfile = ({ route, navigation }) => {
                 </TouchableOpacity>
               </View>
 
-              {/* Services Box */}
-              <View style={styles.servicesBox}>
-                <Text style={styles.sectionTitle}>Services</Text>
-                <View style={styles.servicesList}>
-                  {services.map((service, index) => (
-                    <View key={index} style={styles.serviceItem}>
-                      <Text style={styles.serviceText}>{service.name}</Text>
-                      <Text style={styles.servicePrice}>${service.price}</Text>
-                    </View>
-                  ))}
-                </View>
-                
-                <TouchableOpacity style={styles.additionalRatesButton}>
-                  <Text style={styles.additionalRatesText}>See Additional Rates</Text>
-                </TouchableOpacity>
-
-                {/* Calendar inside services box */}
-                <View style={styles.calendarSection}>
-                  <Text style={styles.sectionTitle}>Availability</Text>
-                  <Calendar
-                    style={styles.calendar}
-                    theme={{
-                      calendarBackground: theme.colors.surface,
-                      selectedDayBackgroundColor: theme.colors.primary,
-                      selectedDayTextColor: '#ffffff',
-                      todayTextColor: theme.colors.primary,
-                    }}
-                  />
-                </View>
-              </View>
+              {/* Availability Box */}
+              {isWideScreen && renderAvailability()}
 
               {/* Map */}
-              {renderMap()}
+              {isWideScreen && renderMap()}
 
               {/* Pets Section */}
-              {mockPets && mockPets.length > 0 && renderPets()}
+              {isWideScreen &&mockPets && mockPets.length > 0 && renderPets()}
             </View>
 
             {/* Right Column */}
             <View style={styles.rightColumn}>
-              {/* Gallery */}
-              <View style={styles.gallerySection}>
-                <Text style={styles.sectionTitle}>53 Photos</Text>
-                <View style={styles.photoGrid}>
-                  {[1, 2, 3, 4].map((_, index) => (
-                    <Image 
-                      key={index}
-                      source={{ uri: 'https://via.placeholder.com/150' }}
-                      style={styles.galleryPhoto}
-                    />
-                  ))}
-                </View>
-              </View>
+              {renderGallery()}
+
+              {renderServices()}
+
+              {!isWideScreen && renderAvailability()}
 
               {/* Specialist Experience */}
-              <View style={styles.specialistSection}>
-                <Text style={styles.sectionTitle}>Specialist Experience</Text>
-                <TruncatedText text={sitterData?.bio || ''} />
-              </View>
+              {renderSpecialistExperience()}
 
-              {/* Reviews */}
-              <View style={styles.reviewsSection}>
-                <Text style={styles.sectionTitle}>Reviews</Text>
-                <View style={styles.reviewsGrid}>
-                  {mockReviews.slice(0, 4).map(renderReview)}
-                </View>
-                <TouchableOpacity 
-                  style={styles.readMoreButton}
-                  onPress={() => setReviewsModalVisible(true)}
-                >
-                  <Text style={styles.readMoreText}>Read more reviews</Text>
-                </TouchableOpacity>
-              </View>
+              {renderReviews()}
 
               {/* About Section */}
-              <View style={styles.aboutSection}>
-                <Text style={styles.sectionTitle}>About {sitterData.name}</Text>
-                <View style={styles.aboutSubsections}>
-                  <View style={styles.communicationSection}>
-                    <Text style={styles.subsectionTitle}>Communication</Text>
-                    <Text>22 repeat pet parents</Text>
-                    <Text>100% response rate</Text>
-                    <Text>Usually responds in a few minutes</Text>
-                    <Text>90% bookings with photo updates</Text>
-                  </View>
-                  <View style={styles.skillsSection}>
-                    <Text style={styles.subsectionTitle}>Skills</Text>
-                    <Text>3 years of experience</Text>
-                  </View>
-                </View>
-              </View>
+              {/* {renderAboutSection()} */}
 
               {/* Home Section */}
-              <View style={styles.homeSection}>
-                <Text style={styles.sectionTitle}>Home</Text>
-                <View style={styles.homeFeaturesGrid}>
-                  <HomeFeature text="No children present" />
-                  <HomeFeature text="Has security system" />
-                  <HomeFeature text="Non-smoking household" />
-                  <HomeFeature text="Has 2 dogs" />
-                  <HomeFeature text="Dogs allowed on bed" />
-                  <HomeFeature text="Dogs allowed on furniture" />
-                  <HomeFeature text="Potty breaks every 0-2 hours" />
-                </View>
-              </View>
+              {renderHomeSection()}
+
+              {console.log(isWideScreen)}
+
+              {!isWideScreen && renderMap()}
             </View>
           </View>
         </View>
@@ -805,13 +912,9 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   mapContainer: {
-    height: 200,
+    height: 400,
     width: '100%',
-    maxWidth: Platform.OS === 'web' ? 600 : undefined,
-    borderRadius: 12,
-    overflow: 'hidden',
-    marginBottom: 24,
-    alignSelf: 'center',
+    marginVertical: 24,
   },
   map: {
     flex: 1,
@@ -894,20 +997,6 @@ const styles = StyleSheet.create({
   },
   rightColumn: {
     flex: Platform.OS === 'web' ? 2 : undefined,
-  },
-  servicesBox: {
-    backgroundColor: theme.colors.surface,
-    padding: 24,
-    borderRadius: 12,
-    marginTop: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    width: '100%',
-    maxWidth: Platform.OS === 'web' ? 600 : undefined,
-    alignSelf: 'center',
   },
   calendar: {
     height: 300,
@@ -1046,18 +1135,6 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 500, // Limit width on mobile for better readability
     alignSelf: 'center',
-  },
-  servicesBox: {
-    backgroundColor: theme.colors.surface,
-    padding: 24,
-    borderRadius: 12,
-    marginTop: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    width: '100%', // Ensure full width in mobile view
   },
 });
 

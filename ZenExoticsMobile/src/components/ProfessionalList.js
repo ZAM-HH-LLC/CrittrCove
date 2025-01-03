@@ -2,33 +2,44 @@ import React from 'react';
 import { View, Text, FlatList, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
+import { useNavigation } from '@react-navigation/native';
 
-const ProfessionalCard = ({ professional, onPress }) => (
-  <TouchableOpacity style={styles.listItem} onPress={() => onPress(professional)}>
-    <Image 
-      source={{ uri: professional.profilePicture }} 
-      style={styles.profileImage}
-    />
-    <View style={styles.infoContainer}>
-      <View style={styles.header}>
-        <Text style={styles.name}>{professional.id}. {professional.name}</Text>
-        <View style={styles.starSitterBadge}>
-          <Text style={styles.price}>from ${professional.startingRate}/night</Text>
-          {/* <Text style={styles.starSitterText}>Star Sitter</Text> */}
+const ProfessionalCard = ({ professional, onPress }) => {
+  const navigation = useNavigation();
+  
+  const handlePress = () => {
+    navigation.navigate('SitterProfile', { 
+      sitter: professional 
+    });
+  };
+
+  return (
+    <TouchableOpacity style={styles.listItem} onPress={handlePress}>
+      <Image 
+        source={{ uri: professional.profilePicture }} 
+        style={styles.profileImage}
+      />
+      <View style={styles.infoContainer}>
+        <View style={styles.header}>
+          <Text style={styles.name}>{professional.id}. {professional.name}</Text>
+          <View style={styles.starSitterBadge}>
+            <Text style={styles.price}>from ${professional.startingRate}/night</Text>
+            {/* <Text style={styles.starSitterText}>Star Sitter</Text> */}
+          </View>
         </View>
-      </View>
-      <Text style={styles.location}>{professional.location}</Text>
-      <View style={styles.stats}>
-        <View style={styles.rating}>
-          <MaterialCommunityIcons name="star" size={16} color={theme.colors.primary} />
-          <Text>{professional.rating}4.5</Text>
-          <Text style={styles.reviews}>{professional.reviewCount}52 reviews</Text>
+        <Text style={styles.location}>{professional.location}</Text>
+        <View style={styles.stats}>
+          <View style={styles.rating}>
+            <MaterialCommunityIcons name="star" size={16} color={theme.colors.primary} />
+            <Text>{professional.rating}4.5</Text>
+            <Text style={styles.reviews}>{professional.reviewCount}52 reviews</Text>
+          </View>
         </View>
+        
       </View>
-      
-    </View>
-  </TouchableOpacity>
-);
+    </TouchableOpacity>
+  );
+};
 
 const ProfessionalList = ({ professionals, onLoadMore, onProfessionalSelect }) => {
   return (

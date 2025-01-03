@@ -38,6 +38,44 @@ export const TIME_OPTIONS = [
   'per visit'
 ];
 
+export const mockServicesForCards = [
+  {
+    id: 1,
+    name: 'Dog Boarding',
+    startingPrice: 25,
+    animalTypes: ['Dogs'],
+    icon: 'dog'
+  },
+  {
+    id: 2,
+    name: 'Doggy Day Care',
+    startingPrice: 30,
+    animalTypes: ['Dogs'],
+    icon: 'dog'
+  },
+  {
+    id: 3,
+    name: 'House Sitting',
+    startingPrice: 40,
+    animalTypes: ['Dogs', 'Cats', 'Small Pets'],
+    icon: 'home'
+  },
+  {
+    id: 4,
+    name: 'Drop-In Visits',
+    startingPrice: 35,
+    animalTypes: ['Cats', 'Small Pets'],
+    icon: 'door'
+  },
+  {
+    id: 5,
+    name: 'Dog Walking',
+    startingPrice: 45,
+    animalTypes: ['Dogs'],
+    icon: 'walk'
+  }
+];
+
 export const GENERAL_CATEGORIES = [
   'Farm Animals', 
   'Domestic',
