@@ -771,3 +771,48 @@ export const sendMessage = async (conversationId, content) => {
   
   return newMessage;
 };
+
+export const DEFAULT_SERVICES = [
+  {
+    serviceName: 'Dog Walking',
+    animalTypes: 'Dogs',
+    rates: { base_rate: '20' },
+    additionalAnimalRate: '10',
+  },
+  {
+    serviceName: 'Cat Sitting',
+    animalTypes: 'Cats',
+    rates: { base_rate: '20' },
+    additionalAnimalRate: '5',
+  },
+  {
+    serviceName: 'Exotic Pet Care',
+    animalTypes: 'Lizards, Birds',
+    rates: { base_rate: '25' },
+    additionalAnimalRate: '15',
+  },
+];
+
+export const SERVICE_TYPE_SUGGESTIONS = [
+  "Overnight Cat Sitting (Client's Home)",
+  "Cat Boarding",
+  "Drop-In Visits (30 min)",
+  "Drop-In Visits (60 min)",
+  "Dog Walking",
+  "Doggy Day Care",
+  "Pet Boarding",
+  "Exotic Pet Care",
+  "Daytime Pet Sitting",
+  "Ferrier", 
+];
+
+export const ANIMAL_TYPE_SUGGESTIONS = [
+  'Dog',
+  'Cat',
+  'Cow',
+  'Calf',
+  'Lizard',
+  'Bird',
+  'Rabbit',
+  'Fish',
+];

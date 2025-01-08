@@ -53,6 +53,7 @@ const MoreScreen = ({ navigation }) => {
       { title: 'Profile', icon: 'account', route: 'MyProfile' },
       { title: 'My Bookings', icon: 'calendar-clock', route: 'MyBookings' },
       { title: 'My Pets', icon: 'paw', route: 'MyPets' },
+      { title: 'Manage Services', icon: 'briefcase-outline', route: 'ServiceManager' },
       { title: 'Payment Methods', icon: 'credit-card', route: 'PaymentMethods' },
       { title: 'Settings', icon: 'cog', route: 'Settings' },
       { title: 'Privacy Policy', icon: 'shield-account', route: 'PrivacyPolicy' },

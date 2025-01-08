@@ -142,12 +142,12 @@ const SitterDashboard = ({ navigation }) => {
                 {Platform.OS === 'web' ? 'Update Availability' : 'Availability'}
               </Button>
               <Button 
-                icon={Platform.OS === 'web' ? ({ size, color }) => <MaterialCommunityIcons name="cash" size={size} color={color} /> : "cash"}
+                icon={Platform.OS === 'web' ? ({ size, color }) => <MaterialCommunityIcons name="briefcase" size={size} color={color} /> : "briefcase"}
                 mode="outlined" 
-                onPress={() => navigation.navigate('Earnings')}
+                onPress={() => navigation.navigate('ServiceManager')}
                 style={styles.quickActionButton}
               >
-                {Platform.OS === 'web' ? 'View Earnings' : 'Earnings'}
+                My Services
               </Button>
             </View>
           </Card.Content>

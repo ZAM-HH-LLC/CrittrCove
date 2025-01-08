@@ -15,6 +15,7 @@ import EditableSection from '../components/EditableSection';
 import DatePicker from '../components/DatePicker';
 import BackHeader from '../components/BackHeader';
 import CrossPlatformView from '../components/CrossPlatformView';
+import { DEFAULT_SERVICES } from '../data/mockData';
 
 const MyProfile = () => {
   const navigation = useNavigation();
@@ -44,26 +45,7 @@ const MyProfile = () => {
     skills: false,
   });
 
-  const [services, setServices] = useState([
-    {
-      serviceName: 'Dog Walking',
-      animalTypes: 'Dogs',
-      rates: { base_rate: '20' },
-      additionalAnimalRate: '10',
-    },
-    {
-      serviceName: 'Cat Sitting',
-      animalTypes: 'Cats',
-      rates: { base_rate: '20' }, // No puppy rates for cats
-      additionalAnimalRate: '5',
-    },
-    {
-      serviceName: 'Exotic Pet Care',
-      animalTypes: 'Lizards, Birds',
-      rates: { base_rate: '25' }, // Single adult rate
-      additionalAnimalRate: '15',
-    },
-  ]);
+  const [services, setServices] = useState(DEFAULT_SERVICES);
   
   const [activeTab, setActiveTab] = useState('client');
   const [rates, setRates] = useState({

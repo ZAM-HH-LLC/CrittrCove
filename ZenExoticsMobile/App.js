@@ -43,6 +43,7 @@ import AddPet from './src/screens/AddPet';
 import SearchSittersListing from './src/screens/SearchSittersListing';
 import MyBookings from './src/screens/MyBookings';
 import BookingDetails from './src/screens/BookingDetails';
+import ServiceManagerScreen from './src/screens/ServiceManagerScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -81,6 +82,7 @@ const screens = [
   { name: 'AddPet', component: AddPet },
   { name: 'MyBookings', component: MyBookings },
   { name: 'BookingDetails', component: BookingDetails },
+  { name: 'ServiceManager', component: ServiceManagerScreen },
 ];
 
 const linking = {
