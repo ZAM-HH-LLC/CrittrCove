@@ -75,8 +75,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: theme.colors.secondary,
     backgroundColor: theme.colors.background,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    // paddingHorizontal: 8,
+    // paddingVertical: 4,
     borderRadius: 12,
   },
   calculateButton: {

@@ -88,6 +88,31 @@ const useResponsiveLayout = () => {
   return isWideScreen;
 };
 
+// Move this outside the component
+if (Platform.OS === 'web') {
+  const style = document.createElement('style');
+  style.textContent = `
+    .services-scroll::-webkit-scrollbar {
+      -webkit-appearance: none;
+    }
+
+    .services-scroll::-webkit-scrollbar:vertical {
+      width: 11px;
+    }
+
+    .services-scroll::-webkit-scrollbar:horizontal {
+      height: 11px;
+    }
+
+    .services-scroll::-webkit-scrollbar-thumb {
+      border-radius: 8px;
+      border: 2px solid white;
+      background-color: rgba(0, 0, 0, .5);
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 const SitterProfile = ({ route, navigation }) => {
   const { width: windowWidth } = useWindowDimensions();
   const [sitterData, setSitterData] = useState(null);
@@ -103,11 +128,12 @@ const SitterProfile = ({ route, navigation }) => {
     servicesBox: {
       backgroundColor: theme.colors.surface,
       padding: 24,
+      paddingTop: 0,
       borderRadius: 12,
       marginTop: 24,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
+      shadowOpacity: 0.2,
       shadowRadius: 4,
       elevation: 3,
       width: '100%',
@@ -194,20 +220,30 @@ const SitterProfile = ({ route, navigation }) => {
           <Text style={styles.seeAllButton}>See All</Text>
         </TouchableOpacity>
       </View>
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false}
-        style={styles.servicesScroll}
-      >
-        {mockServicesForCards.slice(0, 5).map(service => (
-          <ServiceCard 
-            key={service.id}
-            service={service}
-            onHeartPress={toggleFavorite}
-            isFavorite={favoriteServices.includes(service.id)}
-          />
-        ))}
-      </ScrollView>
+      <View style={styles.servicesWrapper}>
+        <ScrollView 
+          horizontal
+          showsHorizontalScrollIndicator={true}
+          style={[
+            styles.servicesScroll,
+            Platform.OS === 'web' && { 
+              className: 'services-scroll',
+              overflowX: 'scroll'
+            }
+          ]}
+          contentContainerStyle={styles.servicesScrollContent}
+          persistentScrollbar={true}
+        >
+          {mockServicesForCards.slice(0, 5).map(service => (
+            <ServiceCard 
+              key={service.id}
+              service={service}
+              onHeartPress={toggleFavorite}
+              isFavorite={favoriteServices.includes(service.id)}
+            />
+          ))}
+        </ScrollView>
+      </View>
     </View>
   );
 
@@ -418,7 +454,7 @@ const SitterProfile = ({ route, navigation }) => {
   const renderAvailability = () => (
     <View style={dynamicStyles.servicesBox}>
       <View style={styles.calendarSection}>
-        <Text style={styles.sectionTitle}>Availability</Text>
+        <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>Availability</Text>
         <Calendar
           style={styles.calendar}
           theme={{
