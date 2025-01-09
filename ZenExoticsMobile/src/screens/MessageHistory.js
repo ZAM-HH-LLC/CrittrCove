@@ -11,9 +11,9 @@ const createStyles = (screenWidth) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
-    paddingTop: screenWidth > 1000 ? 50 : 0,
-    paddingRight: screenWidth > 1000 ? 100 : 0,
-    paddingLeft: screenWidth > 1000 ? 100 : 0,
+    paddingTop: screenWidth > 1000 ? 0 : 0,
+    paddingRight: screenWidth > 1000 ? 0 : 0,
+    paddingLeft: screenWidth > 1000 ? 0 : 0,
     height: 'calc(100vh - 64px)',
     overflow: 'hidden',
     position: 'fixed',
@@ -51,7 +51,7 @@ const createStyles = (screenWidth) => StyleSheet.create({
   conversationListContainer: {
     width: screenWidth <= 1000 ? '100%' : '30%',
     maxWidth: 600,
-    borderRightWidth: 0,
+    borderRightWidth: 2,
     backgroundColor: theme.colors.surface,
     overflow: 'auto',
   },
@@ -76,7 +76,7 @@ const createStyles = (screenWidth) => StyleSheet.create({
     flexDirection: 'column',
     position: 'relative',
     height: '100%',
-    marginLeft: screenWidth > 1000 ? 24 : 0,
+    marginLeft: screenWidth > 1000 ? 0 : 0,
     maxWidth: Platform.OS === 'web' ? 
       (screenWidth <= 1000 ? '100%' : '70%') : 
       '100%',
@@ -91,13 +91,14 @@ const createStyles = (screenWidth) => StyleSheet.create({
     overflow: 'auto',
     width: '100%',
     position: 'absolute',
+    padding: 16,
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
   },
   messageList: {
-    padding: 16,
+    // padding: 16,
     width: '100%',
     paddingBottom: 80,
   },
@@ -126,6 +127,13 @@ const createStyles = (screenWidth) => StyleSheet.create({
   messageCard: {
     marginVertical: 4,
     maxWidth: '80%',
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  // This is for the messages that are sent and received
+  messageContent: {
+    paddingHorizontal: 16,
+    paddingVertical: 4,
   },
   sentMessage: {
     alignSelf: 'flex-end',
@@ -133,7 +141,11 @@ const createStyles = (screenWidth) => StyleSheet.create({
   },
   receivedMessage: {
     alignSelf: 'flex-start',
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.colors.receivedMessage,
+  },
+  messageText: {
+    fontSize: 16,
+    lineHeight: 20,
   },
   sentMessageContainer: {
     alignItems: 'flex-end',
@@ -395,13 +407,16 @@ const MessageHistory = ({ navigation }) => {
       ]}>
         {item.sender}
       </Text>
-      <Card style={[styles.messageCard, item.sender === 'Me' ? styles.sentMessage : styles.receivedMessage]}>
-        <Card.Content>
-          <Paragraph style={item.sender === 'Me' ? styles.sentMessageText : styles.receivedMessageText}>
+      <View style={[styles.messageCard, item.sender === 'Me' ? styles.sentMessage : styles.receivedMessage]}>
+        <View style={styles.messageContent}>
+          <Text style={[
+            styles.messageText,
+            item.sender === 'Me' ? styles.sentMessageText : styles.receivedMessageText
+          ]}>
             {item.content}
-          </Paragraph>
-        </Card.Content>
-      </Card>
+          </Text>
+        </View>
+      </View>
       <Text style={[
         styles.timestampBelow,
         item.sender === 'Me' ? styles.sentTimestamp : styles.receivedTimestamp

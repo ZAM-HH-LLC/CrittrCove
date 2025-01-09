@@ -19,6 +19,7 @@ export const theme = {
     surface: '#f6f6f6',
     border: '#6A6C51',
     inputBackground: '#f6f6f6',
+    receivedMessage: '#e7eae6',
     // headerBorder: '#e0e0e0',
     danger: '#A52A2A',
   },

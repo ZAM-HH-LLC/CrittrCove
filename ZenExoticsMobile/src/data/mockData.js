@@ -718,48 +718,20 @@ export const mockConversations = [
 ];
 
 // Messages for each conversation
-const mockMessages = {
-  'conv1': [
-    {
-      id: 'msg1',
-      sender: 'John Smith',
-      content: 'Hi, I saw your profile and would love to help with your pets!',
-      timestamp: '2024-02-21 15:00',
-    },
-    {
-      id: 'msg2',
-      sender: 'Me',
-      content: 'Thanks for reaching out! What experience do you have with exotic pets?',
-      timestamp: '2024-02-21 15:15',
-    },
-    {
-      id: 'msg3',
-      sender: 'John Smith',
-      content: 'Looking forward to meeting your pets!',
-      timestamp: '2024-02-21 15:30',
-    },
+export const mockMessages = {
+  '1': [
+    { id: '1', sender: 'John Doe', content: 'Hello, how are you?', timestamp: '2023-05-15 14:00' },
+    { id: '2', sender: 'Me', content: 'I\'m doing well, thanks! How about you?', timestamp: '2023-05-15 14:05' },
+    { id: '3', sender: 'John Doe', content: 'Great! Just wondering about our next appointment.', timestamp: '2023-05-15 14:10' },
   ],
-  'conv2': [
-    {
-      id: 'msg1',
-      sender: 'Sarah Wilson',
-      content: 'Just checking in on your cats',
-      timestamp: '2024-02-21 14:00',
-    },
-    {
-      id: 'msg2',
-      sender: 'Me',
-      content: 'How are they doing?',
-      timestamp: '2024-02-21 14:10',
-    },
-    {
-      id: 'msg3',
-      sender: 'Sarah Wilson',
-      content: 'The cats are doing great!',
-      timestamp: '2024-02-21 14:20',
-    },
+  '2': [
+    { id: '4', sender: 'Mary J', content: 'See you tomorrow!', timestamp: '2023-05-15 13:30' },
+    { id: '5', sender: 'Me', content: 'Looking forward to it!', timestamp: '2023-05-15 13:35' },
   ],
-  // Add messages for other conversations...
+  '3': [
+    { id: '6', sender: 'Bitch', content: 'Thanks for the update', timestamp: '2023-05-14 15:20' },
+    { id: '7', sender: 'Me', content: 'No problem at all', timestamp: '2023-05-14 15:25' },
+  ],
 };
 
 // Mock API functions

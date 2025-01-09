@@ -240,6 +240,9 @@ const SitterProfile = ({ route, navigation }) => {
               service={service}
               onHeartPress={toggleFavorite}
               isFavorite={favoriteServices.includes(service.id)}
+              professionalName={sitterData.name}
+              professionalId={sitterData.id}
+              navigation={navigation}
             />
           ))}
         </ScrollView>

@@ -4,14 +4,24 @@ import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
 import { CostCalculationModal } from './CostCalculationModal';
 
-export const ServiceCard = ({ service, onHeartPress, isFavorite, professionalName, onContactPress }) => {
+export const ServiceCard = ({ 
+  service, 
+  onHeartPress, 
+  isFavorite, 
+  professionalName,
+  professionalId,
+  navigation
+}) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
 
   const handleContactPress = () => {
     setIsModalVisible(false);
-    if (onContactPress) {
-      onContactPress();
-    }
+    navigation.navigate('MessageHistory', {
+      targetProfessional: {
+        id: professionalId,
+        name: professionalName
+      }
+    });
   };
 
   return (
@@ -47,6 +57,7 @@ export const ServiceCard = ({ service, onHeartPress, isFavorite, professionalNam
         serviceName={service.name}
         additionalRates={service.additionalRates || []}
         professionalName={professionalName}
+        professionalId={professionalId}
         onContactPress={handleContactPress}
       />
     </View>
