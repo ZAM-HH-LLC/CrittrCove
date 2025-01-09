@@ -416,7 +416,7 @@ const createStyles = (screenWidth) => StyleSheet.create({
   },
 });
 
-const MessageHistory = ({ navigation }) => {
+const MessageHistory = ({ navigation, route }) => {
   const { colors } = useTheme();
   const [screenWidth, setScreenWidth] = useState(Dimensions.get('window').width);
   const styles = createStyles(screenWidth); // Initialize styles here
@@ -447,6 +447,13 @@ const MessageHistory = ({ navigation }) => {
       }
     }
   }, [selectedConversation, conversations]);
+
+  useEffect(() => {
+    // Check if we have a selectedConversation from navigation params
+    if (route.params?.selectedConversation) {
+      setSelectedConversation(route.params.selectedConversation);
+    }
+  }, [route.params]);
 
   const renderMessage = useCallback(({ item }) => (
     <View style={item.sender === 'Me' ? styles.sentMessageContainer : styles.receivedMessageContainer}>

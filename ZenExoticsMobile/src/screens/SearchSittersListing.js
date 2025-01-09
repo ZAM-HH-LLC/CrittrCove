@@ -5,11 +5,11 @@ import ProfessionalList from '../components/ProfessionalList';
 import MapView from '../components/MapView';
 import { theme } from '../styles/theme';
 import { mockSitters } from '../data/mockData'; // Import mock data
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
-const SearchSittersListing = ({ navigation }) => {
+const SearchSittersListing = ({ navigation, route }) => {
   const { width } = useWindowDimensions();
-  const isMobile = width < 900;
+  const isMobile = width < 1000;
   const [activeView, setActiveView] = useState(isMobile ? 'filters' : 'all');
   const [professionals, setProfessionals] = useState(mockSitters); // Use mock data
   const [filters, setFilters] = useState({});
@@ -22,8 +22,18 @@ const SearchSittersListing = ({ navigation }) => {
 
   useEffect(() => {
     // Update active view when screen size changes
-    setActiveView(width < 900 ? 'filters' : 'all');
+    setActiveView(width < 1000 ? 'filters' : 'all');
   }, [width]);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      if (isMobile) {
+        setActiveView('filters');
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation, isMobile]);
 
   const handleFiltersChange = (newFilters) => {
     setFilters(newFilters);
@@ -81,12 +91,15 @@ const SearchSittersListing = ({ navigation }) => {
         {activeView === 'list' && (
           <>
             <View style={styles.mobileHeader}>
-              <TouchableOpacity onPress={() => setActiveView('filters')}>
-                <MaterialCommunityIcons name="filter" size={24} color={theme.colors.primary} />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => setActiveView('map')}>
-                <MaterialCommunityIcons name="map" size={24} color={theme.colors.primary} />
-              </TouchableOpacity>
+              <Text style={styles.mobileHeaderText}>Professionals</Text>
+              <View style={styles.mobileHeaderRight}>
+                <TouchableOpacity onPress={() => setActiveView('filters')} style={styles.headerIcon}>
+                  <MaterialCommunityIcons name="filter" size={24} color={theme.colors.primary} />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setActiveView('map')} style={styles.headerIcon}>
+                  <MaterialCommunityIcons name="map" size={24} color={theme.colors.primary} />
+                </TouchableOpacity>
+              </View>
             </View>
             <ProfessionalList
               professionals={professionals}
@@ -100,7 +113,7 @@ const SearchSittersListing = ({ navigation }) => {
           <>
             <View style={styles.mobileHeader}>
               <TouchableOpacity onPress={() => setActiveView('list')}>
-                <MaterialCommunityIcons name="format-list-bulleted" size={24} color={theme.colors.primary} />
+                <MaterialCommunityIcons name="arrow-left" size={24} color={theme.colors.primary} />
               </TouchableOpacity>
             </View>
             <MapView
@@ -178,8 +191,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    borderBottomWidth: 2,
     padding: 10,
+    marginHorizontal: 10,
     backgroundColor: theme.colors.background,
+  },
+  mobileHeaderText: {
+    fontSize: theme.fontSizes.large,
+    fontWeight: '500',
+  },
+  mobileHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerIcon: {
+    padding: 8,
+    marginLeft: 16,
+  },
+  mapButton: {
+    marginLeft: 20,
   },
   searchButton: {
     backgroundColor: theme.colors.primary,

@@ -13,6 +13,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SCREEN_WIDTH } from '../context/AuthContext';
 import ServiceCard from '../components/ServiceCard';
 import { mockServicesForCards } from '../data/mockData';
+import { mockConversations, mockMessages } from '../data/mockData';
 // Conditionally import WebMap component
 const WebMap = Platform.OS === 'web' ? require('react-leaflet').MapContainer : null;
 
@@ -513,6 +514,42 @@ const SitterProfile = ({ route, navigation }) => {
     },
   });
 
+  const handleContactPress = () => {
+    // Check if conversation already exists
+    const existingConversation = mockConversations.find(
+      conv => conv.professionalId === sitterData.id
+    );
+
+    if (existingConversation) {
+      // Use replace instead of navigate to avoid navigation stack issues
+      navigation.replace('MessageHistory', {
+        selectedConversation: existingConversation.id
+      });
+    } else {
+      // Create new conversation
+      const newConversation = {
+        id: `conv_${Date.now()}`,
+        name: sitterData.name,
+        professionalId: sitterData.id,
+        lastMessage: '',
+        timestamp: new Date().toISOString(),
+        unread: false,
+        bookingStatus: null
+      };
+
+      // Add new conversation to mockConversations
+      mockConversations.unshift(newConversation);
+
+      // Initialize empty messages array for this conversation
+      mockMessages[newConversation.id] = [];
+
+      // Use replace instead of navigate
+      navigation.replace('MessageHistory', {
+        selectedConversation: newConversation.id
+      });
+    }
+  };
+
   return (
     <CrossPlatformView fullWidthHeader={true} contentWidth="1200px">
       <BackHeader 
@@ -536,7 +573,10 @@ const SitterProfile = ({ route, navigation }) => {
                 <Text style={styles.name}>{sitterData.name}</Text>
                 <Text style={styles.location}>{sitterData.location}</Text>
                 {renderRatingStars()}
-                <TouchableOpacity style={styles.contactButton}>
+                <TouchableOpacity 
+                  style={styles.contactButton}
+                  onPress={handleContactPress}
+                >
                   <Text style={styles.contactButtonText}>Contact {sitterData.name}</Text>
                 </TouchableOpacity>
               </View>

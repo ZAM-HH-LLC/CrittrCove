@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
 import { CostCalculationModal } from './CostCalculationModal';
-
+import { mockConversations, mockMessages } from '../data/mockData';
 export const ServiceCard = ({ 
   service, 
   onHeartPress, 
@@ -15,13 +15,39 @@ export const ServiceCard = ({
   const [isModalVisible, setIsModalVisible] = useState(false);
 
   const handleContactPress = () => {
+    // Check if conversation already exists
+    const existingConversation = mockConversations.find(
+      conv => conv.professionalId === professionalId
+    );
+
+    if (existingConversation) {
+      navigation.navigate('MessageHistory', {
+        selectedConversation: existingConversation.id
+      });
+    } else {
+      // Create new conversation
+      const newConversation = {
+        id: `conv_${Date.now()}`,
+        name: professionalName,
+        professionalId: professionalId,
+        lastMessage: '',
+        timestamp: new Date().toISOString(),
+        unread: false,
+        bookingStatus: null
+      };
+
+      // Add new conversation to mockConversations
+      mockConversations.unshift(newConversation);
+
+      // Initialize empty messages array for this conversation
+      mockMessages[newConversation.id] = [];
+
+      // Navigate directly to MessageHistory
+      navigation.navigate('MessageHistory', {
+        selectedConversation: newConversation.id
+      });
+    }
     setIsModalVisible(false);
-    navigation.navigate('MessageHistory', {
-      targetProfessional: {
-        id: professionalId,
-        name: professionalName
-      }
-    });
   };
 
   return (
