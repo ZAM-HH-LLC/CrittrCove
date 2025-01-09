@@ -50,7 +50,7 @@ const createStyles = (screenWidth) => StyleSheet.create({
   },
   conversationListContainer: {
     width: screenWidth <= 1000 ? '100%' : '30%',
-    maxWidth: 600,
+    maxWidth: screenWidth < 1000 ? '' : 600,
     borderRightWidth: 2,
     backgroundColor: theme.colors.surface,
     overflow: 'auto',
@@ -59,7 +59,7 @@ const createStyles = (screenWidth) => StyleSheet.create({
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
-    maxWidth: 600,
+    maxWidth: screenWidth < 1000 ? '' : 600,
     width: '100%',
   },
   selectedConversation: {
@@ -92,6 +92,7 @@ const createStyles = (screenWidth) => StyleSheet.create({
     width: '100%',
     position: 'absolute',
     padding: 16,
+    paddingTop: 72,
     top: 0,
     left: 0,
     right: 0,
@@ -132,7 +133,7 @@ const createStyles = (screenWidth) => StyleSheet.create({
   },
   // This is for the messages that are sent and received
   messageContent: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 8,
     paddingVertical: 4,
   },
   sentMessage: {
@@ -377,27 +378,75 @@ const createStyles = (screenWidth) => StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  messageHeader: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 2,
+  },
+  messageHeaderName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: theme.colors.text,
+    textAlign: 'center',
+  },
+  mobileHeaderContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    paddingVertical: 16,
+    paddingHorizontal: 8,
+  },
+  mobileHeaderName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: theme.colors.text,
+    textAlign: 'center',
+  },
+  backArrow: {
+    position: 'absolute',
+    left: 16,
+    padding: 8,
+  },
 });
 
 const MessageHistory = ({ navigation }) => {
   const { colors } = useTheme();
-  const [messages, setMessages] = useState([
-    { id: '1', sender: 'John Doe', content: 'Hello, how are you bittttttchhhhhhhhhhhh bro?', timestamp: '2023-05-15 14:00' },
-    { id: '2', sender: 'Me', content: 'I\'m doing well, thanks! How about you?', timestamp: '2023-05-15 14:05' },
-    { id: '3', sender: 'John Doe', content: 'Great! Just wondering about our next appointment.', timestamp: '2023-05-15 14:10' },
-    { id: '4', sender: 'Me', content: 'Hello, how are you bittttttchhhhhhhhhhhh bro?', timestamp: '2023-05-15 14:00' },
-    { id: '5', sender: 'John Doe', content: 'I\'m doing well, thanks! How about you?', timestamp: '2023-05-15 14:05' },
-    { id: '6', sender: 'Me', content: 'Great! Just wondering about our next appointment.', timestamp: '2023-05-15 14:10' },
-    { id: '7', sender: 'Me', content: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.', timestamp: '2023-05-15 14:10' },
-    { id: '8', sender: 'John Doe', content: 'Lorem ipsum dolor sit', timestamp: '2023-05-15 14:10' },
-    { id: '9', sender: 'John Doe', content: 'Great! Just wondering about our next appointment. Great! Just wondering about our next appointment.Great! Just wondering about our next appointment.', timestamp: '2023-05-15 14:10' },
-    { id: '10', sender: 'Me', content: 'Great! Just wondering about our next appointment.', timestamp: '2023-05-15 14:10' },
-    { id: '11', sender: 'John Doe', content: 'Great! Just wondering about our next appointment.', timestamp: '2023-05-15 14:10' },
-  ]);
+  const [screenWidth, setScreenWidth] = useState(Dimensions.get('window').width);
+  const styles = createStyles(screenWidth); // Initialize styles here
   
+  const [selectedConversation, setSelectedConversation] = useState('1');
+  const [selectedConversationData, setSelectedConversationData] = useState(null);
+  const [messages, setMessages] = useState([]);
   const [isSending, setIsSending] = useState(false);
   const [showRequestModal, setShowRequestModal] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
   const IS_CLIENT = false; // This should come from your auth context
+
+  // Use mockConversations instead of local state
+  const [conversations, setConversations] = useState(mockConversations);
+
+  useEffect(() => {
+    if (selectedConversation) {
+      const conversation = conversations.find(conv => conv.id === selectedConversation);
+      if (conversation) {
+        // Get messages for this conversation from mockData
+        const conversationMessages = mockMessages[selectedConversation] || [];
+        console.log('Selected conversation:', selectedConversation);
+        console.log('Available messages:', mockMessages);
+        console.log('Loading messages:', conversationMessages);
+        
+        setMessages(conversationMessages);
+        setSelectedConversationData(conversation);
+      }
+    }
+  }, [selectedConversation, conversations]);
 
   const renderMessage = useCallback(({ item }) => (
     <View style={item.sender === 'Me' ? styles.sentMessageContainer : styles.receivedMessageContainer}>
@@ -647,35 +696,6 @@ const MessageHistory = ({ navigation }) => {
     }
   };
 
-  // Add new state for conversations list
-  const [conversations, setConversations] = useState([
-    { 
-      id: '1', 
-      name: 'John Doe', 
-      lastMessage: 'Hello, how are you  bittttttchhhhhhhhhhhh bro?', 
-      timestamp: '2023-05-15 14:00',
-      bookingStatus: 'Pending', // Can be: null, 'Pending', 'Confirmed', 'Completed'
-      unread: true
-    },
-    { 
-      id: '2', 
-      name: 'Mary J', 
-      lastMessage: 'See you tomorrow!', 
-      timestamp: '2023-05-15 13:30',
-      bookingStatus: 'Confirmed',
-      unread: false
-    },
-    { 
-      id: '3', 
-      name: 'Bitch', 
-      lastMessage: 'Thanks for the update', 
-      timestamp: '2023-05-14 15:20',
-      bookingStatus: null,
-      unread: false
-    },
-  ]);
-  const [selectedConversation, setSelectedConversation] = useState('1');
-
   // Add new header component
   const renderHeader = () => {
     if (screenWidth <= 1000 && selectedConversation) {
@@ -742,21 +762,31 @@ const MessageHistory = ({ navigation }) => {
     </View>
   );
 
-  // Add new state for dropdown
-  const [showDropdown, setShowDropdown] = useState(false);
-
   // Update the message section to have a fixed input bar
   const renderMessageSection = () => (
     <View style={styles.messageSection}>
+      {screenWidth > 1000 && selectedConversationData && (
+        <View style={styles.messageHeader}>
+          <Text style={styles.messageHeaderName}>
+            {selectedConversationData.name}
+          </Text>
+        </View>
+      )}
       <View style={styles.messagesContainer}>
-        <FlatList
-          data={messages}
-          renderItem={renderMessage}
-          keyExtractor={item => item.id}
-          contentContainerStyle={styles.messageList}
-          inverted={false}
-          showsVerticalScrollIndicator={true}
-        />
+        {messages.length === 0 ? (
+          <Text style={{ padding: 16, color: theme.colors.placeholder }}>
+            No messages yet
+          </Text>
+        ) : (
+          <FlatList
+            data={messages}
+            renderItem={renderMessage}
+            keyExtractor={item => item.id}
+            contentContainerStyle={styles.messageList}
+            inverted={false}
+            showsVerticalScrollIndicator={true}
+          />
+        )}
       </View>
       <View style={styles.inputWrapper}>
         <View style={styles.attachButtonContainer}>
@@ -811,10 +841,6 @@ const MessageHistory = ({ navigation }) => {
     </View>
   );
 
-  // Move screenWidth state to the top of the component
-  const [screenWidth, setScreenWidth] = useState(Dimensions.get('window').width);
-  const styles = createStyles(screenWidth);
-
   // Update the useEffect for window resize
   useEffect(() => {
     const handleResize = () => {
@@ -836,6 +862,26 @@ const MessageHistory = ({ navigation }) => {
     }
   }, []);
 
+  const renderMobileHeader = () => (
+    <View style={styles.mobileHeader}>
+      <View style={styles.mobileHeaderContent}>
+        <TouchableOpacity 
+          style={styles.backArrow}
+          onPress={() => setSelectedConversation(null)}
+        >
+          <MaterialCommunityIcons 
+            name="arrow-left" 
+            size={24} 
+            color={theme.colors.primary} 
+          />
+        </TouchableOpacity>
+        <Text style={styles.mobileHeaderName}>
+          {selectedConversationData?.name}
+        </Text>
+      </View>
+    </View>
+  );
+
   return (
     <SafeAreaView style={[
       styles.container,
@@ -849,15 +895,7 @@ const MessageHistory = ({ navigation }) => {
         {screenWidth <= 1000 ? (
           selectedConversation ? (
             <View style={styles.mobileMessageView}>
-              <View style={styles.mobileHeader}>
-                <TouchableOpacity 
-                  style={styles.backButton}
-                  onPress={() => setSelectedConversation(null)}
-                >
-                  <MaterialCommunityIcons name="arrow-left" size={24} color={theme.colors.primary} />
-                  <Text style={styles.backButtonText}>Back to Conversations</Text>
-                </TouchableOpacity>
-              </View>
+              {renderMobileHeader()}
               <View style={styles.mobileContent}>
                 {renderMessageSection()}
               </View>

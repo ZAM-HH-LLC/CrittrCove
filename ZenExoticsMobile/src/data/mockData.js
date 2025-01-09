@@ -683,31 +683,31 @@ export const mockClientBookings = [
 // Add these mock conversations and messages
 export const mockConversations = [
   {
-    id: 'conv1',
-    name: 'John Smith',
+    id: '1',
+    name: 'John Doe',
     lastMessage: 'Looking forward to meeting your pets!',
     timestamp: '2024-02-21 15:30',
     unread: true,
     bookingStatus: 'Pending',
   },
   {
-    id: 'conv2',
-    name: 'Sarah Wilson',
+    id: '2',
+    name: 'Mary J',
     lastMessage: 'The cats are doing great!',
     timestamp: '2024-02-21 14:20',
     unread: false,
     bookingStatus: 'Confirmed',
   },
   {
-    id: 'conv3',
-    name: 'Mike Johnson',
+    id: '3',
+    name: 'Bitch Johnson',
     lastMessage: 'Perfect, see you tomorrow then!',
     timestamp: '2024-02-21 13:15',
     unread: false,
     bookingStatus: null,
   },
   {
-    id: 'conv4',
+    id: '4',
     name: 'Emma Davis',
     lastMessage: 'Your reptiles are fascinating!',
     timestamp: '2024-02-21 12:30',
