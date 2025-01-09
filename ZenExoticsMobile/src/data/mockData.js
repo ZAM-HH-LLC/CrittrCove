@@ -38,41 +38,75 @@ export const TIME_OPTIONS = [
   'per visit'
 ];
 
+export const mockAdditionalRates = {
+  'Dog Boarding': [
+    { title: 'Extended Stay (7+ days)', amount: 15 },
+    { title: 'Pickup/Dropoff Service', amount: 25 },
+    { title: 'Special Diet Handling', amount: 10 },
+    { title: 'Medication Administration', amount: 15 },
+  ],
+  'Doggy Day Care': [
+    { title: 'Extended Hours', amount: 20 },
+    { title: 'Training Session', amount: 30 },
+    { title: 'Grooming', amount: 25 },
+  ],
+  'House Sitting': [
+    { title: 'Plant Watering', amount: 10 },
+    { title: 'Mail Collection', amount: 5 },
+    { title: 'Extended Visit (4+ hrs)', amount: 30 },
+  ],
+  'Drop-In Visits': [
+    { title: 'Extra 15 Minutes', amount: 10 },
+    { title: 'Plant Watering', amount: 5 },
+    { title: 'Photo Updates', amount: 5 },
+  ],
+  'Dog Walking': [
+    { title: 'Extra 15 Minutes', amount: 10 },
+    { title: 'Multiple Route Options', amount: 5 },
+    { title: 'Training During Walk', amount: 20 },
+  ],
+};
+
 export const mockServicesForCards = [
   {
     id: 1,
     name: 'Dog Boarding',
     startingPrice: 25,
     animalTypes: ['Dogs'],
-    icon: 'dog'
+    icon: 'dog',
+    additionalRates: mockAdditionalRates['Dog Boarding']
   },
   {
     id: 2,
     name: 'Doggy Day Care',
     startingPrice: 30,
     animalTypes: ['Dogs'],
-    icon: 'dog'
+    icon: 'dog',
+    additionalRates: mockAdditionalRates['Doggy Day Care']
   },
   {
     id: 3,
     name: 'House Sitting',
     startingPrice: 40,
     animalTypes: ['Dogs', 'Cats', 'Small Pets'],
-    icon: 'home'
+    icon: 'home',
+    additionalRates: mockAdditionalRates['House Sitting']
   },
   {
     id: 4,
     name: 'Drop-In Visits',
     startingPrice: 35,
     animalTypes: ['Cats', 'Small Pets'],
-    icon: 'door'
+    icon: 'door',
+    additionalRates: mockAdditionalRates['Drop-In Visits']
   },
   {
     id: 5,
     name: 'Dog Walking',
     startingPrice: 45,
     animalTypes: ['Dogs'],
-    icon: 'walk'
+    icon: 'walk',
+    additionalRates: mockAdditionalRates['Dog Walking']
   }
 ];
 

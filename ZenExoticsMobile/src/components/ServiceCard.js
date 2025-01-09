@@ -1,9 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
+import { CostCalculationModal } from './CostCalculationModal';
 
-export const ServiceCard = ({ service, onHeartPress, isFavorite }) => {
+export const ServiceCard = ({ service, onHeartPress, isFavorite, professionalName, onContactPress }) => {
+  const [isModalVisible, setIsModalVisible] = useState(false);
+
+  const handleContactPress = () => {
+    setIsModalVisible(false);
+    if (onContactPress) {
+      onContactPress();
+    }
+  };
+
   return (
     <View style={styles.serviceCard}>
       <TouchableOpacity 
@@ -26,10 +36,19 @@ export const ServiceCard = ({ service, onHeartPress, isFavorite }) => {
       </View>
       <TouchableOpacity 
         style={styles.calculateButton}
-        onPress={() => {/* Add calculate logic */}}
+        onPress={() => setIsModalVisible(true)}
       >
         <Text style={styles.calculateButtonText}>Calculate Cost</Text>
       </TouchableOpacity>
+
+      <CostCalculationModal
+        visible={isModalVisible}
+        onClose={() => setIsModalVisible(false)}
+        serviceName={service.name}
+        additionalRates={service.additionalRates || []}
+        professionalName={professionalName}
+        onContactPress={handleContactPress}
+      />
     </View>
   );
 };
