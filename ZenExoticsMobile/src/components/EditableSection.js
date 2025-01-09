@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
   section: {
     width: '100%',
     maxWidth: 600,
-    marginBottom: 20,
+    // marginBottom: 20,
     paddingVertical: 20,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,

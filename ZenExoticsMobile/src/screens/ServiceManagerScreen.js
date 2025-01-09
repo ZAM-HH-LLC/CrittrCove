@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { Button } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import ServiceManager from '../components/ServiceManager';
+import AddServiceModal from '../components/AddServiceModal';
 import { theme } from '../styles/theme';
 import { DEFAULT_SERVICES } from '../data/mockData';
 import CrossPlatformView from '../components/CrossPlatformView';
@@ -13,13 +14,11 @@ const ServiceManagerScreen = () => {
   const [services, setServices] = useState([]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [showServiceModal, setShowServiceModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
 
-  // Simulate fetching services from an API
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        // Simulate API delay
         await new Promise(resolve => setTimeout(resolve, 1000));
         setServices(DEFAULT_SERVICES);
         setIsLoading(false);
@@ -32,8 +31,9 @@ const ServiceManagerScreen = () => {
     fetchServices();
   }, []);
 
-  const handleAddServices = () => {
-    setShowServiceModal(true);
+  const handleAddService = (newService) => {
+    setServices(prev => [...prev, newService]);
+    setHasUnsavedChanges(true);
   };
 
   if (isLoading) {
@@ -56,26 +56,32 @@ const ServiceManagerScreen = () => {
         title="Service Manager" 
         onBackPress={() => navigation.navigate('More')} 
       />
+      <View style={[styles.container, { marginTop: 20 }]}></View>
       {services.length > 0 ? (
         <ServiceManager
           services={services}
           setServices={setServices}
           setHasUnsavedChanges={setHasUnsavedChanges}
-          showModal={showServiceModal}
-          setShowModal={setShowServiceModal}
         />
       ) : (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>No services yet</Text>
           <Button 
             mode="contained" 
-            onPress={handleAddServices}
+            onPress={() => setShowAddModal(true)}
             style={styles.addButton}
           >
             Add Services
           </Button>
         </View>
       )}
+
+      <AddServiceModal
+        visible={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSave={handleAddService}
+        setHasUnsavedChanges={setHasUnsavedChanges}
+      />
     </CrossPlatformView>
   );
 };
@@ -95,7 +101,7 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     color: theme.colors.text,
-    marginBottom: 20,
+    // marginBottom: 20,
   },
   addButton: {
     paddingHorizontal: 20,
