@@ -97,13 +97,30 @@ export const AuthProvider = ({ children }) => {
     setUserRole(null);
   };
 
-  const switchRole = () => {
+  const switchRole = async () => {
     if (isApprovedSitter) {
-      setUserRole(prevRole => prevRole === 'sitter' ? 'petOwner' : 'sitter');
-    } else {
-      setUserRole('petOwner');
+      const newRole = userRole === 'sitter' ? 'petOwner' : 'sitter';
+      setUserRole(newRole);
+      // Persist the role in AsyncStorage
+      await AsyncStorage.setItem('userRole', newRole);
     }
   };
+
+  // Add this useEffect to load the persisted role on app start
+  useEffect(() => {
+    const loadPersistedRole = async () => {
+      try {
+        const persistedRole = await AsyncStorage.getItem('userRole');
+        if (persistedRole) {
+          setUserRole(persistedRole);
+        }
+      } catch (error) {
+        console.error('Error loading persisted role:', error);
+      }
+    };
+
+    loadPersistedRole();
+  }, []);
 
   return (
     <AuthContext.Provider value={{ 

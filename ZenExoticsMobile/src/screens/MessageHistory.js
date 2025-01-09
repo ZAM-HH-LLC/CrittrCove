@@ -4,7 +4,7 @@ import { Button, Card, Paragraph, useTheme, ActivityIndicator } from 'react-nati
 import { MaterialCommunityIcons } from '@expo/vector-icons'; // Import the icon library
 import { theme } from '../styles/theme';
 import RequestBookingModal from '../components/RequestBookingModal';
-import { createBooking, BOOKING_STATES, mockConversations, mockMessages } from '../data/mockData';
+import { createBooking, BOOKING_STATES, mockConversations, mockMessages, CURRENT_USER_ID } from '../data/mockData';
 
 // First, create a function to generate dynamic styles
 const createStyles = (screenWidth) => StyleSheet.create({
@@ -92,7 +92,7 @@ const createStyles = (screenWidth) => StyleSheet.create({
     width: '100%',
     position: 'absolute',
     padding: 16,
-    paddingTop: 72,
+    paddingTop: screenWidth > 1000 ? 72 : 20,
     top: 0,
     left: 0,
     right: 0,
@@ -452,35 +452,64 @@ const MessageHistory = ({ navigation, route }) => {
     // Check if we have a selectedConversation from navigation params
     if (route.params?.selectedConversation) {
       setSelectedConversation(route.params.selectedConversation);
+      
+      // If this is a new conversation with a professional, update the conversation data
+      if (route.params.professionalId && route.params.professionalName) {
+        const conversation = mockConversations.find(
+          conv => conv.id === route.params.selectedConversation
+        );
+        if (conversation) {
+          conversation.professionalId = route.params.professionalId;
+          conversation.name = route.params.professionalName;
+          conversation.isProfessional = true;
+        }
+      }
     }
   }, [route.params]);
 
-  const renderMessage = useCallback(({ item }) => (
-    <View style={item.sender === 'Me' ? styles.sentMessageContainer : styles.receivedMessageContainer}>
-      <Text style={[
-        styles.senderAbove,
-        item.sender === 'Me' ? styles.sentSenderName : styles.receivedSenderName
-      ]}>
-        {item.sender}
-      </Text>
-      <View style={[styles.messageCard, item.sender === 'Me' ? styles.sentMessage : styles.receivedMessage]}>
-        <View style={styles.messageContent}>
-          <Text style={[
-            styles.messageText,
-            item.sender === 'Me' ? styles.sentMessageText : styles.receivedMessageText
-          ]}>
-            {item.content}
-          </Text>
+  const isCurrentUserMessage = useCallback((message) => {
+    return message.sender === 'Me';
+  }, []);
+
+  const renderMessage = useCallback(({ item }) => {
+    // Message is from current user if they are the sender
+    const isFromMe = item.sender === CURRENT_USER_ID;
+    console.log('Message:', item);
+    console.log('CURRENT_USER_ID:', CURRENT_USER_ID);
+    console.log('Is from me?', isFromMe);
+    
+    return (
+      <View 
+        style={isFromMe ? styles.sentMessageContainer : styles.receivedMessageContainer}
+      >
+        <Text style={[
+          styles.senderAbove,
+          isFromMe ? styles.sentSenderName : styles.receivedSenderName
+        ]}>
+          {isFromMe ? 'Me' : selectedConversationData?.name}
+        </Text>
+        <View style={[
+          styles.messageCard, 
+          isFromMe ? styles.sentMessage : styles.receivedMessage
+        ]}>
+          <View style={styles.messageContent}>
+            <Text style={[
+              styles.messageText,
+              isFromMe ? styles.sentMessageText : styles.receivedMessageText
+            ]}>
+              {item.content}
+            </Text>
+          </View>
         </View>
+        <Text style={[
+          styles.timestampBelow,
+          isFromMe ? styles.sentTimestamp : styles.receivedTimestamp
+        ]}>
+          {new Date(item.timestamp).toLocaleTimeString()}
+        </Text>
       </View>
-      <Text style={[
-        styles.timestampBelow,
-        item.sender === 'Me' ? styles.sentTimestamp : styles.receivedTimestamp
-      ]}>
-        {item.timestamp}
-      </Text>
-    </View>
-  ), []);
+    );
+  }, [selectedConversationData]);
 
   const simulateMessageSend = async (messageContent) => {
     try {
@@ -514,10 +543,16 @@ const MessageHistory = ({ navigation, route }) => {
         try {
           await simulateMessageSend(message.trim());
           const newMsg = {
-            id: Date.now().toString(),
-            sender: 'Me',
+            message_id: Date.now().toString(),
+            participant1_id: selectedConversationData?.participant1_id !== CURRENT_USER_ID ? selectedConversationData?.participant1_id : CURRENT_USER_ID,
+            participant2_id: selectedConversationData?.participant2_id !== CURRENT_USER_ID ? selectedConversationData?.participant2_id : CURRENT_USER_ID,
+            sender: CURRENT_USER_ID,
+            role_map: selectedConversationData?.role_map,
             content: message.trim(),
-            timestamp: new Date().toLocaleString(),
+            timestamp: new Date().toISOString(),
+            status: "sent",
+            is_booking_request: false,
+            metadata: {}
           };
           setMessages(prevMessages => [...prevMessages, newMsg]);
           setMessage('');
@@ -574,10 +609,16 @@ const MessageHistory = ({ navigation, route }) => {
         try {
           await simulateMessageSend(message.trim());
           const newMsg = {
-            id: Date.now().toString(),
-            sender: 'Me',
+            message_id: Date.now().toString(),
+            participant1_id: selectedConversationData?.participant1_id !== CURRENT_USER_ID ? selectedConversationData?.participant1_id : CURRENT_USER_ID,
+            participant2_id: selectedConversationData?.participant2_id !== CURRENT_USER_ID ? selectedConversationData?.participant2_id : CURRENT_USER_ID,
+            sender: CURRENT_USER_ID,
+            role_map: selectedConversationData?.role_map,
             content: message.trim(),
-            timestamp: new Date().toLocaleString(),
+            timestamp: new Date().toISOString(),
+            status: "sent",
+            is_booking_request: false,
+            metadata: {}
           };
           setMessages(prevMessages => [...prevMessages, newMsg]);
           setMessage('');
@@ -619,38 +660,62 @@ const MessageHistory = ({ navigation, route }) => {
   const MessageInput = Platform.OS === 'web' ? <WebInput /> : <MobileInput />;
   
   const handleRequestBooking = async () => {
-    if (IS_CLIENT) {
-      setShowRequestModal(true);
-    } else {
+    const currentConversation = conversations.find(c => c.id === selectedConversation);
+    console.log('Current conversation:', currentConversation);
+    console.log('CURRENT_USER_ID:', CURRENT_USER_ID);
+    console.log('Selected conversation ID:', selectedConversation);
+    
+    if (!currentConversation) {
+      console.log('No conversation found');
+      return;
+    }
+
+    // Log participant and role information
+    console.log('Participant1 ID:', currentConversation.participant1_id);
+    console.log('Participant2 ID:', currentConversation.participant2_id);
+    console.log('Role map:', currentConversation.role_map);
+
+    // Check if current user is the professional by checking their role in the conversation
+    const isProfessional = 
+      (currentConversation.participant1_id === CURRENT_USER_ID && 
+       currentConversation.role_map.participant1_role === "professional") ||
+      (currentConversation.participant2_id === CURRENT_USER_ID && 
+       currentConversation.role_map.participant2_role === "professional");
+    
+    console.log('Is Professional?', isProfessional);
+
+    if (isProfessional) {
+      console.log('User is professional - creating booking and navigating to details');
       try {
-        // Get the current conversation details
-        const currentConversation = conversations.find(c => c.id === selectedConversation);
+        // Get the client ID (the other participant)
+        const clientId = currentConversation.participant1_id === CURRENT_USER_ID ? 
+          currentConversation.participant2_id : currentConversation.participant1_id;
+        const professionalId = CURRENT_USER_ID;
         
+        console.log('Creating booking with:', {
+          clientId,
+          professionalId,
+          clientName: currentConversation.name
+        });
+
         const bookingId = await createBooking(
-          'client123', // This should come from auth context
-          'freelancer123', // This should come from the conversation
+          clientId,
+          professionalId,
           {
-            clientName: currentConversation?.name || 'Unknown Client',
-            professionalName: 'Me', // This should be the logged-in user's name
+            clientName: currentConversation.name,
+            professionalName: 'Me',
             status: BOOKING_STATES.PENDING_INITIAL_PROFESSIONAL_CHANGES,
-            serviceType: 'Pet Sitting',
-            animalType: 'Dog',
-            numberOfPets: 1,
-            occurrences: [{
-              startDate: new Date().toISOString().split('T')[0],
-              endDate: new Date().toISOString().split('T')[0],
-              startTime: '09:00',
-              endTime: '17:00',
-              rates: {
-                baseRate: 20.00,
-                additionalRates: []
-              }
-            }]
           }
         );
 
+        console.log('Created booking with ID:', bookingId);
+
         if (bookingId) {
-          console.log('Created booking with ID:', bookingId);
+          console.log('Navigating to BookingDetails with:', {
+            bookingId,
+            initialData: null
+          });
+          
           navigation.navigate('BookingDetails', {
             bookingId: bookingId,
             initialData: null
@@ -658,18 +723,13 @@ const MessageHistory = ({ navigation, route }) => {
         }
       } catch (error) {
         console.error('Error creating booking:', error);
-        if (Platform.OS === 'web') {
-          // For web, use window.alert instead of Alert
-          window.alert('Unable to create booking. Please try again.');
-        } else {
-          Alert.alert(
-            'Error',
-            'Unable to create booking. Please try again.',
-            [{ text: 'OK' }]
-          );
-        }
+        Alert.alert('Error', 'Unable to create booking. Please try again.');
       }
+    } else {
+      console.log('User is client - showing request modal');
+      setShowRequestModal(true);
     }
+    
     setShowDropdown(false);
   };
 
@@ -722,50 +782,55 @@ const MessageHistory = ({ navigation, route }) => {
     );
   };
 
-  // Add conversation list component
+  // Update the conversation list component
   const renderConversationList = () => (
     <View style={styles.conversationListContainer}>
-      {conversations.map((conv) => (
-        <TouchableOpacity
-          key={conv.id}
-          style={[
-            styles.conversationItem,
-            selectedConversation === conv.id && styles.selectedConversation
-          ]}
-          onPress={() => setSelectedConversation(conv.id)}
-        >
-          <View style={styles.conversationContent}>
-            <View style={styles.conversationHeader}>
-              <Text style={styles.conversationName}>{conv.name}</Text>
-              <Text style={styles.conversationTime}>{conv.timestamp}</Text>
-            </View>
-            <Text 
-              style={[
-                styles.conversationLastMessage,
-                selectedConversation === conv.id && styles.activeConversationText,
-                conv.unread && styles.unreadMessage
-              ]} 
-              numberOfLines={1}
-            >
-              {conv.lastMessage}
-            </Text>
-            {conv.bookingStatus ? (
-              <View style={styles.bookingStatusContainer}>
-                <Text style={styles.bookingStatus}>{conv.bookingStatus}</Text>
+      {conversations.map((conv) => {
+        const otherParticipantName = conv.participant1_id === CURRENT_USER_ID ? 
+          conv.participant2_name : conv.participant1_name;
+        
+        return (
+          <TouchableOpacity
+            key={conv.id}
+            style={[
+              styles.conversationItem,
+              selectedConversation === conv.id && styles.selectedConversation
+            ]}
+            onPress={() => setSelectedConversation(conv.id)}
+          >
+            <View style={styles.conversationContent}>
+              <View style={styles.conversationHeader}>
+                <Text style={styles.conversationName}>
+                  {otherParticipantName || conv.name || 'Unknown'}
+                </Text>
+                <Text style={styles.conversationTime}>
+                  {new Date(conv.timestamp).toLocaleTimeString()}
+                </Text>
               </View>
-            ) : (
-              <Button 
-                mode="outlined" 
-                onPress={() => handleRequestBooking(conv.id)}
-                style={styles.requestBookingButton}
-                labelStyle={styles.requestBookingLabel}
+              <Text 
+                style={[
+                  styles.conversationLastMessage,
+                  selectedConversation === conv.id && styles.activeConversationText,
+                  conv.unread && styles.unreadMessage
+                ]} 
+                numberOfLines={1}
               >
-                Request Booking
-              </Button>
-            )}
-          </View>
-        </TouchableOpacity>
-      ))}
+                {conv.lastMessage}
+              </Text>
+              {conv.bookingStatus && (
+                <View style={[
+                  styles.bookingStatusContainer,
+                  styles[`booking${conv.bookingStatus}Status`] || styles.bookingPendingStatus
+                ]}>
+                  <Text style={styles.bookingStatus}>
+                    {conv.bookingStatus}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </TouchableOpacity>
+        );
+      })}
     </View>
   );
 
@@ -788,10 +853,8 @@ const MessageHistory = ({ navigation, route }) => {
           <FlatList
             data={messages}
             renderItem={renderMessage}
-            keyExtractor={item => item.id}
-            contentContainerStyle={styles.messageList}
-            inverted={false}
-            showsVerticalScrollIndicator={true}
+            keyExtractor={item => (item.message_id || Date.now().toString())}
+            style={styles.messageList}
           />
         )}
       </View>
@@ -917,6 +980,13 @@ const MessageHistory = ({ navigation, route }) => {
           </>
         )}
       </View>
+      
+      {/* Add RequestBookingModal if it's not already present */}
+      <RequestBookingModal
+        visible={showRequestModal}
+        onClose={() => setShowRequestModal(false)}
+        onSubmit={handleModalSubmit}
+      />
     </SafeAreaView>
   );
 };

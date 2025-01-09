@@ -3,7 +3,8 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
 import { CostCalculationModal } from './CostCalculationModal';
-import { mockConversations, mockMessages } from '../data/mockData';
+import { mockConversations, mockMessages, createNewConversation } from '../data/mockData';
+
 export const ServiceCard = ({ 
   service, 
   onHeartPress, 
@@ -21,20 +22,19 @@ export const ServiceCard = ({
     );
 
     if (existingConversation) {
-      navigation.navigate('MessageHistory', {
-        selectedConversation: existingConversation.id
+      navigation.replace('MessageHistory', {
+        selectedConversation: existingConversation.id,
+        professionalName: professionalName,
+        professionalId: professionalId
       });
     } else {
-      // Create new conversation
-      const newConversation = {
-        id: `conv_${Date.now()}`,
-        name: professionalName,
-        professionalId: professionalId,
-        lastMessage: '',
-        timestamp: new Date().toISOString(),
-        unread: false,
-        bookingStatus: null
-      };
+      // Create new conversation using the helper function
+      const newConversation = createNewConversation(
+        professionalId,
+        professionalName,
+        'current_user_id', // Replace with actual current user ID
+        'Me' // Current user name
+      );
 
       // Add new conversation to mockConversations
       mockConversations.unshift(newConversation);
@@ -43,8 +43,10 @@ export const ServiceCard = ({
       mockMessages[newConversation.id] = [];
 
       // Navigate directly to MessageHistory
-      navigation.navigate('MessageHistory', {
-        selectedConversation: newConversation.id
+      navigation.replace('MessageHistory', {
+        selectedConversation: newConversation.id,
+        professionalName: professionalName,
+        professionalId: professionalId
       });
     }
     setIsModalVisible(false);

@@ -680,102 +680,300 @@ export const mockClientBookings = [
   },
 ];
 
-// Add these mock conversations and messages
+// Assuming current user ID is 101 for testing
+export const CURRENT_USER_ID = 101;
+
 export const mockConversations = [
   {
-    id: '1',
-    name: 'John Doe',
-    lastMessage: 'Looking forward to meeting your pets!',
-    timestamp: '2024-02-21 15:30',
-    unread: true,
-    bookingStatus: 'Pending',
+    id: 'conv_1',
+    participant1_id: CURRENT_USER_ID,
+    participant2_id: 202,
+    name: "Dr. Sarah Smith",
+    role_map: {
+      participant1_role: "client",
+      participant2_role: "professional"
+    },
+    lastMessage: "I'd be happy to help! What kind of pet do you have?",
+    timestamp: "2024-02-21T07:05:00Z",
+    unread: false
   },
   {
-    id: '2',
-    name: 'Mary J',
-    lastMessage: 'The cats are doing great!',
-    timestamp: '2024-02-21 14:20',
-    unread: false,
-    bookingStatus: 'Confirmed',
+    id: 'conv_2',
+    participant1_id: 203,
+    participant2_id: CURRENT_USER_ID,
+    name: "Dr. Mike Johnson",
+    role_map: {
+      participant1_role: "client",
+      participant2_role: "professional"
+    },
+    lastMessage: "I'm available! Let's set up a booking",
+    timestamp: "2024-02-21T15:35:00Z",
+    unread: false
   },
   {
-    id: '3',
-    name: 'Bitch Johnson',
-    lastMessage: 'Perfect, see you tomorrow then!',
-    timestamp: '2024-02-21 13:15',
-    unread: false,
-    bookingStatus: null,
+    id: 'conv_3',
+    participant1_id: CURRENT_USER_ID,
+    participant2_id: 204,
+    name: "Dr. Emily Wilson",
+    role_map: {
+      participant1_role: "client",
+      participant2_role: "professional"
+    },
+    lastMessage: "Your cat's checkup is scheduled",
+    timestamp: "2024-02-20T10:15:00Z",
+    unread: true
   },
   {
-    id: '4',
-    name: 'Emma Davis',
-    lastMessage: 'Your reptiles are fascinating!',
-    timestamp: '2024-02-21 12:30',
-    unread: true,
-    bookingStatus: 'Confirmed',
+    id: 'conv_4',
+    participant1_id: CURRENT_USER_ID,
+    participant2_id: 205,
+    name: "Dr. James Anderson",
+    role_map: {
+      participant1_role: "client",
+      participant2_role: "professional"
+    },
+    lastMessage: "See you tomorrow at 2 PM",
+    timestamp: "2024-02-19T16:45:00Z",
+    unread: false
   },
-  // Add more conversations...
+  {
+    id: 'conv_5',
+    participant1_id: CURRENT_USER_ID,
+    participant2_id: 206,
+    name: "Dr. Lisa Brown",
+    role_map: {
+      participant1_role: "client",
+      participant2_role: "professional"
+    },
+    lastMessage: "How is Max doing today?",
+    timestamp: "2024-02-18T09:30:00Z",
+    unread: false
+  },
+  {
+    id: 'conv_6',
+    participant1_id: CURRENT_USER_ID,
+    participant2_id: 207,
+    name: "Dr. Robert Taylor",
+    role_map: {
+      participant1_role: "client",
+      participant2_role: "professional"
+    },
+    lastMessage: "The medication has been prescribed",
+    timestamp: "2024-02-17T14:20:00Z",
+    unread: false
+  },
+  {
+    id: 'conv_7',
+    participant1_id: CURRENT_USER_ID,
+    participant2_id: 208,
+    name: "Dr. Maria Garcia",
+    role_map: {
+      participant1_role: "client",
+      participant2_role: "professional"
+    },
+    lastMessage: "Your appointment is confirmed",
+    timestamp: "2024-02-16T11:25:00Z",
+    unread: true
+  },
+  {
+    id: 'conv_8',
+    participant1_id: CURRENT_USER_ID,
+    participant2_id: 209,
+    name: "Dr. David Lee",
+    role_map: {
+      participant1_role: "client",
+      participant2_role: "professional"
+    },
+    lastMessage: "Let's schedule a follow-up",
+    timestamp: "2024-02-15T13:40:00Z",
+    unread: false
+  },
+  {
+    id: 'conv_9',
+    participant1_id: CURRENT_USER_ID,
+    participant2_id: 210,
+    name: "Dr. Sarah Martinez",
+    role_map: {
+      participant1_role: "client",
+      participant2_role: "professional"
+    },
+    lastMessage: "The test results are ready",
+    timestamp: "2024-02-14T15:55:00Z",
+    unread: false
+  },
+  {
+    id: 'conv_10',
+    participant1_id: CURRENT_USER_ID,
+    participant2_id: 211,
+    name: "Dr. John White",
+    role_map: {
+      participant1_role: "client",
+      participant2_role: "professional"
+    },
+    lastMessage: "How's the new diet working?",
+    timestamp: "2024-02-13T08:15:00Z",
+    unread: false
+  },
+  {
+    id: 'conv_11',
+    participant1_id: CURRENT_USER_ID,
+    participant2_id: 212,
+    name: "Dr. Anna Clark",
+    role_map: {
+      participant1_role: "client",
+      participant2_role: "professional"
+    },
+    lastMessage: "Vaccination reminder",
+    timestamp: "2024-02-12T10:30:00Z",
+    unread: true
+  },
+  {
+    id: 'conv_12',
+    participant1_id: CURRENT_USER_ID,
+    participant2_id: 213,
+    name: "Dr. Thomas Wright",
+    role_map: {
+      participant1_role: "client",
+      participant2_role: "professional"
+    },
+    lastMessage: "Surgery scheduled for next week",
+    timestamp: "2024-02-11T12:45:00Z",
+    unread: false
+  },
+  {
+    id: 'conv_13',
+    participant1_id: CURRENT_USER_ID,
+    participant2_id: 214,
+    name: "Dr. Patricia Moore",
+    role_map: {
+      participant1_role: "client",
+      participant2_role: "professional"
+    },
+    lastMessage: "Emergency consultation available",
+    timestamp: "2024-02-10T17:20:00Z",
+    unread: false
+  },
+  {
+    id: 'conv_14',
+    participant1_id: CURRENT_USER_ID,
+    participant2_id: 215,
+    name: "Dr. Kevin Hall",
+    role_map: {
+      participant1_role: "client",
+      participant2_role: "professional"
+    },
+    lastMessage: "Treatment plan updated",
+    timestamp: "2024-02-09T14:10:00Z",
+    unread: false
+  },
+  {
+    id: 'conv_15',
+    participant1_id: CURRENT_USER_ID,
+    participant2_id: 216,
+    name: "Dr. Rachel Green",
+    role_map: {
+      participant1_role: "client",
+      participant2_role: "professional"
+    },
+    lastMessage: "Prescription ready for pickup",
+    timestamp: "2024-02-08T16:35:00Z",
+    unread: true
+  }
 ];
 
-// Messages for each conversation
 export const mockMessages = {
-  '1': [
-    { id: '1', sender: 'John Doe', content: 'Hello, how are you?', timestamp: '2023-05-15 14:00' },
-    { id: '2', sender: 'Me', content: 'I\'m doing well, thanks! How about you?', timestamp: '2023-05-15 14:05' },
-    { id: '3', sender: 'John Doe', content: 'Great! Just wondering about our next appointment.', timestamp: '2023-05-15 14:10' },
+  'conv_1': [
+    {
+      message_id: 1,
+      participant1_id: CURRENT_USER_ID,
+      participant2_id: 202,
+      sender: CURRENT_USER_ID,
+      role_map: {
+        participant1_role: "client",
+        participant2_role: "professional"
+      },
+      content: "Hi, I'm interested in your pet sitting services",
+      timestamp: "2024-02-21T14:00:00Z",
+      booking_id: null,
+      status: "read",
+      is_booking_request: false,
+      metadata: {}
+    },
+    {
+      message_id: 2,
+      participant1_id: CURRENT_USER_ID,
+      participant2_id: 202,
+      sender: 202,
+      role_map: {
+        participant1_role: "client",
+        participant2_role: "professional"
+      },
+      content: "I'd be happy to help! What kind of pet do you have?",
+      timestamp: "2024-02-21T14:05:00Z",
+      booking_id: null,
+      status: "sent",
+      is_booking_request: false,
+      metadata: {}
+    }
   ],
-  '2': [
-    { id: '4', sender: 'Mary J', content: 'See you tomorrow!', timestamp: '2023-05-15 13:30' },
-    { id: '5', sender: 'Me', content: 'Looking forward to it!', timestamp: '2023-05-15 13:35' },
-  ],
-  '3': [
-    { id: '6', sender: 'Bitch', content: 'Thanks for the update', timestamp: '2023-05-14 15:20' },
-    { id: '7', sender: 'Me', content: 'No problem at all', timestamp: '2023-05-14 15:25' },
-  ],
+  'conv_2': [
+    {
+      message_id: 3,
+      participant1_id: 303,
+      participant2_id: CURRENT_USER_ID,
+      sender: 303,
+      role_map: {
+        participant1_role: "client",
+        participant2_role: "professional"
+      },
+      content: "Looking for a dog walker next week",
+      timestamp: "2024-02-21T15:30:00Z",
+      booking_id: null,
+      status: "read",
+      is_booking_request: false,
+      metadata: {}
+    },
+    {
+      message_id: 4,
+      participant1_id: 303,
+      participant2_id: CURRENT_USER_ID,
+      sender: CURRENT_USER_ID,
+      role_map: {
+        participant1_role: "client",
+        participant2_role: "professional"
+      },
+      content: "I'm available! Let's set up a booking",
+      timestamp: "2024-02-21T15:35:00Z",
+      booking_id: "booking_123",
+      status: "sent",
+      is_booking_request: true,
+      metadata: {
+        booking_type: "dog_walking",
+        rate: 30,
+        duration: 60
+      }
+    }
+  ]
 };
 
-// Mock API functions
-export const fetchConversations = async () => {
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  return mockConversations;
-};
-
-export const fetchMessagesByConversationId = async (conversationId) => {
-  await new Promise(resolve => setTimeout(resolve, 800));
-  const messages = mockMessages[conversationId];
-  if (!messages) {
-    throw new Error('Conversation not found');
-  }
-  return messages;
-};
-
-export const sendMessage = async (conversationId, content) => {
-  await new Promise(resolve => setTimeout(resolve, 500));
-  const newMessage = {
-    id: `msg_${Date.now()}`,
-    sender: 'Me',
-    content,
+// Helper function to create a new conversation
+export const createNewConversation = (professionalId, professionalName, clientId, clientName) => {
+  const conversationId = `conv_${Date.now()}`;
+  const isCurrentUserClient = clientId === CURRENT_USER_ID;
+  
+  return {
+    id: conversationId,
+    participant1_id: isCurrentUserClient ? clientId : professionalId,
+    participant2_id: isCurrentUserClient ? professionalId : clientId,
+    role_map: {
+      participant1_role: isCurrentUserClient ? "client" : "professional",
+      participant2_role: isCurrentUserClient ? "professional" : "client"
+    },
+    lastMessage: "",
     timestamp: new Date().toISOString(),
+    unread: false,
+    bookingStatus: null
   };
-  
-  // Update mock data
-  if (!mockMessages[conversationId]) {
-    mockMessages[conversationId] = [];
-  }
-  
-  mockMessages[conversationId].push(newMessage);
-  
-  // Update conversation last message
-  const conversationIndex = mockConversations.findIndex(c => c.id === conversationId);
-  if (conversationIndex !== -1) {
-    mockConversations[conversationIndex] = {
-      ...mockConversations[conversationIndex],
-      lastMessage: content,
-      timestamp: newMessage.timestamp,
-    };
-  }
-  
-  return newMessage;
 };
 
 export const DEFAULT_SERVICES = [
