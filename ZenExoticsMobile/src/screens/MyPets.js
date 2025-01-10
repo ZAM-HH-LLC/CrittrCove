@@ -170,10 +170,13 @@ const MyPets = ({ navigation }) => {
         return 'cat';
       case 'rabbit':
         return 'rabbit';
+      case 'reptile':
       case 'lizard':
+        return 'snake';
       case 'snake':
+        return 'snake';
       case 'turtle':
-        return 'turtle'; // Using 'turtle' as a general reptile icon
+        return 'turtle';
       case 'bird':
       case 'parrot':
         return 'bird';

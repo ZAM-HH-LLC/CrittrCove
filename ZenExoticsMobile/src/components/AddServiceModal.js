@@ -545,7 +545,7 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
   },
   inputWrapper: {
-    marginBottom: 15,
+    // marginBottom: 5,
     position: 'relative',
   },
   input: {
@@ -565,6 +565,7 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSizes.small,
     color: theme.colors.text,
     marginBottom: 5,
+    marginTop: 15,
     fontWeight: '500',
   },
   categoryInput: {

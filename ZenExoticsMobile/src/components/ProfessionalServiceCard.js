@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
+import { SCREEN_WIDTH } from '../context/AuthContext';
+import { AuthContext } from '../context/AuthContext';
 
 const ProfessionalServiceCard = ({ 
   item, 
@@ -11,6 +13,8 @@ const ProfessionalServiceCard = ({
   onDelete, 
   onToggleCollapse 
 }) => {
+  const { screenWidth } = useContext(AuthContext);
+
   return (
     <View style={styles.serviceCard}>
       <View style={styles.topRow}>
@@ -31,15 +35,25 @@ const ProfessionalServiceCard = ({
         </View>
       ) : (
         <View style={styles.contentRow}>
-          <Text style={styles.rateText}>Base Rate: ${item.rates.base_rate || 'N/A'}</Text>
-          <Text style={styles.rateText}>Additional Animal: ${item.rates.additionalAnimalRate || 'N/A'}</Text>
-          <Text style={styles.rateText}>Holiday Rate: ${item.rates.holidayRate || 'N/A'}</Text>
+          <Text style={[styles.rateText, { 
+            fontSize: screenWidth <= 600 ? theme.fontSizes.small : theme.fontSizes.medium 
+          }]}>Base Rate: ${item.rates.base_rate || 'N/A'}</Text>
+          <Text style={[styles.rateText, { 
+            fontSize: screenWidth <= 600 ? theme.fontSizes.small : theme.fontSizes.medium 
+          }]}>Additional Animal: ${item.rates.additionalAnimalRate || 'N/A'}</Text>
+          <Text style={[styles.rateText, { 
+            fontSize: screenWidth <= 600 ? theme.fontSizes.small : theme.fontSizes.medium 
+          }]}>Holiday Rate: ${item.rates.holidayRate || 'N/A'}</Text>
           {item.additionalRates && item.additionalRates.map((rate, idx) => (
-            <Text key={idx} style={styles.rateText}>
+            <Text key={idx} style={[styles.rateText, { 
+              fontSize: screenWidth <= 600 ? theme.fontSizes.small : theme.fontSizes.medium 
+            }]}>
               {rate.label}: ${rate.value} {rate.description ? `(${rate.description})` : ''}
             </Text>
           ))}
-          <Text style={styles.rateText}>Duration: {item.lengthOfService || 'N/A'}</Text>
+          <Text style={[styles.rateText, { 
+            fontSize: screenWidth <= 600 ? theme.fontSizes.small : theme.fontSizes.medium 
+          }]}>Duration: {item.lengthOfService || 'N/A'}</Text>
         </View>
       )}
 
@@ -93,7 +107,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   rateText: {
-    fontSize: theme.fontSizes.medium,
     color: theme.colors.text,
   },
   collapseButton: {

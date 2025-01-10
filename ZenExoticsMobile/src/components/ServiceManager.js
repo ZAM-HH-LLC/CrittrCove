@@ -6,7 +6,7 @@ import AddServiceModal from './AddServiceModal';
 import ProfessionalServiceCard from './ProfessionalServiceCard';
 import ConfirmationModal from './ConfirmationModal';
 
-const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
+const ServiceManager = ({ services, setServices, setHasUnsavedChanges, isProfessionalTab = false }) => {
   const [showModal, setShowModal] = useState(false);
   const [editingService, setEditingService] = useState(null);
   const [collapsedServices, setCollapsedServices] = useState([]);
@@ -67,61 +67,65 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges }) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerButtons}>
-        <Text style={styles.sectionTitle}>Services</Text>
-        <View style={styles.headerActions}>
-          <TouchableOpacity 
-            onPress={toggleCollapseAll} 
-            style={styles.headerButton}
-            onMouseEnter={() => setHoveredButton('collapse')}
-            onMouseLeave={() => setHoveredButton(null)}
-          >
-            <MaterialCommunityIcons 
-              name={allCollapsed ? "chevron-down" : "chevron-up"} 
-              size={24} 
-              color={theme.colors.primary} 
-            />
-            {hoveredButton === 'collapse' && (
-              <Text style={styles.buttonTooltip}>
-                {allCollapsed ? 'Expand' : 'Collapse'}
-              </Text>
-            )}
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.headerButton}
-            onMouseEnter={() => setHoveredButton('add')}
-            onMouseLeave={() => setHoveredButton(null)}
-            onPress={() => {
-              setEditingService(null);
-              setShowModal(true);
-            }}
-          >
-            <MaterialCommunityIcons 
-              name="plus" 
-              size={24} 
-              color={theme.colors.primary} 
-            />
-            {hoveredButton === 'add' && (
-              <Text style={styles.buttonTooltip}>Add Service</Text>
-            )}
-          </TouchableOpacity>
-        </View>
+      <View style={[styles.serviceListContainer, { paddingHorizontal: isProfessionalTab ? 0 : 20 }]}>
+        <View style={styles.headerButtons}>
+          <Text style={styles.sectionTitle}>Services</Text>
+          <View style={styles.headerActions}>
+            <TouchableOpacity 
+              onPress={toggleCollapseAll} 
+              style={styles.headerButton}
+              onMouseEnter={() => setHoveredButton('collapse')}
+              onMouseLeave={() => setHoveredButton(null)}
+            >
+              <MaterialCommunityIcons 
+                name={allCollapsed ? "chevron-down" : "chevron-up"} 
+                size={24} 
+                color={theme.colors.primary} 
+              />
+              {hoveredButton === 'collapse' && (
+                <Text style={styles.buttonTooltip}>
+                  {allCollapsed ? 'Expand' : 'Collapse'}
+                </Text>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.headerButton}
+              onMouseEnter={() => setHoveredButton('add')}
+              onMouseLeave={() => setHoveredButton(null)}
+              onPress={() => {
+                setEditingService(null);
+                setShowModal(true);
+              }}
+            >
+              <MaterialCommunityIcons 
+                name="plus" 
+                size={24} 
+                color={theme.colors.primary} 
+              />
+              {hoveredButton === 'add' && (
+                <Text style={styles.buttonTooltip}>Add Service</Text>
+              )}
+            </TouchableOpacity>
+          </View>
       </View>
 
-      <FlatList
-        data={services}
-        keyExtractor={(item, index) => index.toString()}
-        renderItem={({ item, index }) => (
-          <ProfessionalServiceCard
-            item={item}
-            index={index}
-            isCollapsed={collapsedServices.includes(index)}
-            onEdit={handleEditService}
-            onDelete={handleDeleteService}
-            onToggleCollapse={toggleCollapse}
-          />
-        )}
-      />
+      
+        <FlatList
+          data={services}
+          keyExtractor={(item, index) => index.toString()}
+          renderItem={({ item, index }) => (
+            <ProfessionalServiceCard
+              item={item}
+              index={index}
+              isCollapsed={collapsedServices.includes(index)}
+              onEdit={handleEditService}
+              onDelete={handleDeleteService}
+              onToggleCollapse={toggleCollapse}
+            />
+          )}
+        />
+      </View>
+      
 
       <AddServiceModal
         visible={showModal}
@@ -190,6 +194,10 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
     zIndex: 1000,
+  },
+  serviceListContainer: {
+    flex: 1,
+    paddingVertical: 0,
   },
 });
 

@@ -94,7 +94,6 @@ const AvailabilitySettings = () => {
     const hasAllServices = (reason) => {
       if (!reason) return false;
       const services = reason.replace('Unavailable for: ', '').split(', ');
-      // Subtract 1 from SERVICE_TYPES.length to account for "All Services" option
       return services.length === (SERVICE_TYPES.length - 1);
     };
 
@@ -102,30 +101,33 @@ const AvailabilitySettings = () => {
       const isFullDay = time.startTime === '00:00' && time.endTime === '24:00';
       const allServicesSelected = hasAllServices(time.reason);
       
-      // Only mark as fully unavailable if it's all day AND all services are selected
-      if (isFullDay && allServicesSelected) {
-        newMarkedDates[date] = {
-          customStyles: {
-            container: { backgroundColor: 'lightgrey' },
-            text: { color: 'white' }
-          }
-        };
-      } else {
-        // Otherwise mark as partially unavailable
-        newMarkedDates[date] = {
-          customStyles: {
-            container: { backgroundColor: theme.colors.calendarColor },
-            text: { color: 'white' }
-          }
-        };
-      }
+      newMarkedDates[date] = {
+        customStyles: {
+          container: { 
+            backgroundColor: isFullDay && allServicesSelected ? 'lightgrey' : theme.colors.calendarColor,
+            width: 35,
+            height: 35,
+            borderRadius: 17.5,
+            alignItems: 'center',
+            justifyContent: 'center'
+          },
+          text: { color: 'white' }
+        }
+      };
     });
 
     Object.entries(availableDates).forEach(([date, time]) => {
       if (!newMarkedDates[date]) {
         newMarkedDates[date] = {
           customStyles: {
-            container: { backgroundColor: 'white' },
+            container: { 
+              backgroundColor: 'white',
+              width: 35,
+              height: 35,
+              borderRadius: 17.5,
+              alignItems: 'center',
+              justifyContent: 'center'
+            },
             text: { color: 'black' }
           }
         };
@@ -140,7 +142,14 @@ const AvailabilitySettings = () => {
         marked: true,
         dotColor: theme.colors.primary,
         customStyles: {
-          container: { backgroundColor: isFullDay ? theme.colors.primary : theme.colors.calendarColorYellowBrown },
+          container: { 
+            backgroundColor: isFullDay ? theme.colors.primary : theme.colors.calendarColorYellowBrown,
+            width: 35,
+            height: 35,
+            borderRadius: 17.5,
+            alignItems: 'center',
+            justifyContent: 'center'
+          },
           text: { color: 'white' }
         }
       };
@@ -502,25 +511,60 @@ const AvailabilitySettings = () => {
       <Calendar
         markedDates={{
           ...markedDates,
-          ...selectedDates.reduce((acc, date) => ({
-            ...acc,
-            [date]: {
-              ...markedDates[date],
-              selected: true,
-              customStyles: {
-                ...markedDates[date]?.customStyles,
-                container: { backgroundColor: theme.colors.primary },
-                text: { color: 'white' }
+          ...selectedDates.reduce((acc, date, index) => {
+            const isFirstDate = index === 0;
+            const isLastDate = index === selectedDates.length - 1;
+            const isMiddleDate = !isFirstDate && !isLastDate;
+            
+            return {
+              ...acc,
+              [date]: {
+                ...markedDates[date],
+                selected: true,
+                customStyles: {
+                  container: {
+                    backgroundColor: theme.colors.primary,
+                    width: '100%',  // Take full width
+                    // height: 40,     // Fixed height
+                    marginHorizontal: 0,
+                    marginVertical: 0,
+                    borderRadius: 0,  // Remove border radius for middle dates
+                    ...(isFirstDate && {
+                      borderTopLeftRadius: 20,
+                      borderBottomLeftRadius: 20,
+                    }),
+                    ...(isLastDate && {
+                      borderTopRightRadius: 20,
+                      borderBottomRightRadius: 20,
+                    }),
+                  },
+                  text: { 
+                    color: 'white',
+                    fontWeight: 'bold',
+                  }
+                }
               }
+            };
+          }, {})
+        }}
+        markingType={'custom'}
+        theme={{
+          'stylesheet.calendar.main': {
+            week: {
+              marginVertical: 0,
+              flexDirection: 'row',
+              justifyContent: 'space-around',
+            },
+            dayContainer: {
+              flex: 1,
+              alignItems: 'center',
+              padding: 0,
+              margin: 0,
             }
-          }), {})
+          }
         }}
         onDayPress={onDayPress}
-        markingType={'custom'}
         renderArrow={renderArrow}
-        theme={{
-          arrowColor: theme.colors.primary,
-        }}
       />
 
       {/* Color Code Key */}

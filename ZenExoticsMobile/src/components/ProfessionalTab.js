@@ -199,6 +199,7 @@ const ProfessionalTab = ({
           services={services}
           setServices={setServices}
           setHasUnsavedChanges={setHasUnsavedChanges}
+          isProfessionalTab={true}
         />
       </View>
 

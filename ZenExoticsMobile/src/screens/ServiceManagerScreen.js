@@ -62,6 +62,7 @@ const ServiceManagerScreen = () => {
           services={services}
           setServices={setServices}
           setHasUnsavedChanges={setHasUnsavedChanges}
+          isProfessionalTab={false}
         />
       ) : (
         <View style={styles.emptyContainer}>
