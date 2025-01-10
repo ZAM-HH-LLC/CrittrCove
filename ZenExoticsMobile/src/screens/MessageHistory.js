@@ -480,6 +480,17 @@ const createStyles = (screenWidth) => StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
   },
+  statusContainer: {
+    backgroundColor: theme.colors.primary + '15',
+    padding: 8,
+    borderRadius: 4,
+    marginBottom: 12,
+  },
+  statusText: {
+    color: theme.colors.primary,
+    fontSize: 14,
+    fontWeight: '500',
+  },
 });
 
 const MessageHistory = ({ navigation, route }) => {
@@ -1115,6 +1126,14 @@ const MessageHistory = ({ navigation, route }) => {
              'Booking Request'}
           </Text>
         </View>
+        
+        {data.status && (
+          <View style={styles.statusContainer}>
+            <Text style={styles.statusText}>
+              Status: {data.status}
+            </Text>
+          </View>
+        )}
         
         <View style={styles.bookingRequestDetails}>
           <Text style={styles.detailLabel}>Service:</Text>

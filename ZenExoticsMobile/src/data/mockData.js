@@ -497,14 +497,13 @@ const sharedBookingDetails = {
     ]
   },
   costs: {
-    baseTotal: 80.00,
-    additionalPetTotal: 5.00,
-    extraServicesTotal: 15.00,
-    subtotal: 100.00,
-    clientFee: 10.00,
-    taxes: 9.00,
-    totalClientCost: 119.00,
-    professionalPayout: 90.00,
+    baseTotal: 35.00,
+    additionalPetTotal: 25.00,
+    subtotal: 60.00,
+    clientFee: 6.00,
+    taxes: 5.00,
+    totalClientCost: 71.00,
+    professionalPayout: 63.90,
   },
 };
 
@@ -575,7 +574,7 @@ const mockBookingDetails = {
     startTime: '15:30',
   },
   '3749': {...sharedBookingDetails,
-    id: '56713',
+    id: '567132',
     clientName: 'Dr. Mike Johnson',
     status: BOOKING_STATES.PENDING_INITIAL_PROFESSIONAL_CHANGES,
     startDate: '2025-02-21',
