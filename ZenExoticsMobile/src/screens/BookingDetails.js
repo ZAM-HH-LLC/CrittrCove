@@ -4,7 +4,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { theme } from '../styles/theme';
 import CrossPlatformView from '../components/CrossPlatformView';
 import BackHeader from '../components/BackHeader';
-import { fetchBookingDetails, createBooking, BOOKING_STATES, updateBookingStatus } from '../data/mockData';
+import { fetchBookingDetails, createBooking, BOOKING_STATES, updateBookingStatus, mockMessages, mockConversations, CURRENT_USER_ID } from '../data/mockData';
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DatePicker from '../components/DatePicker';
@@ -205,8 +205,8 @@ const BookingDetails = () => {
         if (!bookingId && initialData) {
           // If we have initial data but no booking ID, create a new booking
           bookingId = await createBooking(
-            'client123', // Replace with actual client ID from auth
-            'freelancer123', // Replace with actual freelancer ID
+            initialData.clientId || 'client123', // Get from auth context in real app
+            initialData.professionalId || 'professional123', // Get from context or params
             initialData
           );
         }
@@ -220,8 +220,10 @@ const BookingDetails = () => {
           return;
         }
 
+        console.log('Fetching booking with ID:', bookingId);
         await AsyncStorage.setItem(LAST_VIEWED_BOOKING_ID, bookingId);
         const bookingData = await fetchBookingDetails(bookingId);
+        console.log('Fetched booking data:', bookingData);
         setBooking(bookingData);
       } catch (error) {
         console.error('Error fetching booking details:', error);
@@ -337,10 +339,17 @@ const BookingDetails = () => {
     if (petsHaveChanged || serviceDetailsHaveChanged || occurrencesHaveChanged) {
       setHasUnsavedChanges(true);
 
+      // update status to reflect the pro making changes again.
       if (booking.status === BOOKING_STATES.CONFIRMED) {
         setBooking(prev => ({
           ...prev,
           status: BOOKING_STATES.CONFIRMED_PENDING_PROFESSIONAL_CHANGES
+        }));
+      }
+      if (booking.status === BOOKING_STATES.PENDING_CLIENT_APPROVAL) {
+        setBooking(prev => ({
+          ...prev,
+          status: BOOKING_STATES.PENDING_PROFESSIONAL_CHANGES
         }));
       }
     }
@@ -844,22 +853,96 @@ const BookingDetails = () => {
     return format(date, 'h:mm a');
   };
 
+  const sendBookingMessage = async (bookingId, recipientId, messageType) => {
+    try {
+      if (!booking) {
+        throw new Error('No booking data available');
+      }
+
+      console.log('Sending booking message:', {
+        bookingId,
+        recipientId,
+        messageType,
+        booking
+      });
+
+      // Find the existing conversation with Dr. Mike Johnson
+      const conversationId = 'conv_2'; // This is the existing conversation ID from mockData
+      console.log('Using existing conversation:', conversationId);
+
+      const bookingMessage = {
+        message_id: Date.now().toString(),
+        participant1_id: CURRENT_USER_ID,
+        participant2_id: recipientId,
+        sender: CURRENT_USER_ID,
+        type: 'booking_request',
+        data: {
+          bookingId: bookingId,
+          messageType: messageType,
+          serviceType: booking.serviceType,
+          dates: booking.occurrences.map(occ => ({
+            startDate: occ.startDate,
+            endDate: occ.endDate,
+            startTime: occ.startTime,
+            endTime: occ.endTime
+          })),
+          totalCost: booking.costs.totalClientCost,
+          status: booking.status
+        },
+        timestamp: new Date().toISOString(),
+        status: "sent",
+        is_booking_request: true,
+        metadata: {}
+      };
+
+      // Add message to existing conversation
+      if (!mockMessages[conversationId]) {
+        mockMessages[conversationId] = [];
+      }
+      mockMessages[conversationId].push(bookingMessage);
+
+      // Update the conversation's last message
+      const conversation = mockConversations.find(conv => conv.id === conversationId);
+      if (conversation) {
+        conversation.lastMessage = "Booking update sent";
+        conversation.timestamp = new Date().toISOString();
+        conversation.unread = true;
+      }
+
+      console.log('Message sent successfully to conversation:', conversationId);
+      console.log('Updated conversation messages:', mockMessages[conversationId]);
+      return true;
+    } catch (error) {
+      console.error('Error sending booking message:', error);
+      return false;
+    }
+  };
+
   const handleStatusUpdate = async (newStatus, reason = '', metadata = {}) => {
     setConfirmationModal(prev => ({ ...prev, isLoading: true }));
     
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Create a copy of the current booking with all its data
-      const bookingDataToUpdate = {
-        ...booking,
-        status: newStatus,
-        reason,
-        ...metadata
-      };
+      // First send the message
+      if (newStatus === BOOKING_STATES.PENDING_CLIENT_APPROVAL) {
+        const messageSent = await sendBookingMessage(
+          booking.id,
+          booking.clientId || 'client123',
+          'professional_changes'
+        );
+        if (!messageSent) {
+          throw new Error('Failed to send booking message');
+        }
+      }
 
-      // Pass the complete booking data to updateBookingStatus
+      // Then update the booking status
+      console.log('Updating booking status:', {
+        bookingId: booking.id,
+        currentStatus: booking.status,
+        newStatus,
+        reason,
+        metadata
+      });
+
       const updatedBooking = await updateBookingStatus(
         booking.id, 
         newStatus, 
@@ -878,22 +961,11 @@ const BookingDetails = () => {
       console.error('Error updating booking status:', error);
       Alert.alert('Error', 'Failed to update booking status');
     } finally {
-      // First set loading to false but keep the modal visible and text
       setConfirmationModal(prev => ({ 
         ...prev, 
         isLoading: false,
         visible: false
       }));
-      
-      // After animation completes, clear the modal state
-      setTimeout(() => {
-        setConfirmationModal({ 
-          visible: false, 
-          actionText: '', 
-          onConfirm: null, 
-          isLoading: false 
-        });
-      }, 300);
     }
   };
 

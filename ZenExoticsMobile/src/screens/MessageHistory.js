@@ -6,6 +6,7 @@ import { theme } from '../styles/theme';
 import RequestBookingModal from '../components/RequestBookingModal';
 import { createBooking, BOOKING_STATES, mockConversations, mockMessages, CURRENT_USER_ID } from '../data/mockData';
 import { format } from 'date-fns';
+import { useNavigation } from '@react-navigation/native';
 
 // First, create a function to generate dynamic styles
 const createStyles = (screenWidth) => StyleSheet.create({
@@ -463,6 +464,18 @@ const createStyles = (screenWidth) => StyleSheet.create({
     marginTop: 16,
   },
   acceptButtonText: {
+    color: theme.colors.surface,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  viewBookingButton: {
+    backgroundColor: theme.colors.primary,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  viewBookingText: {
     color: theme.colors.surface,
     fontSize: 16,
     fontWeight: '500',
@@ -1059,59 +1072,85 @@ const MessageHistory = ({ navigation, route }) => {
   );
 
   // Move BookingRequestMessage inside the component
-  const BookingRequestMessage = ({ data, onAccept, isFromMe, timestamp }) => (
-    <View style={isFromMe ? styles.sentMessageContainer : styles.receivedMessageContainer}>
-      <Text style={[
-        styles.senderAbove,
-        isFromMe ? styles.sentSenderName : styles.receivedSenderName
-      ]}>
-        {isFromMe ? 'Me' : selectedConversationData?.name}
-      </Text>
-      
+  const BookingRequestMessage = ({ data, onAccept, isFromMe, timestamp }) => {
+    const navigation = useNavigation();
+    
+    const handleViewBooking = () => {
+      navigation.navigate('BookingDetails', {
+        bookingId: data.bookingId,
+        readOnly: !isFromMe // Make fields read-only for client
+      });
+    };
+
+    // Handle both old and new message formats
+    const renderDates = () => {
+      if (data.dates) {
+        // New format
+        return data.dates.map((date, index) => (
+          <Text key={index} style={styles.detailText}>
+            {format(new Date(date.startDate), 'MMM d, yyyy')} {date.startTime} - {date.endTime}
+          </Text>
+        ));
+      } else if (data.occurrences) {
+        // Old format
+        return data.occurrences.map((occ, index) => (
+          <Text key={index} style={styles.detailText}>
+            {format(new Date(occ.startDate), 'MMM d, yyyy')} {occ.startTime} - {occ.endTime}
+          </Text>
+        ));
+      }
+      return null;
+    };
+
+    return (
       <View style={[
         styles.bookingRequestCard,
         isFromMe ? styles.sentBookingRequest : styles.receivedBookingRequest
       ]}>
         <View style={styles.bookingRequestHeader}>
           <MaterialCommunityIcons name="calendar-clock" size={24} color={theme.colors.primary} />
-          <Text style={styles.bookingRequestTitle}>Booking Request</Text>
+          <Text style={styles.bookingRequestTitle}>
+            {data.messageType === 'professional_changes' ? 'Booking Update' : 
+             data.messageType === 'client_approval' ? 'Booking Approval' : 
+             'Booking Request'}
+          </Text>
         </View>
         
         <View style={styles.bookingRequestDetails}>
           <Text style={styles.detailLabel}>Service:</Text>
           <Text style={styles.detailText}>{data.serviceType}</Text>
           
-          <Text style={styles.detailLabel}>Pets:</Text>
-          <Text style={styles.detailText}>
-            {data.pets.map(pet => pet.name).join(', ')}
-          </Text>
+          {data.pets && (
+            <>
+              <Text style={styles.detailLabel}>Pets:</Text>
+              <Text style={styles.detailText}>
+                {data.pets.map(pet => pet.name).join(', ')}
+              </Text>
+            </>
+          )}
           
           <Text style={styles.detailLabel}>Dates:</Text>
-          {data.occurrences.map((occ, index) => (
-            <Text key={index} style={styles.detailText}>
-              {format(new Date(occ.startDate), 'MMM d, yyyy')} {occ.startTime} - {occ.endTime}
-            </Text>
-          ))}
+          {renderDates()}
+          
+          {data.totalCost !== undefined && (
+            <>
+              <Text style={styles.detailLabel}>Total Cost:</Text>
+              <Text style={styles.detailText}>
+                ${data.totalCost.toFixed(2)}
+              </Text>
+            </>
+          )}
         </View>
 
-        {!isFromMe && selectedConversationData?.role_map?.participant2_role === "professional" && (
-          <TouchableOpacity 
-            style={styles.acceptButton}
-            onPress={onAccept}
-          >
-            <Text style={styles.acceptButtonText}>Review Booking</Text>
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity 
+          style={styles.viewBookingButton}
+          onPress={handleViewBooking}
+        >
+          <Text style={styles.viewBookingText}>View Booking Details</Text>
+        </TouchableOpacity>
       </View>
-
-      <Text style={[
-        styles.timestampBelow,
-        isFromMe ? styles.sentTimestamp : styles.receivedTimestamp
-      ]}>
-        {new Date(timestamp).toLocaleTimeString()}
-      </Text>
-    </View>
-  );
+    );
+  };
 
   return (
     <SafeAreaView style={[

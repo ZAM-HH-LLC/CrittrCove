@@ -566,6 +566,21 @@ const mockBookingDetails = {
     startDate: '2024-02-21',
     startTime: '15:30',
   },
+  '56713': {
+    ...sharedBookingDetails,
+    id: '567123',
+    clientName: 'bolaskdnflkasjfdaslkdfj',
+    status: BOOKING_STATES.PENDING_INITIAL_PROFESSIONAL_CHANGES,
+    startDate: '2025-02-21',
+    startTime: '15:30',
+  },
+  '3749': {...sharedBookingDetails,
+    id: '56713',
+    clientName: 'Dr. Mike Johnson',
+    status: BOOKING_STATES.PENDING_INITIAL_PROFESSIONAL_CHANGES,
+    startDate: '2025-02-21',
+    startTime: '15:30',
+  },
 };
 
 // Map mockProfessionalBookings from mockBookingDetails
@@ -580,13 +595,13 @@ export const mockProfessionalBookings = Object.values(mockBookingDetails)
 
 // Add the createBooking function
 export const createBooking = async (clientId, freelancerId, initialData = {}) => {
-  const newBookingId = Math.floor(Math.random() * 10000).toString();
+  const newBookingId = `booking_${Date.now()}`;
   
-  const blankBooking = {
+  const newBooking = {
     id: newBookingId,
-    status: 'Pending Initial Professional Changes',
-    clientId,
-    freelancerId,
+    clientId: clientId,
+    freelancerId: freelancerId,
+    status: BOOKING_STATES.PENDING_INITIAL_PROFESSIONAL_CHANGES,
     clientName: initialData.clientName || 'TBD',
     professionalName: initialData.professionalName || 'TBD',
     serviceType: initialData.serviceType || 'TBD',
@@ -615,25 +630,35 @@ export const createBooking = async (clientId, freelancerId, initialData = {}) =>
   };
 
   // Add to mock database
-  mockBookingDetails[newBookingId] = blankBooking;
-  console.log('Created new booking:', newBookingId, mockBookingDetails[newBookingId]);
+  mockBookingDetails[newBookingId] = newBooking;
+  
+  console.log('Created new booking:', {
+    bookingId: newBookingId,
+    booking: newBooking,
+    allBookings: Object.keys(mockBookingDetails)
+  });
 
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 500));
   return newBookingId;
 };
 
-// Update fetchBookingDetails to handle missing bookings better and add logging
+// Update fetchBookingDetails with better logging
 export const fetchBookingDetails = async (bookingId) => {
-  console.log("Fetching booking details for ID:", bookingId);
-  console.log("Available bookings:", Object.keys(mockBookingDetails));
+  console.log('Fetching booking details:', {
+    requestedId: bookingId,
+    availableBookings: Object.keys(mockBookingDetails)
+  });
   
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 1000));
   
   const bookingDetails = mockBookingDetails[bookingId];
   if (!bookingDetails) {
-    console.error(`Booking not found for ID: ${bookingId}`);
+    console.error('Booking not found:', {
+      requestedId: bookingId,
+      availableBookings: Object.keys(mockBookingDetails)
+    });
     throw new Error('Booking not found');
   }
   
@@ -645,22 +670,41 @@ export const _mockBookingDetails = mockBookingDetails;
 
 // Add new mock function for updating booking status
 export const updateBookingStatus = async (bookingId, newStatus, reason = '', metadata = {}) => {
+  console.log('updateBookingStatus called with:', {
+    bookingId,
+    newStatus,
+    reason,
+    metadata,
+    availableBookings: Object.keys(mockBookingDetails)
+  });
+  
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 1000));
   
-  if (!mockBookingDetails[bookingId]) {
+  // Find the booking by ID regardless of the key
+  const bookingKey = Object.keys(mockBookingDetails).find(key => 
+    mockBookingDetails[key].id === bookingId
+  );
+  
+  if (!bookingKey) {
+    console.error('Booking not found in mockBookingDetails. Available bookings:', 
+      Object.keys(mockBookingDetails),
+      '\nFull mockBookingDetails:', mockBookingDetails
+    );
     throw new Error('Booking not found');
   }
   
-  mockBookingDetails[bookingId] = {
-    ...mockBookingDetails[bookingId],
+  // Create updated booking object
+  mockBookingDetails[bookingKey] = {
+    ...mockBookingDetails[bookingKey],
     status: newStatus,
     statusReason: reason,
     updated_at: new Date().toISOString(),
     ...metadata
   };
-  
-  return mockBookingDetails[bookingId];
+
+  console.log('Updated booking:', mockBookingDetails[bookingKey]);
+  return mockBookingDetails[bookingKey];
 };
 
 // Make sure to update MyBookings.js to use the same BOOKING_STATES constant
