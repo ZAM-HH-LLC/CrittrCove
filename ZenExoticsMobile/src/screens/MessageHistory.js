@@ -5,6 +5,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons'; // Import the icon 
 import { theme } from '../styles/theme';
 import RequestBookingModal from '../components/RequestBookingModal';
 import { createBooking, BOOKING_STATES, mockConversations, mockMessages, CURRENT_USER_ID } from '../data/mockData';
+import { format } from 'date-fns';
 
 // First, create a function to generate dynamic styles
 const createStyles = (screenWidth) => StyleSheet.create({
@@ -414,6 +415,58 @@ const createStyles = (screenWidth) => StyleSheet.create({
     left: 16,
     padding: 8,
   },
+  bookingRequestCard: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: 8,
+    padding: 16,
+    margin: 8,
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+    maxWidth: 500,
+  },
+  sentBookingRequest: {
+    alignSelf: 'flex-end',
+    marginLeft: '20%',
+  },
+  receivedBookingRequest: {
+    alignSelf: 'flex-start',
+    marginRight: '20%',
+  },
+  bookingRequestHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 8,
+  },
+  bookingRequestTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: theme.colors.primary,
+  },
+  bookingRequestDetails: {
+    gap: 8,
+  },
+  detailLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: theme.colors.placeholder,
+  },
+  detailText: {
+    fontSize: 16,
+    color: theme.colors.text,
+  },
+  acceptButton: {
+    backgroundColor: theme.colors.primary,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  acceptButtonText: {
+    color: theme.colors.surface,
+    fontSize: 16,
+    fontWeight: '500',
+  },
 });
 
 const MessageHistory = ({ navigation, route }) => {
@@ -471,17 +524,40 @@ const MessageHistory = ({ navigation, route }) => {
     return message.sender === 'Me';
   }, []);
 
-  const renderMessage = useCallback(({ item }) => {
-    // Message is from current user if they are the sender
+  const renderBookingRequestMessage = useCallback(({ item }) => {
     const isFromMe = item.sender === CURRENT_USER_ID;
-    console.log('Message:', item);
-    console.log('CURRENT_USER_ID:', CURRENT_USER_ID);
-    console.log('Is from me?', isFromMe);
     
     return (
-      <View 
-        style={isFromMe ? styles.sentMessageContainer : styles.receivedMessageContainer}
-      >
+      <BookingRequestMessage 
+        data={item.data}
+        isFromMe={isFromMe}
+        timestamp={item.timestamp}
+        onAccept={() => {
+          navigation.navigate('BookingDetails', {
+            bookingId: null,
+            initialData: {
+              serviceType: item.data.serviceType,
+              pets: item.data.pets,
+              occurrences: item.data.occurrences,
+              status: BOOKING_STATES.PENDING_INITIAL_PROFESSIONAL_CHANGES,
+              clientName: selectedConversationData.name,
+              professionalName: 'Me'
+            }
+          });
+        }}
+      />
+    );
+  }, [navigation, selectedConversationData, CURRENT_USER_ID]);
+
+  const renderMessage = useCallback(({ item }) => {
+    if (item.type === 'booking_request') {
+      return renderBookingRequestMessage({ item });
+    }
+
+    // Existing message rendering code
+    const isFromMe = item.sender === CURRENT_USER_ID;
+    return (
+      <View style={isFromMe ? styles.sentMessageContainer : styles.receivedMessageContainer}>
         <Text style={[
           styles.senderAbove,
           isFromMe ? styles.sentSenderName : styles.receivedSenderName
@@ -509,7 +585,7 @@ const MessageHistory = ({ navigation, route }) => {
         </Text>
       </View>
     );
-  }, [selectedConversationData]);
+  }, [selectedConversationData, renderBookingRequestMessage]);
 
   const simulateMessageSend = async (messageContent) => {
     try {
@@ -763,6 +839,36 @@ const MessageHistory = ({ navigation, route }) => {
     }
   };
 
+  // Add new function to handle booking request messages
+  const handleBookingRequest = async (bookingRequestMessage) => {
+    try {
+      // Add the booking request message to the current conversation
+      const newMessage = {
+        message_id: Date.now().toString(),
+        participant1_id: selectedConversationData?.participant1_id,
+        participant2_id: selectedConversationData?.participant2_id,
+        sender: CURRENT_USER_ID,
+        role_map: selectedConversationData?.role_map,
+        type: 'booking_request',
+        data: bookingRequestMessage.data,
+        timestamp: new Date().toISOString(),
+        status: "sent",
+        is_booking_request: true,
+        metadata: {}
+      };
+
+      setMessages(prevMessages => [...prevMessages, newMessage]);
+      setShowRequestModal(false);
+    } catch (error) {
+      console.error('Error sending booking request:', error);
+      Alert.alert(
+        'Error',
+        'Unable to send booking request. Please try again.',
+        [{ text: 'OK' }]
+      );
+    }
+  };
+
   // Add new header component
   const renderHeader = () => {
     if (screenWidth <= 1000 && selectedConversation) {
@@ -952,6 +1058,61 @@ const MessageHistory = ({ navigation, route }) => {
     </View>
   );
 
+  // Move BookingRequestMessage inside the component
+  const BookingRequestMessage = ({ data, onAccept, isFromMe, timestamp }) => (
+    <View style={isFromMe ? styles.sentMessageContainer : styles.receivedMessageContainer}>
+      <Text style={[
+        styles.senderAbove,
+        isFromMe ? styles.sentSenderName : styles.receivedSenderName
+      ]}>
+        {isFromMe ? 'Me' : selectedConversationData?.name}
+      </Text>
+      
+      <View style={[
+        styles.bookingRequestCard,
+        isFromMe ? styles.sentBookingRequest : styles.receivedBookingRequest
+      ]}>
+        <View style={styles.bookingRequestHeader}>
+          <MaterialCommunityIcons name="calendar-clock" size={24} color={theme.colors.primary} />
+          <Text style={styles.bookingRequestTitle}>Booking Request</Text>
+        </View>
+        
+        <View style={styles.bookingRequestDetails}>
+          <Text style={styles.detailLabel}>Service:</Text>
+          <Text style={styles.detailText}>{data.serviceType}</Text>
+          
+          <Text style={styles.detailLabel}>Pets:</Text>
+          <Text style={styles.detailText}>
+            {data.pets.map(pet => pet.name).join(', ')}
+          </Text>
+          
+          <Text style={styles.detailLabel}>Dates:</Text>
+          {data.occurrences.map((occ, index) => (
+            <Text key={index} style={styles.detailText}>
+              {format(new Date(occ.startDate), 'MMM d, yyyy')} {occ.startTime} - {occ.endTime}
+            </Text>
+          ))}
+        </View>
+
+        {!isFromMe && selectedConversationData?.role_map?.participant2_role === "professional" && (
+          <TouchableOpacity 
+            style={styles.acceptButton}
+            onPress={onAccept}
+          >
+            <Text style={styles.acceptButtonText}>Review Booking</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      <Text style={[
+        styles.timestampBelow,
+        isFromMe ? styles.sentTimestamp : styles.receivedTimestamp
+      ]}>
+        {new Date(timestamp).toLocaleTimeString()}
+      </Text>
+    </View>
+  );
+
   return (
     <SafeAreaView style={[
       styles.container,
@@ -985,7 +1146,7 @@ const MessageHistory = ({ navigation, route }) => {
       <RequestBookingModal
         visible={showRequestModal}
         onClose={() => setShowRequestModal(false)}
-        onSubmit={handleModalSubmit}
+        onSubmit={handleBookingRequest}
       />
     </SafeAreaView>
   );

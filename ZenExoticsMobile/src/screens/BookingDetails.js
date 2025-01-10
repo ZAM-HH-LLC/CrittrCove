@@ -83,6 +83,11 @@ const calculateTimeUnits = (startDate, endDate, startTime, endTime, timeUnit) =>
 };
 
 const calculateOccurrenceCost = (occurrence) => {
+  // If occurrence doesn't have rates, return 0
+  if (!occurrence.rates) {
+    return 0;
+  }
+  
   const timeUnits = calculateTimeUnits(
     occurrence.startDate,
     occurrence.endDate,
@@ -777,17 +782,17 @@ const BookingDetails = () => {
           {expandedOccurrenceId === occurrence.id && (
             <View style={styles.expandedCostDetails}>
               <View style={styles.costDetailRow}>
-                <Text>Base Rate ({occurrence.rates.timeUnit || 'per visit'}):</Text>
+                <Text>Base Rate ({occurrence.rates?.timeUnit || 'per visit'}):</Text>
                 <Text>
-                  ${parseFloat(occurrence.rates.baseRate).toFixed(2)} × {
+                  ${parseFloat(occurrence.rates?.baseRate).toFixed(2)} × {
                     calculateTimeUnits(
                       occurrence.startDate,
                       occurrence.endDate,
                       occurrence.startTime,
                       occurrence.endTime,
-                      occurrence.rates.timeUnit
+                      occurrence.rates?.timeUnit
                     )
-                  } = ${(parseFloat(occurrence.rates.baseRate) * 
+                  } = ${(parseFloat(occurrence.rates?.baseRate) * 
                         calculateTimeUnits(
                           occurrence.startDate,
                           occurrence.endDate,
@@ -797,7 +802,7 @@ const BookingDetails = () => {
                         )).toFixed(2)}
                 </Text>
               </View>
-              {occurrence.rates.additionalRates.map((rate, idx) => (
+              {occurrence.rates?.additionalRates?.map((rate, idx) => (
                 <View key={idx} style={styles.costDetailRow}>
                   <Text>{rate.name}:</Text>
                   <Text>${rate.amount.toFixed(2)}</Text>

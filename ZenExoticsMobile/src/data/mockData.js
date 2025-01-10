@@ -6,7 +6,8 @@ export const BOOKING_STATES = {
   CONFIRMED_PENDING_PROFESSIONAL_CHANGES: 'Confirmed Pending Professional Changes',
   CONFIRMED: 'Confirmed',
   DENIED: 'Denied',
-  CANCELLED: 'Cancelled'
+  CANCELLED: 'Cancelled',
+  DRAFT: 'Draft'
 };
 
 export const ALL_SERVICES = "All Services";
@@ -699,7 +700,7 @@ export const mockConversations = [
   },
   {
     id: 'conv_2',
-    participant1_id: 203,
+    participant1_id: 303,
     participant2_id: CURRENT_USER_ID,
     name: "Dr. Mike Johnson",
     role_map: {
@@ -937,22 +938,47 @@ export const mockMessages = {
       message_id: 4,
       participant1_id: 303,
       participant2_id: CURRENT_USER_ID,
+      sender: 303,
+      role_map: {
+        participant1_role: "client",
+        participant2_role: "professional"
+      },
+      type: 'booking_request',
+      data: {
+        serviceType: "Dog Walking",
+        pets: [
+          { id: '1', name: 'Max', type: 'Dog', breed: 'Golden Retriever' }
+        ],
+        occurrences: [
+          {
+            startDate: '2024-02-28',
+            endDate: '2024-02-28',
+            startTime: '14:00',
+            endTime: '15:00'
+          }
+        ]
+      },
+      timestamp: "2024-02-21T15:35:00Z",
+      status: "sent",
+      is_booking_request: true,
+      metadata: {}
+    },
+    {
+      message_id: 5,
+      participant1_id: 303,
+      participant2_id: CURRENT_USER_ID,
       sender: CURRENT_USER_ID,
       role_map: {
         participant1_role: "client",
         participant2_role: "professional"
       },
-      content: "I'm available! Let's set up a booking",
-      timestamp: "2024-02-21T15:35:00Z",
-      booking_id: "booking_123",
-      status: "sent",
-      is_booking_request: true,
-      metadata: {
-        booking_type: "dog_walking",
-        rate: 30,
-        duration: 60
-      }
-    }
+      content: "I'll take a look!",
+      timestamp: "2024-02-21T15:30:00Z",
+      booking_id: null,
+      status: "read",
+      is_booking_request: false,
+      metadata: {}
+    },
   ]
 };
 

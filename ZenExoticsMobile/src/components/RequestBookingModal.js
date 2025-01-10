@@ -1,63 +1,200 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Modal, ScrollView } from 'react-native';
+import { View, StyleSheet, Modal, ScrollView, TouchableOpacity } from 'react-native';
 import { Button, Text, TextInput } from 'react-native-paper';
 import { theme } from '../styles/theme';
 import DatePicker from './DatePicker';
 import TimePicker from './TimePicker';
+import AddOccurrenceModal from './AddOccurrenceModal';
+import { format } from 'date-fns';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { SERVICE_TYPE_SUGGESTIONS, mockPets } from '../data/mockData';
+import ConfirmationModal from './ConfirmationModal';
 
-const RequestBookingModal = ({ visible, onClose, onSubmit, services = [], pets = [] }) => {
+const RequestBookingModal = ({ visible, onClose, onSubmit, services = SERVICE_TYPE_SUGGESTIONS, pets = mockPets }) => {
   const [selectedService, setSelectedService] = useState('');
   const [selectedPets, setSelectedPets] = useState([]);
-  const [startDate, setStartDate] = useState(new Date());
-  const [endDate, setEndDate] = useState(new Date());
-  const [startTime, setStartTime] = useState(() => {
-    const date = new Date();
-    date.setHours(9, 0, 0);
-    return date;
-  });
-  const [endTime, setEndTime] = useState(() => {
-    const date = new Date();
-    date.setHours(17, 0, 0);
-    return date;
+  const [showServiceDropdown, setShowServiceDropdown] = useState(false);
+  const [showPetDropdown, setShowPetDropdown] = useState(false);
+  const [showAddOccurrenceModal, setShowAddOccurrenceModal] = useState(false);
+  const [occurrences, setOccurrences] = useState([]);
+  const [selectedOccurrence, setSelectedOccurrence] = useState(null);
+  const [confirmationModal, setConfirmationModal] = useState({
+    visible: false,
+    actionText: '',
+    onConfirm: null,
+    isLoading: false
   });
 
   const resetForm = () => {
     setSelectedService('');
     setSelectedPets([]);
-    setStartDate(new Date());
-    setEndDate(new Date());
-    const defaultStartTime = new Date();
-    defaultStartTime.setHours(9, 0, 0);
-    const defaultEndTime = new Date();
-    defaultEndTime.setHours(17, 0, 0);
-    setStartTime(defaultStartTime);
-    setEndTime(defaultEndTime);
-  };
-
-  const formatTimeForSubmission = (date) => {
-    return date.toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      hour12: false 
-    });
+    setOccurrences([]);
+    setSelectedOccurrence(null);
   };
 
   const handleSubmit = () => {
-    onSubmit({
+    if (occurrences.length === 0) return;
+
+    const bookingData = {
       serviceType: selectedService,
-      pets: selectedPets,
-      startDate,
-      endDate,
-      startTime: formatTimeForSubmission(startTime),
-      endTime: formatTimeForSubmission(endTime)
-    });
+      pets: selectedPets.map(petId => pets.find(p => p.id === petId)),
+      occurrences: occurrences
+    };
+
+    // Create a booking request message
+    const bookingRequestMessage = {
+      type: 'booking_request',
+      data: bookingData,
+      timestamp: new Date().toISOString()
+    };
+
+    onSubmit(bookingRequestMessage);
     resetForm();
+    onClose();
+  };
+
+  const handleDeleteOccurrence = async (occurrenceToDelete) => {
+    setConfirmationModal(prev => ({ ...prev, isLoading: true }));
+    
+    try {
+      setOccurrences(prev => prev.filter(occ => 
+        occ.startDate !== occurrenceToDelete.startDate || 
+        occ.startTime !== occurrenceToDelete.startTime
+      ));
+    } finally {
+      setConfirmationModal({ 
+        visible: false, 
+        actionText: '', 
+        onConfirm: null, 
+        isLoading: false 
+      });
+    }
+  };
+
+  const confirmDeleteOccurrence = (occurrence) => {
+    setConfirmationModal({
+      visible: true,
+      actionText: 'delete this occurrence',
+      onConfirm: () => handleDeleteOccurrence(occurrence),
+      isLoading: false
+    });
   };
 
   const handleClose = () => {
     resetForm();
     onClose();
   };
+
+  const handleOpenOccurrenceModal = () => {
+    setShowServiceDropdown(false);
+    setShowPetDropdown(false);
+    setShowAddOccurrenceModal(true);
+  };
+
+  const renderServiceDropdown = () => (
+    <View style={styles.dropdownContainer}>
+      <TouchableOpacity
+        style={styles.dropdownInput}
+        onPress={() => setShowServiceDropdown(!showServiceDropdown)}
+      >
+        <Text>{selectedService || 'Select Service Type'}</Text>
+        <MaterialCommunityIcons 
+          name={showServiceDropdown ? "chevron-up" : "chevron-down"} 
+          size={24} 
+          color={theme.colors.text} 
+        />
+      </TouchableOpacity>
+
+      {showServiceDropdown && (
+        <View style={styles.dropdownList}>
+          <ScrollView nestedScrollEnabled={true}>
+            {services.map((service) => (
+              <TouchableOpacity
+                key={service}
+                style={styles.dropdownItem}
+                onPress={() => {
+                  setSelectedService(service);
+                  setShowServiceDropdown(false);
+                }}
+              >
+                <Text style={[
+                  styles.dropdownText,
+                  selectedService === service && styles.selectedOption
+                ]}>
+                  {service}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+    </View>
+  );
+
+  const renderPetSelector = () => (
+    <View style={{ zIndex: 2 }}>
+      {selectedPets.map((petId) => {
+        const pet = pets.find(p => p.id === petId);
+        return (
+          <View key={petId} style={styles.petItem}>
+            <View style={styles.petInfo}>
+              <Text style={styles.petName}>{pet.name}</Text>
+              <Text style={styles.petDetails}>{pet.type} • {pet.breed}</Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => setSelectedPets(prev => prev.filter(id => id !== petId))}
+            >
+              <MaterialCommunityIcons 
+                name="close" 
+                size={24} 
+                color={theme.colors.error} 
+              />
+            </TouchableOpacity>
+          </View>
+        );
+      })}
+      
+      <TouchableOpacity
+        style={styles.addPetButton}
+        onPress={() => setShowPetDropdown(!showPetDropdown)}
+      >
+        <MaterialCommunityIcons 
+          name={showPetDropdown ? "chevron-up" : "chevron-down"} 
+          size={20} 
+          color={theme.colors.primary} 
+        />
+        <Text style={styles.addPetText}>
+          {selectedPets.length === 0 ? 'Select Pets' : 'Add Pet'}
+        </Text>
+      </TouchableOpacity>
+      
+      {showPetDropdown && (
+        <View style={styles.dropdownList}>
+          <ScrollView nestedScrollEnabled={true} style={styles.petDropdown}>
+            {pets
+              .filter(pet => !selectedPets.includes(pet.id))
+              .map((pet) => (
+                <TouchableOpacity
+                  key={pet.id}
+                  style={styles.dropdownItem}
+                  onPress={() => {
+                    setSelectedPets(prev => [...prev, pet.id]);
+                    setShowPetDropdown(false);
+                  }}
+                >
+                  <View>
+                    <Text style={styles.dropdownPetName}>{pet.name}</Text>
+                    <Text style={styles.dropdownPetDetails}>
+                      {pet.type} • {pet.breed}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+          </ScrollView>
+        </View>
+      )}
+    </View>
+  );
 
   return (
     <Modal
@@ -73,84 +210,60 @@ const RequestBookingModal = ({ visible, onClose, onSubmit, services = [], pets =
           <ScrollView style={styles.scrollView}>
             {/* Service Selection */}
             <Text style={styles.label}>Select Service</Text>
-            <View style={styles.serviceOptions}>
-              {services.map((service) => (
-                <Button
-                  key={service}
-                  mode={selectedService === service ? "contained" : "outlined"}
-                  onPress={() => setSelectedService(service)}
-                  style={styles.serviceButton}
-                >
-                  {service}
-                </Button>
-              ))}
-            </View>
+            {renderServiceDropdown()}
 
             {/* Pet Selection */}
             <Text style={styles.label}>Select Pets</Text>
-            <View style={styles.petOptions}>
-              {pets.map((pet) => (
-                <Button
-                  key={pet.id}
-                  mode={selectedPets.includes(pet.id) ? "contained" : "outlined"}
-                  onPress={() => {
-                    if (selectedPets.includes(pet.id)) {
-                      setSelectedPets(selectedPets.filter(id => id !== pet.id));
-                    } else {
-                      setSelectedPets([...selectedPets, pet.id]);
-                    }
-                  }}
-                  style={styles.petButton}
-                >
-                  {pet.name}
-                </Button>
-              ))}
-            </View>
+            {renderPetSelector()}
 
-            {/* Date Selection */}
-            <Text style={styles.label}>Select Dates</Text>
-            <View style={styles.dateContainer}>
-              <DatePicker
-                label="Start Date"
-                date={startDate}
-                onDateChange={setStartDate}
-              />
-              <DatePicker
-                label="End Date"
-                date={endDate}
-                onDateChange={setEndDate}
-                minimumDate={startDate}
-              />
-            </View>
+            {/* Date & Time Selection */}
+            <Text style={styles.label}>Select Date & Time</Text>
+            {occurrences.map((occ, index) => (
+              <TouchableOpacity 
+                key={index}
+                style={styles.occurrenceCard}
+              >
+                <View style={styles.occurrenceDetails}>
+                  <Text style={styles.dateText}>
+                    {occ.endDate && occ.startDate !== occ.endDate ? 
+                      `${format(new Date(occ.startDate), 'MMM d, yyyy')} - ${format(new Date(occ.endDate), 'MMM d, yyyy')}` :
+                      format(new Date(occ.startDate), 'MMM d, yyyy')
+                    }
+                  </Text>
+                  <Text style={styles.timeText}>
+                    {`${occ.startTime} - ${occ.endTime}`}
+                  </Text>
+                </View>
+                <View style={styles.occurrenceActions}>
+                  <TouchableOpacity 
+                    style={styles.actionButton}
+                    onPress={() => confirmDeleteOccurrence(occ)}
+                  >
+                    <MaterialCommunityIcons name="trash-can-outline" size={20} color={theme.colors.error} />
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={styles.actionButton}
+                    onPress={() => {
+                      setSelectedOccurrence(occ);
+                      handleOpenOccurrenceModal();
+                    }}
+                  >
+                    <MaterialCommunityIcons name="pencil" size={20} color={theme.colors.primary} />
+                  </TouchableOpacity>
+                </View>
+              </TouchableOpacity>
+            ))}
 
-            {/* Time Selection */}
-            <Text style={styles.label}>Select Times</Text>
-            <View style={styles.timeContainer}>
-              <View style={styles.timePickerWrapper}>
-                <TimePicker
-                  label="Start Time"
-                  value={startTime}
-                  onChange={(newTime) => {
-                    if (newTime instanceof Date) {
-                      setStartTime(newTime);
-                    }
-                  }}
-                  mode="time"
-                />
-              </View>
-              <View style={styles.timePickerWrapper}>
-                <TimePicker
-                  label="End Time"
-                  value={endTime}
-                  onChange={(newTime) => {
-                    if (newTime instanceof Date) {
-                      setEndTime(newTime);
-                    }
-                  }}
-                  mode="time"
-                />
-              </View>
-            </View>
+            <TouchableOpacity
+              style={styles.addOccurrenceButton}
+              onPress={() => {
+                setSelectedOccurrence(null);
+                handleOpenOccurrenceModal();
+              }}
+            >
+              <MaterialCommunityIcons name="plus" size={24} color={theme.colors.primary} />
+              <Text style={styles.addOccurrenceText}>Add Date & Time</Text>
+            </TouchableOpacity>
           </ScrollView>
 
           <View style={styles.buttonContainer}>
@@ -161,13 +274,52 @@ const RequestBookingModal = ({ visible, onClose, onSubmit, services = [], pets =
               mode="contained" 
               onPress={handleSubmit}
               style={styles.button}
-              disabled={!selectedService || selectedPets.length === 0}
+              disabled={!selectedService || selectedPets.length === 0 || occurrences.length === 0}
             >
               Submit
             </Button>
           </View>
         </View>
       </View>
+
+      <AddOccurrenceModal
+        visible={showAddOccurrenceModal}
+        onClose={() => setShowAddOccurrenceModal(false)}
+        onAdd={(newOccurrence) => {
+          const { startDate, endDate, startTime, endTime } = newOccurrence;
+          if (selectedOccurrence) {
+            setOccurrences(prev => prev.map(occ => 
+              occ === selectedOccurrence ? 
+              { startDate, endDate, startTime, endTime } : 
+              occ
+            ));
+          } else {
+            setOccurrences(prev => [...prev, { startDate, endDate, startTime, endTime }]);
+          }
+          setSelectedOccurrence(null);
+          setShowAddOccurrenceModal(false);
+        }}
+        hideRates={true}
+        initialOccurrence={selectedOccurrence}
+        modalTitle={selectedOccurrence ? 'Edit Occurrence' : 'Add New Occurrence'}
+      />
+
+      <ConfirmationModal
+        visible={confirmationModal.visible}
+        actionText={confirmationModal.actionText}
+        onClose={() => {
+          if (!confirmationModal.isLoading) {
+            setConfirmationModal({ 
+              visible: false, 
+              actionText: '', 
+              onConfirm: null, 
+              isLoading: false 
+            });
+          }
+        }}
+        onConfirm={confirmationModal.onConfirm}
+        isLoading={confirmationModal.isLoading}
+      />
     </Modal>
   );
 };
@@ -237,6 +389,173 @@ const styles = StyleSheet.create({
   },
   timePickerWrapper: {
     flex: 1,
+  },
+  dropdownContainer: {
+    position: 'relative',
+    marginBottom: 20,
+    zIndex: 3,
+  },
+  dropdownInput: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 8,
+    padding: 12,
+    backgroundColor: theme.colors.surface,
+  },
+  dropdownList: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 8,
+    maxHeight: 200,
+    zIndex: 1000,
+    elevation: 5,
+  },
+  dropdownItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  dropdownText: {
+    color: theme.colors.text,
+  },
+  selectedOption: {
+    color: theme.colors.primary,
+    fontWeight: 'bold',
+  },
+  petItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  petInfo: {
+    flex: 1,
+  },
+  petName: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  petDetails: {
+    fontSize: 14,
+    color: theme.colors.placeholder,
+  },
+  addPetButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 8,
+    justifyContent: 'center',
+  },
+  addPetText: {
+    marginLeft: 8,
+    color: theme.colors.primary,
+    fontSize: 16,
+  },
+  occurrenceCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 15,
+    backgroundColor: theme.colors.surface,
+    borderRadius: 8,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  occurrenceDetails: {
+    flex: 1,
+  },
+  dateText: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  timeText: {
+    fontSize: 14,
+    color: theme.colors.placeholder,
+  },
+  addOccurrenceButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+    borderRadius: 8,
+    marginTop: 12,
+  },
+  addOccurrenceText: {
+    marginLeft: 8,
+    color: theme.colors.primary,
+    fontSize: 16,
+  },
+  occurrenceActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  actionButton: {
+    padding: 8,
+    borderWidth: 1,
+    borderColor: theme.colors.error,
+    borderRadius: 4,
+  },
+  bookingRequestCard: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: 8,
+    padding: 16,
+    margin: 8,
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+  },
+  bookingRequestHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 8,
+  },
+  bookingRequestTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: theme.colors.primary,
+  },
+  bookingRequestDetails: {
+    gap: 8,
+  },
+  detailLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: theme.colors.placeholder,
+  },
+  detailText: {
+    fontSize: 16,
+    color: theme.colors.text,
+  },
+  acceptButton: {
+    backgroundColor: theme.colors.primary,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  acceptButtonText: {
+    color: theme.colors.surface,
+    fontSize: 16,
+    fontWeight: '500',
   },
 });
 

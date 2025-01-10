@@ -9,22 +9,22 @@ const EditOccurrenceModal = ({ visible, onClose, onSave, occurrence }) => {
   const [rates, setRates] = useState({
     baseRate: occurrence?.rates?.baseRate || 0,
     additionalRates: occurrence?.rates?.additionalRates || [],
+    timeUnit: occurrence?.rates?.timeUnit || 'per visit'
   });
-
-  const [timeUnit, setTimeUnit] = useState(occurrence?.rates?.timeUnit || 'per visit');
 
   useEffect(() => {
     if (occurrence) {
       setRates({
-        baseRate: occurrence.rates.baseRate,
-        additionalRates: occurrence.rates.additionalRates,
+        baseRate: occurrence.rates?.baseRate || 0,
+        additionalRates: occurrence.rates?.additionalRates || [],
+        timeUnit: occurrence.rates?.timeUnit || 'per visit'
       });
     }
   }, [occurrence]);
 
   const calculateTotal = () => {
-    const base = parseFloat(rates.baseRate) || 0;
-    const additional = rates.additionalRates.reduce((sum, rate) => 
+    const base = parseFloat(rates.baseRate ? rates.baseRate : 0) || 0;
+    const additional = rates.additionalRates?.reduce((sum, rate) => 
       sum + (parseFloat(rate.amount) || 0), 0);
     return (base + additional).toFixed(2);
   };
@@ -39,12 +39,12 @@ const EditOccurrenceModal = ({ visible, onClose, onSave, occurrence }) => {
 
   const handleSave = () => {
     const sanitizedRates = {
-      baseRate: parseFloat(rates.baseRate) || 0,
-      additionalRates: rates.additionalRates.map(rate => ({
+      baseRate: parseFloat(rates.baseRate ? rates.baseRate : 0) || 0,
+      additionalRates: rates.additionalRates?.map(rate => ({
         name: rate.name,
         amount: parseFloat(rate.amount) || 0
-      })),
-      timeUnit,
+      })) || [],
+      timeUnit: rates.timeUnit,
     };
 
     onSave({
@@ -56,7 +56,7 @@ const EditOccurrenceModal = ({ visible, onClose, onSave, occurrence }) => {
   };
 
   const handleAdditionalRateChange = (index, field, value) => {
-    const updated = [...rates.additionalRates];
+    const updated = [...rates?.additionalRates];
     updated[index] = { 
       ...updated[index], 
       [field]: field === 'amount' ? parseFloat(value) || 0 : value 
@@ -64,6 +64,16 @@ const EditOccurrenceModal = ({ visible, onClose, onSave, occurrence }) => {
     setRates(prev => ({
       ...prev,
       additionalRates: updated
+    }));
+  };
+
+  const handleAddRate = () => {
+    setRates(prev => ({
+      ...prev,
+      additionalRates: [
+        ...(prev.additionalRates || []),
+        { name: '', amount: 0 }
+      ]
     }));
   };
 
@@ -100,7 +110,7 @@ const EditOccurrenceModal = ({ visible, onClose, onSave, occurrence }) => {
               <Text style={[styles.label, {marginTop: 10}]}>Base Rate ($)</Text>
               <TextInput
                 style={styles.input}
-                value={rates.baseRate.toString()}
+                value={rates.baseRate ? rates.baseRate.toString() : ''}
                 onChangeText={(text) => setRates(prev => ({
                   ...prev,
                   baseRate: text
@@ -111,7 +121,7 @@ const EditOccurrenceModal = ({ visible, onClose, onSave, occurrence }) => {
 
             <View style={styles.rateSection}>
               <Text style={styles.sectionTitle}>Additional Rates</Text>
-              {rates.additionalRates.map((rate, index) => (
+              {rates?.additionalRates?.map((rate, index) => (
                 <View key={index} style={styles.additionalRate}>
                   <View style={styles.additionalRateHeader}>
                     <Text style={styles.additionalRateTitle}>{rate.name}</Text>
@@ -119,7 +129,7 @@ const EditOccurrenceModal = ({ visible, onClose, onSave, occurrence }) => {
                       onPress={() => {
                         setRates(prev => ({
                           ...prev,
-                          additionalRates: prev.additionalRates.filter((_, i) => i !== index)
+                          additionalRates: prev.additionalRates?.filter((_, i) => i !== index)
                         }));
                       }}
                     >
@@ -146,15 +156,7 @@ const EditOccurrenceModal = ({ visible, onClose, onSave, occurrence }) => {
               
               <TouchableOpacity
                 style={styles.addRateButton}
-                onPress={() => {
-                  setRates(prev => ({
-                    ...prev,
-                    additionalRates: [
-                      ...prev.additionalRates,
-                      { name: '', amount: 0 }
-                    ]
-                  }));
-                }}
+                onPress={handleAddRate}
               >
                 <MaterialCommunityIcons name="plus" size={20} color={theme.colors.primary} />
                 <Text style={styles.addRateText}>Add Rate</Text>
