@@ -155,7 +155,7 @@ const BookingDetails = () => {
     serviceDetails: {
       type: '',
       animalType: '',
-      numberOfPets: ''
+      numberOfPets: 0
     },
     rates: {
       additionalPetRate: 0,
@@ -259,7 +259,11 @@ const BookingDetails = () => {
     if (booking) {
       setEditedBooking({
         ...booking,
-        serviceDetails: booking.serviceDetails || {},
+        serviceDetails: {
+          type: booking.serviceType || '',
+          animalType: booking.animalType || '',
+          numberOfPets: (booking.pets || []).length  // Initialize based on pets array length
+        },
         rates: {
           additionalPetRate: booking.rates?.additionalPetRate ?? 0,
           holidayFee: booking.rates?.holidayFee ?? 0,
@@ -310,25 +314,27 @@ const BookingDetails = () => {
     const currentPets = booking.pets || [];
     const currentOccurrences = booking.occurrences || [];
     
-    // Ensure both objects are initialized with the current booking values
+    // Use the actual pets array length for both current and edited states
     const currentServiceDetails = {
       type: booking.serviceType || '',
       animalType: booking.animalType || '',
-      numberOfPets: booking.numberOfPets || 0
+      numberOfPets: currentPets.length  // Use current pets array length
     };
     
     const editedServiceDetails = {
       type: editedBooking.serviceDetails?.type || booking.serviceType || '',
       animalType: editedBooking.serviceDetails?.animalType || booking.animalType || '',
-      // Convert to number for comparison
-      numberOfPets: Number(editedBooking.serviceDetails?.numberOfPets) || 0
+      numberOfPets: selectedPets.length  // Use selected pets array length
     };
+
+    console.log('Current Pets Length:', currentPets.length);
+    console.log('Selected Pets Length:', selectedPets.length);
 
     const petsHaveChanged = JSON.stringify(currentPets) !== JSON.stringify(selectedPets);
     const serviceDetailsHaveChanged = (
       currentServiceDetails.type !== editedServiceDetails.type ||
       currentServiceDetails.animalType !== editedServiceDetails.animalType ||
-      Number(currentServiceDetails.numberOfPets) !== Number(editedServiceDetails.numberOfPets)  // Compare as numbers
+      currentServiceDetails.numberOfPets !== editedServiceDetails.numberOfPets
     );
     const occurrencesHaveChanged = JSON.stringify(currentOccurrences) !== JSON.stringify(editedBooking.occurrences);
 
@@ -339,17 +345,19 @@ const BookingDetails = () => {
     if (petsHaveChanged || serviceDetailsHaveChanged || occurrencesHaveChanged) {
       setHasUnsavedChanges(true);
 
-      // update status to reflect the pro making changes again.
+      // Update booking status if needed
       if (booking.status === BOOKING_STATES.CONFIRMED) {
         setBooking(prev => ({
           ...prev,
-          status: BOOKING_STATES.CONFIRMED_PENDING_PROFESSIONAL_CHANGES
+          status: BOOKING_STATES.CONFIRMED_PENDING_PROFESSIONAL_CHANGES,
+          numberOfPets: selectedPets.length  // Update the booking's numberOfPets
         }));
       }
       if (booking.status === BOOKING_STATES.PENDING_CLIENT_APPROVAL) {
         setBooking(prev => ({
           ...prev,
-          status: BOOKING_STATES.PENDING_PROFESSIONAL_CHANGES
+          status: BOOKING_STATES.PENDING_PROFESSIONAL_CHANGES,
+          numberOfPets: selectedPets.length  // Update the booking's numberOfPets
         }));
       }
     }
@@ -364,12 +372,39 @@ const BookingDetails = () => {
         if (petsHaveChanged) {
           const response = await mockUpdateBookingPets(booking.id, selectedPets);
           if (response.success) {
+            // Update both booking and editedBooking
             setBooking(prev => ({
               ...prev,
-              pets: selectedPets
+              pets: selectedPets,
+              numberOfPets: selectedPets.length
             }));
+            
+            setEditedBooking(prev => ({
+              ...prev,
+              numberOfPets: selectedPets.length,
+              serviceDetails: {
+                ...prev.serviceDetails,
+                numberOfPets: selectedPets.length
+              }
+            }));
+            
             handleStatusUpdateAfterEdit();
           }
+        } else {
+          console.log('No pets changes detected');
+          // Even if pets haven't changed, we should still update the numberOfPets
+          setEditedBooking(prev => {
+            console.log('Setting editedBooking (no changes) - prev state:', prev);
+            const newState = {
+              ...prev,
+              serviceDetails: {
+                ...prev.serviceDetails,
+                numberOfPets: selectedPets.length || 0
+              }
+            };
+            console.log('New editedBooking state (no changes):', newState);
+            return newState;
+          });
         }
         setIsPetsEditMode(false);
       } catch (error) {
@@ -424,12 +459,13 @@ const BookingDetails = () => {
         setIsServiceSaving(false);
       }
     } else {
+      // Initialize editedBooking with current values when entering edit mode
       setEditedBooking(prev => ({
         ...prev,
         serviceDetails: {
           type: booking.serviceType || '',
           animalType: booking.animalType || '',
-          numberOfPets: booking.numberOfPets || ''
+          numberOfPets: booking.numberOfPets || 0  // Make sure to use the current numberOfPets
         }
       }));
       setIsServiceEditMode(true);
@@ -1347,8 +1383,8 @@ const BookingDetails = () => {
                   <Text style={styles.inputLabel}>Number of Pets:</Text>
                   <TextInput
                     style={styles.numberInput}
-                    value={editedBooking.serviceDetails?.numberOfPets?.toString() || ''}
-                    onChangeText={handleUpdatePets}
+                    value={selectedPets.length.toString()}
+                    editable={false}
                     keyboardType="numeric"
                     maxLength={2}
                   />
