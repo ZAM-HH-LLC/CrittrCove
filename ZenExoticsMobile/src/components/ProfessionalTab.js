@@ -196,7 +196,7 @@ const ProfessionalTab = ({
       {/* Services Section */}
       <View style={styles.section}>
         <ServiceManager
-          services={services}
+          services={services || []}
           setServices={setServices}
           setHasUnsavedChanges={setHasUnsavedChanges}
           isProfessionalTab={true}

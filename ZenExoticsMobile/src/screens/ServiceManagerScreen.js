@@ -51,43 +51,32 @@ const ServiceManagerScreen = () => {
   }
 
   return (
-    <CrossPlatformView fullWidthHeader={true}>
-      <BackHeader 
-        title="Service Manager" 
-        onBackPress={() => navigation.navigate('More')} 
-      />
-      <View style={[styles.container, { marginTop: 20 }]}></View>
-      {services.length > 0 ? (
+    <CrossPlatformView fullWidthHeader={true} style={{ position: 'relative', zIndex: 1 }}>
+      <View style={{ position: 'relative', zIndex: 1 }}>
+        <BackHeader 
+          title="Service Manager" 
+          onBackPress={() => navigation.navigate('More')}
+          style={{ zIndex: 1 }}
+        />
+      </View>
+      <View style={[styles.container, { marginTop: 20, position: 'relative', zIndex: 2 }]}>
         <ServiceManager
-          services={services}
+          services={services || []}
           setServices={setServices}
           setHasUnsavedChanges={setHasUnsavedChanges}
           isProfessionalTab={false}
         />
-      ) : (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No services yet</Text>
-          <Button 
-            mode="contained" 
-            onPress={() => setShowAddModal(true)}
-            style={styles.addButton}
-          >
-            Add Services
-          </Button>
-        </View>
-      )}
-
-      <AddServiceModal
-        visible={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        onSave={handleAddService}
-        setHasUnsavedChanges={setHasUnsavedChanges}
-      />
+      </View>
     </CrossPlatformView>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    position: 'relative',
+    zIndex: 1,
+  },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',

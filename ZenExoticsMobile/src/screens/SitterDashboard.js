@@ -107,7 +107,7 @@ const SitterDashboard = ({ navigation }) => {
           </Card.Actions>
         </Card>
 
-        <Card style={styles.card}>
+        {/* <Card style={styles.card}>
           <Card.Content>
             <Title>Client Requests</Title>
             {clientRequests.map((request) => (
@@ -127,7 +127,7 @@ const SitterDashboard = ({ navigation }) => {
           <Card.Actions>
             <Button onPress={() => navigation.navigate('ClientRequests')}>View All Requests</Button>
           </Card.Actions>
-        </Card>
+        </Card> */}
 
         <Card style={styles.card}>
           <Card.Content>

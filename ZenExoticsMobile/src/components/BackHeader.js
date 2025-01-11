@@ -52,6 +52,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
     backgroundColor: theme.colors.background,
+    zIndex: 100,
+    elevation: 100,
   },
   backButton: {
     marginRight: 16,
