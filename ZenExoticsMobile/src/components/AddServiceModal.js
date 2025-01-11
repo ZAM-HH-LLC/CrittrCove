@@ -44,15 +44,15 @@ const AddServiceModal = ({
   const [animalDropdownPosition, setAnimalDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
   const [categoryDropdownPosition, setCategoryDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
 
-  const [dropdownRef, setDropdownRef] = useState(null);
-  const [serviceDropdownRef, setServiceDropdownRef] = useState(null);
-  const [animalDropdownRef, setAnimalDropdownRef] = useState(null);
-  const [timeDropdownRef, setTimeDropdownRef] = useState(null);
-
   const serviceInputRef = useRef(null);
   const animalInputRef = useRef(null);
   const categoryInputRef = useRef(null);
   const timeInputRef = useRef(null);
+
+  const categoryDropdownRef = useRef(null);
+  const animalDropdownRef = useRef(null);
+  const serviceDropdownRef = useRef(null);
+  const timeDropdownRef = useRef(null);
 
   useEffect(() => {
     if (initialService) {
@@ -61,6 +61,39 @@ const AddServiceModal = ({
       setAdditionalRates(initialService.additionalRates || []);
     }
   }, [initialService]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showCategoryDropdown && 
+          categoryDropdownRef.current && 
+          !categoryDropdownRef.current.contains(event.target)) {
+        setShowCategoryDropdown(false);
+      }
+      if (showAnimalDropdown && 
+          animalDropdownRef.current && 
+          !animalDropdownRef.current.contains(event.target)) {
+        setShowAnimalDropdown(false);
+      }
+      if (showServiceDropdown && 
+          serviceDropdownRef.current && 
+          !serviceDropdownRef.current.contains(event.target)) {
+        setShowServiceDropdown(false);
+      }
+      if (showTimeDropdown && 
+          timeDropdownRef.current && 
+          !timeDropdownRef.current.contains(event.target)) {
+        setShowTimeDropdown(false);
+      }
+    };
+
+    if (visible) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showCategoryDropdown, showAnimalDropdown, showServiceDropdown, showTimeDropdown, visible]);
 
   const measureDropdown = (inputRef, setPosition, inputType) => {
     if (inputRef.current) {
@@ -196,7 +229,7 @@ const AddServiceModal = ({
               </TouchableOpacity>
               {showCategoryDropdown && (
                 <View 
-                  ref={ref => setDropdownRef(ref)}
+                  ref={categoryDropdownRef}
                   style={[styles.categoryDropdownContainer, categoryDropdownPosition]}
                 >
                   <ScrollView 
@@ -247,7 +280,7 @@ const AddServiceModal = ({
               />
               {showAnimalDropdown && (
                 <View 
-                  ref={ref => setAnimalDropdownRef(ref)}
+                  ref={animalDropdownRef}
                   style={[styles.suggestionsContainer, animalDropdownPosition]}
                 >
                   <ScrollView 
@@ -291,7 +324,7 @@ const AddServiceModal = ({
               />
               {showServiceDropdown && (
                 <View 
-                  ref={ref => setServiceDropdownRef(ref)}
+                  ref={serviceDropdownRef}
                   style={[styles.suggestionsContainer, serviceDropdownPosition]}
                 >
                   <ScrollView 
@@ -351,7 +384,10 @@ const AddServiceModal = ({
                 />
               </TouchableOpacity>
               {showTimeDropdown && (
-                <View style={styles.timeDropdownContainer}>
+                <View 
+                  ref={timeDropdownRef}
+                  style={styles.timeDropdownContainer}
+                >
                   <ScrollView
                     style={{ maxHeight: 200 }}
                     nestedScrollEnabled={true}
@@ -541,11 +577,10 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: theme.fontSizes.large,
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: 5,
     color: theme.colors.text,
   },
   inputWrapper: {
-    // marginBottom: 5,
     position: 'relative',
   },
   input: {
