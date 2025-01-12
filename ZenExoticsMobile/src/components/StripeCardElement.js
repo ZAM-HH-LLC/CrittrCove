@@ -103,8 +103,7 @@ const WebPaymentForm = ({ onChange, paymentType }) => {
                 border: '1px solid #ccc',
                 borderRadius: '4px',
                 width: '50%',
-                marginTop: '5px',
-                marginLeft: '20px'
+                marginTop: '5px'
               }}
             />
           </div>
@@ -124,8 +123,7 @@ const WebPaymentForm = ({ onChange, paymentType }) => {
                 border: '1px solid #ccc',
                 borderRadius: '4px',
                 width: '50%',
-                marginTop: '5px',
-                marginLeft: '20px'
+                marginTop: '5px'
               }}
             />
           </div>

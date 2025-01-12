@@ -44,12 +44,12 @@ export default function SignUp() {
       const response = await axios.post(`${API_BASE_URL}/api/users/register/`, userData);
       if (Platform.OS === 'ios' || Platform.OS === 'android') {
         Alert.alert('Success', 'Account created successfully!', [
-          { text: 'OK', onPress: () => navigation.navigate('ClientProfile') }
+          { text: 'OK', onPress: () => navigation.navigate('MyProfile') }
         ]);
       } else {
         setSuccessMessage('Account created successfully!');
         setTimeout(() => {
-          navigation.navigate('ClientProfile');
+          navigation.navigate('MyProfile');
         }, 1500); // Navigate after 1.5 seconds
       }
       setIsSignedIn(true);
