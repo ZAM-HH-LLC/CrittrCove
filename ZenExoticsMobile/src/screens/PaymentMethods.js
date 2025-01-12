@@ -137,14 +137,15 @@ const PaymentMethods = () => {
   };
 
   const handleEditMethod = (method, isReceivePayment) => {
-    setSelectedMethod(method);
+    setError('');
+    setSelectedMethod({ ...method, isReceivePayment });
     setNewPaymentMethod({
       type: method.type,
-      cardNumber: method.type === 'card' ? `****${method.last4}` : '',
-      expiryDate: method.type === 'card' ? method.expiryDate : '',
+      cardNumber: '',
+      expiryDate: '',
       cvc: '',
-      accountNumber: method.type === 'bank' ? method.accountNumber : '',
-      routingNumber: method.type === 'bank' ? method.routingNumber : '',
+      accountNumber: method.accountNumber || '',
+      routingNumber: method.routingNumber || '',
     });
     setModalVisible(true);
   };
@@ -337,7 +338,7 @@ const PaymentMethods = () => {
         />
         <Dialog.Content>
           <Text style={styles.verificationText}>
-            Please enter the two small deposit amounts that were made to your account:
+            A deposit will be made to your bank account in 1-2 business days of adding your bank account. Please enter the two small deposit amounts that were made to your account:
           </Text>
           <View style={styles.amountsContainer}>
             <TextInput
@@ -538,51 +539,31 @@ const PaymentMethods = () => {
         }
 
         let result;
-        if (newPaymentMethod.type === 'bank') {
-          try {
-            result = await cardElement.stripe.createToken('bank_account', {
-              country: 'US',
-              currency: 'usd',
-              routing_number: cardElement.value.routingNumber,
-              account_number: cardElement.value.accountNumber,
-              account_holder_type: 'individual',
-            });
-            
-            console.log('Bank token creation result:', result);
+        if (newPaymentMethod.type === 'card') {
+          // Handle credit card
+          result = await cardElement.stripe.createPaymentMethod({
+            type: 'card',
+            card: cardElement.elements.getElement(CardElement),
+          });
 
-            if (result.error || !result.token) {
-              throw new Error(result.error?.message || 'Invalid routing number. Please check and try again.');
-            }
+          console.log('Card payment method result:', result);
 
-            if (result.token.bank_account.status === 'new') {
-              const paymentMethodData = {
-                id: result.token.id,
-                type: 'bank',
-                accountNumber: `****${result.token.bank_account.last4}`,
-                routingNumber: cardElement.value.routingNumber,
-                bankName: result.token.bank_account.bank_name,
-                is_verified: false
-              };
-
-              // Update the appropriate list based on where it was added
-              if (selectedMethod?.isReceivePayment) {
-                setReceivePaymentMethods(prev => [...prev, paymentMethodData]);
-              } else {
-                setPayForServicesMethods(prev => [...prev, paymentMethodData]);
-              }
-
-              // Show verification instructions
-              setError(
-                'Bank account added but requires verification. Two small deposits will be made to your account in 1-2 business days. ' +
-                'Please check your account and return to verify the amounts.'
-              );
-            }
-          } catch (err) {
-            console.error('Bank account creation error:', err);
-            throw new Error(err.message || 'Invalid routing number. Please check and try again.');
+          if (result.error) {
+            throw new Error(result.error.message);
           }
+
+          const paymentMethodData = {
+            id: result.paymentMethod.id,
+            type: 'card',
+            last4: result.paymentMethod.card.last4,
+            brand: result.paymentMethod.card.brand,
+            is_verified: false
+          };
+
+          // Only add to payForServicesMethods since cards can't be used for receiving
+          setPayForServicesMethods(prev => [...prev, paymentMethodData]);
         } else {
-          // For bank accounts
+          // Handle bank account
           result = await cardElement.stripe.createToken('bank_account', {
             country: 'US',
             currency: 'usd',
@@ -590,38 +571,40 @@ const PaymentMethods = () => {
             account_number: cardElement.value.accountNumber,
             account_holder_type: 'individual',
           });
-          console.log('Created bank account token:', result);
+          
+          console.log('Bank token creation result:', result);
 
-          if (result.token.bank_account.status === 'new') {
-            const paymentMethodData = {
-              id: result.token.id,
-              type: 'bank',
-              accountNumber: `****${result.token.bank_account.last4}`,
-              routingNumber: cardElement.value.routingNumber,
-              bankName: result.token.bank_account.bank_name,
-              is_verified: false
-            };
-
-            // Update the appropriate list based on where it was added
-            if (selectedMethod?.isReceivePayment) {
-              setReceivePaymentMethods(prev => [...prev, paymentMethodData]);
-            } else {
-              setPayForServicesMethods(prev => [...prev, paymentMethodData]);
-            }
-
-            // Show verification instructions
-            setError(
-              'Bank account added but requires verification. Two small deposits will be made to your account in 1-2 business days. ' +
-              'Please check your account and return to verify the amounts.'
-            );
+          if (result.error || !result.token) {
+            throw new Error(result.error?.message || 'Invalid routing number. Please check and try again.');
           }
+
+          const paymentMethodData = {
+            id: result.token.id,
+            type: 'bank',
+            accountNumber: `****${result.token.bank_account.last4}`,
+            routingNumber: cardElement.value.routingNumber,
+            bankName: result.token.bank_account.bank_name,
+            is_verified: false
+          };
+
+          // Update the appropriate list based on where it was added
+          if (selectedMethod?.isReceivePayment) {
+            setReceivePaymentMethods(prev => [...prev, paymentMethodData]);
+          } else {
+            setPayForServicesMethods(prev => [...prev, paymentMethodData]);
+          }
+
+          setError(
+            'Bank account added but requires verification. Two small deposits will be made to your account in 1-2 business days. ' +
+            'Please check your account and return to verify the amounts.'
+          );
         }
 
         setModalVisible(false);
       } else {
         // Native platform handling
         const { paymentMethod, error } = await createPaymentMethod({
-          type: 'card',
+          type: newPaymentMethod.type,
           card: cardElement,
           is_receive_payment: selectedMethod?.isReceivePayment || false,
         });
@@ -659,10 +642,18 @@ const PaymentMethods = () => {
             value={activeTab}
             onValueChange={setActiveTab}
             buttons={[
-              { value: 'receive', label: 'Receive Payments' },
-              { value: 'pay', label: 'Pay for Services' },
+              { 
+                value: 'receive', 
+                label: 'Receive Payments',
+                style: { minWidth: 150 }
+              },
+              { 
+                value: 'pay', 
+                label: 'Pay for Services',
+                style: { minWidth: 150 }
+              },
             ]}
-            style={styles.segmentedButtons}
+            style={[styles.segmentedButtons, { width: '100%' }]}
           />
         )}
 
@@ -730,6 +721,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     maxWidth: MAX_WIDTH,
     alignSelf: 'center',
+    minHeight: 40,
   },
   sectionTitle: {
     fontSize: 20,

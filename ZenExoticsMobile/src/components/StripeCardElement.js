@@ -87,8 +87,12 @@ const WebPaymentForm = ({ onChange, paymentType }) => {
         />
       ) : (
         <div>
-          <div style={{ marginBottom: '10px' }}>
-            <label>Account Number</label>
+          <div style={{ 
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginBottom: '10px' }}>
+            {/* <label>Account Number</label> */}
             <input
               className="stripe-input"
               placeholder="Account Number"
@@ -98,13 +102,18 @@ const WebPaymentForm = ({ onChange, paymentType }) => {
                 padding: '10px',
                 border: '1px solid #ccc',
                 borderRadius: '4px',
-                width: '100%',
-                marginTop: '5px'
+                width: '50%',
+                marginTop: '5px',
+                marginLeft: '20px'
               }}
             />
           </div>
-          <div>
-            <label>Routing Number</label>
+          <div style={{ 
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginBottom: '10px' }}>
+            {/* <label>Routing Number</label> */}
             <input
               className="stripe-input"
               placeholder="Routing Number"
@@ -114,8 +123,9 @@ const WebPaymentForm = ({ onChange, paymentType }) => {
                 padding: '10px',
                 border: '1px solid #ccc',
                 borderRadius: '4px',
-                width: '100%',
-                marginTop: '5px'
+                width: '50%',
+                marginTop: '5px',
+                marginLeft: '20px'
               }}
             />
           </div>
@@ -133,7 +143,7 @@ const NativePaymentElement = ({ onChange, paymentType }) => {
   if (paymentType === 'bank') {
     // For native platforms, use regular inputs for bank accounts
     return (
-      <View>
+      <View style={[{ marginRight: 20 }]}>
         <TextInput
           placeholder="Account Number"
           onChangeText={(text) => onChange({
@@ -188,5 +198,12 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     marginVertical: 5,
     paddingHorizontal: 10,
-  }
+  },
+  bankInputsContainer: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+  },
+  bankInput: {
+    marginBottom: 16,
+  },
 }); 
