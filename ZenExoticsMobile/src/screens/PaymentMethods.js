@@ -7,6 +7,11 @@ import { theme } from '../styles/theme';
 import BackHeader from '../components/BackHeader';
 import { useNavigation } from '@react-navigation/native'; 
 import CrossPlatformView from '../components/CrossPlatformView';
+import axios from 'axios';
+import { createPaymentMethod } from '../utils/StripeService';
+import { StripeCardElement } from '../components/StripeCardElement';
+import { CardElement } from '@stripe/react-stripe-js';
+import { StripePaymentElement } from '../components/StripeCardElement';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const MAX_WIDTH = 500; // Maximum width for web view
@@ -32,17 +37,27 @@ const PaymentMethods = () => {
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
   const [methodToDelete, setMethodToDelete] = useState(null);
   const [deleteError, setDeleteError] = useState(null);
+  const stripe = Platform.OS !== 'web' ? stripeModule()?.useStripe() : null;
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [cardComplete, setCardComplete] = useState(false);
+  const [cardElement, setCardElement] = useState(null);
+  const [stripeElement, setStripeElement] = useState(null);
+  const [bankAccountComplete, setBankAccountComplete] = useState({
+    accountNumber: false,
+    routingNumber: false
+  });
 
   useEffect(() => {
     // Fetch payment methods from backend
     // This is a placeholder. Replace with actual API calls.
     setReceivePaymentMethods([
-      { id: '1', type: 'bank', accountNumber: '****1234', routingNumber: '123456789', isPrimary: true },
-      { id: '2', type: 'bank', accountNumber: '****5678', routingNumber: '987654321', isPrimary: false },
+      { id: '1', type: 'bank', accountNumber: '****1234', routingNumber: '123456789', isPrimary: true, is_verified: true },
+      { id: '2', type: 'bank', accountNumber: '****5678', routingNumber: '987654321', isPrimary: false, is_verified: true },
     ]);
     setPayForServicesMethods([
-      { id: '1', type: 'card', last4: '4242', brand: 'Visa', isPrimary: true },
-      { id: '2', type: 'bank', accountNumber: '****9012', routingNumber: '123456789', isPrimary: false },
+      { id: '1', type: 'card', last4: '4242', brand: 'Visa', isPrimary: true, is_verified: true },
+      { id: '2', type: 'bank', accountNumber: '****9012', routingNumber: '123456789', isPrimary: false, is_verified: true },
     ]);
   }, []);
 
@@ -52,22 +67,44 @@ const PaymentMethods = () => {
         <View style={styles.cardContent}>
           <View style={styles.methodInfo}>
             <Text style={styles.methodType}>
-              {method.type === 'card' ? `${method.brand} •••• ${method.last4}` : `Bank Account •••• ${method.accountNumber}`}
+              {method.type === 'card' 
+                ? `${method.brand} •••• ${method.last4}` 
+                : `Bank Account ${method.accountNumber || '•••• undefined'}`}
             </Text>
+            {method.bankName && <Text style={styles.bankName}>{method.bankName}</Text>}
             {method.isPrimary && <Text style={styles.primaryLabel}>Primary</Text>}
+            {!method.is_verified && (
+              <Text style={styles.verificationNeeded}>
+                {method.type === 'card' 
+                  ? 'Card Verification In Progress'
+                  : 'Bank Account Verification Required'}
+              </Text>
+            )}
           </View>
           <View style={styles.cardActions}>
-            <IconButton
-              icon={() => <MaterialCommunityIcons name="pencil" size={20} color={theme.colors.primary} />}
-              onPress={() => handleEditMethod(method, isReceivePayment)}
-            />
-            <IconButton
-              icon={() => <MaterialCommunityIcons name="delete" size={20} color={theme.colors.error} />}
-              onPress={() => handleDeleteMethod(method, isReceivePayment)}
-            />
+            {!method.is_verified && method.type === 'bank' && (
+              <Button
+                onPress={() => handleVerifyBankAccount(method)}
+                mode="contained"
+              >
+                Verify
+              </Button>
+            )}
+            {method.is_verified && (
+              <>
+                <IconButton
+                  icon={() => <MaterialCommunityIcons name="pencil" size={20} color={theme.colors.primary} />}
+                  onPress={() => handleEditMethod(method, isReceivePayment)}
+                />
+                <IconButton
+                  icon={() => <MaterialCommunityIcons name="delete" size={20} color={theme.colors.error} />}
+                  onPress={() => handleDeleteMethod(method, isReceivePayment)}
+                />
+              </>
+            )}
           </View>
         </View>
-        {!method.isPrimary && (
+        {!method.isPrimary && method.is_verified && (
           <Button 
             onPress={() => handleSetPrimary(method.id, isReceivePayment)}
             style={styles.setPrimaryButton}
@@ -79,7 +116,8 @@ const PaymentMethods = () => {
     </Card>
   );
 
-  const handleAddMethod = (isReceivePayment) => {
+  const handleAddMethod = async (isReceivePayment) => {
+    setError(null);
     setNewPaymentMethod({
       type: 'card',
       cardNumber: '',
@@ -194,51 +232,21 @@ const PaymentMethods = () => {
             ]}
             style={styles.segmentedButtons}
           />
-          {newPaymentMethod.type === 'card' ? (
-            <>
-              <TextInput
-                label="Card Number"
-                value={newPaymentMethod.cardNumber}
-                onChangeText={(text) => setNewPaymentMethod({ ...newPaymentMethod, cardNumber: text })}
-                style={styles.input}
-              />
-              <TextInput
-                label="Expiry Date"
-                value={newPaymentMethod.expiryDate}
-                onChangeText={(text) => setNewPaymentMethod({ ...newPaymentMethod, expiryDate: text })}
-                style={styles.input}
-              />
-              <TextInput
-                label="CVC"
-                value={newPaymentMethod.cvc}
-                onChangeText={(text) => setNewPaymentMethod({ ...newPaymentMethod, cvc: text })}
-                style={styles.input}
-              />
-            </>
-          ) : (
-            <>
-              <TextInput
-                label="Account Number"
-                value={newPaymentMethod.accountNumber}
-                onChangeText={(text) => setNewPaymentMethod({ ...newPaymentMethod, accountNumber: text })}
-                style={styles.input}
-              />
-              <TextInput
-                label="Routing Number"
-                value={newPaymentMethod.routingNumber}
-                onChangeText={(text) => setNewPaymentMethod({ ...newPaymentMethod, routingNumber: text })}
-                style={styles.input}
-              />
-            </>
-          )}
+          <StripePaymentElement 
+            onChange={handlePaymentChange}
+            paymentType={newPaymentMethod.type}
+          />
+          {error && <Text style={styles.errorText}>{error}</Text>}
         </Dialog.Content>
         <Dialog.Actions>
-          <Button onPress={() => setModalVisible(false)}>Cancel</Button>
-          <Button onPress={() => {
-            // Logic to save new payment method (implement API call later)
-            console.log('Save new payment method:', newPaymentMethod);
-            setModalVisible(false);
-          }}>Save</Button>
+          <Button onPress={() => setModalVisible(false)} disabled={loading}>Cancel</Button>
+          <Button 
+            onPress={handleSavePaymentMethod} 
+            disabled={loading || (newPaymentMethod.type === 'card' && !cardComplete)}
+            loading={loading}
+          >
+            Save
+          </Button>
         </Dialog.Actions>
       </Dialog>
     </Portal>
@@ -299,6 +307,210 @@ const PaymentMethods = () => {
       </Dialog>
     </Portal>
   );
+
+  // Add card verification handler
+  const handleVerifyCard = async (method) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Create a SetupIntent on your backend
+      const setupIntent = await axios.post('/api/create-setup-intent', {
+        payment_method_id: method.id
+      });
+
+      // Confirm the SetupIntent with Stripe
+      const result = await cardElement.stripe.confirmCardSetup(
+        setupIntent.client_secret,
+        {
+          payment_method: method.id
+        }
+      );
+
+      console.log('Card verification result:', result);
+
+      if (result.error) {
+        throw new Error(result.error.message);
+      }
+
+      // Update the payment method status in your lists
+      const updateMethod = (methods) =>
+        methods.map(m =>
+          m.id === method.id
+            ? { ...m, status: 'verified', verificationNeeded: false }
+            : m
+        );
+
+      setReceivePaymentMethods(prev => updateMethod(prev));
+      setPayForServicesMethods(prev => updateMethod(prev));
+
+      setError('Card successfully verified!');
+    } catch (err) {
+      console.error('Card verification error:', err);
+      setError(err.message || 'Failed to verify card');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Add these functions back after handleAddMethod
+  const handlePaymentChange = (event) => {
+    console.log('Payment change event:', event);
+    if (Platform.OS === 'web') {
+      if (newPaymentMethod.type === 'card') {
+        setCardComplete(event.complete);
+      } else {
+        // For bank accounts, track both fields
+        if (event.value) {
+          setBankAccountComplete(prev => ({
+            ...prev,
+            accountNumber: event.value.accountNumber?.length >= 9 || prev.accountNumber,
+            routingNumber: event.value.routingNumber?.length === 9 || prev.routingNumber
+          }));
+        }
+        setCardComplete(bankAccountComplete.accountNumber && bankAccountComplete.routingNumber);
+      }
+
+      setCardElement({
+        stripe: event.stripe,
+        elements: event.elements,
+        complete: event.complete,
+        paymentType: newPaymentMethod.type,
+        value: event.value
+      });
+
+      // Update newPaymentMethod state if it's a bank account
+      if (newPaymentMethod.type === 'bank' && event.value) {
+        setNewPaymentMethod(prev => ({
+          ...prev,
+          accountNumber: event.value.accountNumber || prev.accountNumber,
+          routingNumber: event.value.routingNumber || prev.routingNumber,
+        }));
+      }
+    } else {
+      setCardComplete(event.complete);
+      setCardElement(event);
+    }
+  };
+
+  const handleSavePaymentMethod = async () => {
+    if (newPaymentMethod.type === 'card') {
+      if (!cardComplete) {
+        setError('Please complete card details');
+        return;
+      }
+    } else if (newPaymentMethod.type === 'bank') {
+      if (!bankAccountComplete.accountNumber || !bankAccountComplete.routingNumber) {
+        setError('Please complete both account number and routing number');
+        return;
+      }
+    }
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      if (Platform.OS === 'web') {
+        if (!cardElement.stripe || !cardElement.elements) {
+          throw new Error('Stripe not initialized');
+        }
+
+        let result;
+        if (newPaymentMethod.type === 'card') {
+          // Create payment method for cards
+          result = await cardElement.stripe.createPaymentMethod({
+            type: 'card',
+            card: cardElement.elements.getElement(CardElement),
+          });
+          console.log('Created card payment method:', result);
+
+          if (result.error) {
+            throw new Error(result.error.message);
+          }
+
+          const paymentMethodData = {
+            id: result.paymentMethod.id,
+            type: 'card',
+            last4: result.paymentMethod.card.last4,
+            brand: result.paymentMethod.card.brand,
+            is_verified: false
+          };
+
+          // Update the appropriate list
+          if (selectedMethod?.isReceivePayment) {
+            setReceivePaymentMethods(prev => [...prev, paymentMethodData]);
+          } else {
+            setPayForServicesMethods(prev => [...prev, paymentMethodData]);
+          }
+
+          setError(
+            'Card added but requires verification. Click verify to confirm this is your card.'
+          );
+        } else {
+          // For bank accounts
+          result = await cardElement.stripe.createToken('bank_account', {
+            country: 'US',
+            currency: 'usd',
+            routing_number: cardElement.value.routingNumber,
+            account_number: cardElement.value.accountNumber,
+            account_holder_type: 'individual',
+          });
+          console.log('Created bank account token:', result);
+
+          if (result.token.bank_account.status === 'new') {
+            const paymentMethodData = {
+              id: result.token.id,
+              type: 'bank',
+              accountNumber: `****${result.token.bank_account.last4}`,
+              routingNumber: cardElement.value.routingNumber,
+              bankName: result.token.bank_account.bank_name,
+              is_verified: false
+            };
+
+            // Add to list but mark as unverified
+            if (selectedMethod?.isReceivePayment) {
+              setReceivePaymentMethods(prev => [...prev, paymentMethodData]);
+            } else {
+              setPayForServicesMethods(prev => [...prev, paymentMethodData]);
+            }
+
+            // Show verification instructions
+            setError(
+              'Bank account added but requires verification. Two small deposits will be made to your account in 1-2 business days. ' +
+              'Please check your account and return to verify the amounts.'
+            );
+          }
+        }
+
+        setModalVisible(false);
+      } else {
+        // Native platform handling
+        const { paymentMethod, error } = await createPaymentMethod({
+          type: 'card',
+          card: cardElement,
+          is_receive_payment: selectedMethod?.isReceivePayment || false,
+        });
+
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        // Update local state with new payment method
+        if (selectedMethod?.isReceivePayment) {
+          setReceivePaymentMethods(prev => [...prev, paymentMethod]);
+        } else {
+          setPayForServicesMethods(prev => [...prev, paymentMethod]);
+        }
+      }
+
+      setModalVisible(false);
+    } catch (err) {
+      console.error('Payment method error:', err);
+      setError(err.message || 'Failed to save payment method');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <CrossPlatformView fullWidthHeader={true}>
@@ -414,7 +626,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   dialog: {
-    width: Platform.OS === 'web' ? '40%' : '90%',
+    width: '90%',
     alignSelf: 'center',
     maxWidth: 500,
   },
@@ -431,12 +643,32 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: theme.colors.error,
-    marginBottom: 16,
+    marginBottom: 10,
   },
   closeButton: {
     position: 'absolute',
     right: 5,
     top: 5,
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bankName: {
+    fontSize: 14,
+    color: theme.colors.secondary,
+    marginTop: 4,
+  },
+  verificationNeeded: {
+    color: theme.colors.error,
+    fontSize: 12,
+    marginTop: 4,
   },
 });
 
