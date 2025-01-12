@@ -47,6 +47,12 @@ const PaymentMethods = () => {
     accountNumber: false,
     routingNumber: false
   });
+  const [verificationModalVisible, setVerificationModalVisible] = useState(false);
+  const [verificationAmounts, setVerificationAmounts] = useState({
+    first: '',
+    second: ''
+  });
+  const [verifyingMethod, setVerifyingMethod] = useState(null);
 
   useEffect(() => {
     // Fetch payment methods from backend
@@ -313,6 +319,117 @@ const PaymentMethods = () => {
     </Portal>
   );
 
+  const handleVerifyBankAccount = (method) => {
+    setVerifyingMethod(method);
+    setVerificationAmounts({ first: '', second: '' });
+    setVerificationModalVisible(true);
+    setError(null);
+  };
+
+  const renderVerificationModal = () => (
+    <Portal>
+      <Dialog visible={verificationModalVisible} onDismiss={() => setVerificationModalVisible(false)} style={styles.dialog}>
+        <Dialog.Title>Verify Bank Account</Dialog.Title>
+        <IconButton
+          icon={() => <MaterialCommunityIcons name="close" size={24} color={theme.colors.text} />}
+          onPress={() => setVerificationModalVisible(false)}
+          style={styles.closeButton}
+        />
+        <Dialog.Content>
+          <Text style={styles.verificationText}>
+            Please enter the two small deposit amounts that were made to your account:
+          </Text>
+          <View style={styles.amountsContainer}>
+            <TextInput
+              label="First Amount (cents)"
+              value={verificationAmounts.first}
+              onChangeText={(text) => setVerificationAmounts(prev => ({ ...prev, first: text }))}
+              keyboardType="numeric"
+              style={styles.amountInput}
+              mode="outlined"
+              placeholder="32"
+            />
+            <TextInput
+              label="Second Amount (cents)"
+              value={verificationAmounts.second}
+              onChangeText={(text) => setVerificationAmounts(prev => ({ ...prev, second: text }))}
+              keyboardType="numeric"
+              style={styles.amountInput}
+              mode="outlined"
+              placeholder="45"
+            />
+          </View>
+          {error && <Text style={styles.errorText}>{error}</Text>}
+        </Dialog.Content>
+        <Dialog.Actions>
+          <Button onPress={() => setVerificationModalVisible(false)} disabled={loading}>
+            Cancel
+          </Button>
+          <Button
+            onPress={handleVerificationSubmit}
+            loading={loading}
+            disabled={loading || !verificationAmounts.first || !verificationAmounts.second}
+          >
+            Verify
+          </Button>
+        </Dialog.Actions>
+      </Dialog>
+    </Portal>
+  );
+
+  const handleVerificationSubmit = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      if (!verifyingMethod) {
+        throw new Error('Missing required verification data');
+      }
+
+      const firstAmount = parseInt(verificationAmounts.first);
+      const secondAmount = parseInt(verificationAmounts.second);
+
+      if ([firstAmount, secondAmount].some(amount => isNaN(amount) || amount < 1 || amount > 99)) {
+        throw new Error('Please enter valid amounts between 1 and 99 cents');
+      }
+
+      // Simulate backend API call
+      const simulateBackendVerification = () => new Promise((resolve, reject) => {
+        setTimeout(() => {
+          // Simulate success for amounts 32 and 45, fail for others
+          if (firstAmount === 12 && secondAmount === 12) {
+            resolve({ success: true });
+          } else {
+            reject(new Error('The amounts entered do not match our records. Please verify the amounts and try again.'));
+          }
+        }, 1000);
+      });
+
+      const result = await simulateBackendVerification();
+
+      // Update the UI if verification succeeds
+      const updateMethod = (methods) =>
+        methods.map(m =>
+          m.id === verifyingMethod.id
+            ? { ...m, is_verified: true }
+            : m
+        );
+
+      setReceivePaymentMethods(prev => updateMethod(prev));
+      setPayForServicesMethods(prev => updateMethod(prev));
+
+      setVerificationModalVisible(false);
+      setVerifyingMethod(null);
+      setVerificationAmounts({ first: '', second: '' });
+      setError('Bank account successfully verified!');
+    } catch (err) {
+      console.error('Verification error:', err);
+      setError(err.message || 'Failed to verify bank account. Please check the amounts and try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Add card verification handler
   const handleVerifyCard = async (method) => {
     setLoading(true);
@@ -421,32 +538,49 @@ const PaymentMethods = () => {
         }
 
         let result;
-        if (newPaymentMethod.type === 'card') {
-          if (selectedMethod?.isReceivePayment) {
-            throw new Error('Cannot add credit card for receiving payments. Please add a bank account.');
+        if (newPaymentMethod.type === 'bank') {
+          try {
+            result = await cardElement.stripe.createToken('bank_account', {
+              country: 'US',
+              currency: 'usd',
+              routing_number: cardElement.value.routingNumber,
+              account_number: cardElement.value.accountNumber,
+              account_holder_type: 'individual',
+            });
+            
+            console.log('Bank token creation result:', result);
+
+            if (result.error || !result.token) {
+              throw new Error(result.error?.message || 'Invalid routing number. Please check and try again.');
+            }
+
+            if (result.token.bank_account.status === 'new') {
+              const paymentMethodData = {
+                id: result.token.id,
+                type: 'bank',
+                accountNumber: `****${result.token.bank_account.last4}`,
+                routingNumber: cardElement.value.routingNumber,
+                bankName: result.token.bank_account.bank_name,
+                is_verified: false
+              };
+
+              // Update the appropriate list based on where it was added
+              if (selectedMethod?.isReceivePayment) {
+                setReceivePaymentMethods(prev => [...prev, paymentMethodData]);
+              } else {
+                setPayForServicesMethods(prev => [...prev, paymentMethodData]);
+              }
+
+              // Show verification instructions
+              setError(
+                'Bank account added but requires verification. Two small deposits will be made to your account in 1-2 business days. ' +
+                'Please check your account and return to verify the amounts.'
+              );
+            }
+          } catch (err) {
+            console.error('Bank account creation error:', err);
+            throw new Error(err.message || 'Invalid routing number. Please check and try again.');
           }
-          
-          // Create payment method for cards
-          result = await cardElement.stripe.createPaymentMethod({
-            type: 'card',
-            card: cardElement.elements.getElement(CardElement),
-          });
-          console.log('Created card payment method:', result);
-
-          if (result.error) {
-            throw new Error(result.error.message);
-          }
-
-          const paymentMethodData = {
-            id: result.paymentMethod.id,
-            type: 'card',
-            last4: result.paymentMethod.card.last4,
-            brand: result.paymentMethod.card.brand,
-            is_verified: false
-          };
-
-          // Update only payForServicesMethods for cards
-          setPayForServicesMethods(prev => [...prev, paymentMethodData]);
         } else {
           // For bank accounts
           result = await cardElement.stripe.createToken('bank_account', {
@@ -565,6 +699,7 @@ const PaymentMethods = () => {
         {renderAddMethodModal()}
         {renderConfirmPrimaryDialog()}
         {renderDeleteConfirmDialog()}
+        {renderVerificationModal()}
       </ScrollView>
     </CrossPlatformView>
   );
@@ -670,6 +805,19 @@ const styles = StyleSheet.create({
     color: theme.colors.error,
     fontSize: 12,
     marginTop: 4,
+  },
+  amountsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 16,
+    marginBottom: 16,
+  },
+  amountInput: {
+    width: '48%',
+  },
+  verificationText: {
+    marginBottom: 8,
+    fontSize: 14,
   },
 });
 
