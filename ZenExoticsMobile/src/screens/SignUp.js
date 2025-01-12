@@ -31,12 +31,13 @@ export default function SignUp() {
       return;
     }
 
-    // Prepare data for POST request
+    // Updated data structure to match new backend expectations
     const userData = {
-      first_name: firstName.trim(),
-      last_name: lastName.trim(),
+      name: `${firstName.trim()} ${lastName.trim()}`, // Combine first and last name
       email: email.trim().toLowerCase(),
-      password,
+      password: password,
+      password2: confirmPassword, // Add confirmation password
+      phone_number: '', // Add empty phone number for now
     };
 
     setLoading(true);
@@ -50,15 +51,20 @@ export default function SignUp() {
         setSuccessMessage('Account created successfully!');
         setTimeout(() => {
           navigation.navigate('MyProfile');
-        }, 1500); // Navigate after 1.5 seconds
+        }, 1500);
       }
       setIsSignedIn(true);
     } catch (error) {
       let errorMessage = 'Signup Failed: An error occurred during signup.';
       if (error.response) {
         const errorData = error.response.data;
-        if (errorData.email && Array.isArray(errorData.email)) {
-          errorMessage = `Signup Failed: ${errorData.email[0].charAt(0).toUpperCase() + errorData.email[0].slice(1)}`;
+        // Handle specific field errors
+        if (errorData) {
+          const firstError = Object.entries(errorData)[0];
+          if (firstError) {
+            const [field, messages] = firstError;
+            errorMessage = `${field}: ${Array.isArray(messages) ? messages[0] : messages}`;
+          }
         }
       }
       if (Platform.OS === 'ios' || Platform.OS === 'android') {

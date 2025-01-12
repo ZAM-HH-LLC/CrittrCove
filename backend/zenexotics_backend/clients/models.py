@@ -8,14 +8,21 @@ class Client(models.Model):
         related_name='client_profile'
     )
     about_me = models.TextField(blank=True)
-    emergency_contact_name = models.CharField(max_length=255, blank=True)
-    emergency_contact_phone = models.CharField(max_length=20, blank=True)
-    authorized_household_members = models.TextField(
+    emergency_contact = models.JSONField(
+        default=dict,
         blank=True,
-        null=True,
-        default=''
+        help_text='List of emergency contacts'
+    )
+    authorized_household_members = models.JSONField(
+        default=list,
+        blank=True,
+        help_text='List of people authorized to interact with the pet'
     )
     last_booking = models.DateField(null=True, blank=True)
+    verified_payment_method = models.BooleanField(
+        default=False,
+        help_text='True if client has a verified payment method'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

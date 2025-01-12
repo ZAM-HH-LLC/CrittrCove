@@ -49,8 +49,9 @@ INSTALLED_APPS = [
     'contracts',
     'clients',
     'sitters',
-    'bookings',
     'pets',
+    'professional_status',
+    'user_addresses',
 ]
 
 MIDDLEWARE = [

@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.utils import timezone
 import secrets
 import string
 
@@ -18,7 +19,7 @@ class UserManager(BaseUserManager):
     def create_superuser(self, email, name, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
-        extra_fields.setdefault('is_verified', True)
+        extra_fields.setdefault('email_is_verified', True)
         return self.create_user(email, name, password, **extra_fields)
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -28,29 +29,19 @@ class User(AbstractBaseUser, PermissionsMixin):
     name = models.CharField(max_length=255)
     profile_picture = models.ImageField(upload_to='user_photos/', null=True, blank=True)
     phone_number = models.CharField(max_length=20, blank=True)
-    address = models.TextField(blank=True)
+    birthday = models.DateTimeField(null=True, blank=True)
     
-    # Account Status
+    # Status fields
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
-    is_verified = models.BooleanField(default=False)
-    is_client = models.BooleanField(default=True)
-    is_sitter = models.BooleanField(default=False)
+    identity_verified = models.BooleanField(default=False)
+    email_is_verified = models.BooleanField(default=False)
     
-    # Sitter Approval Status
-    approved_for_dogs = models.BooleanField(default=False)
-    approved_for_cats = models.BooleanField(default=False)
-    approved_for_exotics = models.BooleanField(default=False)
-    approved_at = models.DateTimeField(null=True, blank=True)
-    
-    # Sitter Application Status
-    wants_to_be_sitter = models.BooleanField(default=False)
-    wants_dog_approval = models.BooleanField(default=False)
-    wants_cat_approval = models.BooleanField(default=False)
-    wants_exotics_approval = models.BooleanField(default=False)
+    # Payment related
+    stripe_customer_id = models.CharField(max_length=100, blank=True, null=True)
     
     # Timestamps
-    date_joined = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     last_login = models.DateTimeField(null=True, blank=True)
     
     USERNAME_FIELD = 'email'

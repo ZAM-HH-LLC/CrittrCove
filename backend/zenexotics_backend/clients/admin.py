@@ -3,10 +3,10 @@ from .models import Client
 
 @admin.register(Client)
 class ClientAdmin(admin.ModelAdmin):
-    list_display = ('get_name', 'get_email', 'last_booking', 'created_at')
-    list_filter = ('last_booking', 'created_at')
-    search_fields = ('user__email', 'user__name')
-    readonly_fields = ('created_at', 'updated_at')
+    list_display = ('id', 'get_name', 'get_email', 'last_booking', 'verified_payment_method', 'created_at')
+    list_filter = ('last_booking', 'verified_payment_method', 'created_at')
+    search_fields = ('user__email', 'user__name', 'id')
+    readonly_fields = ('id', 'created_at', 'updated_at')
 
     def get_name(self, obj):
         return obj.user.name
@@ -18,14 +18,13 @@ class ClientAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ('User Information', {
-            'fields': ('user',)
+            'fields': ('id', 'user')
         }),
         ('Client Details', {
-            'fields': ('about_me', 'emergency_contact_name', 
-                      'emergency_contact_phone', 'authorized_household_members')
+            'fields': ('about_me', 'emergency_contact', 'authorized_household_members')
         }),
-        ('Booking Information', {
-            'fields': ('last_booking',)
+        ('Payment & Booking Information', {
+            'fields': ('verified_payment_method', 'last_booking')
         }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),

@@ -11,7 +11,8 @@ class ClientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Client
         fields = [
-            'id', 'name', 'email', 'about_me',
-            'emergency_contact_name', 'emergency_contact_phone',
-            'authorized_household_members', 'last_booking', 'created_at'
+            'client_id', 'name', 'email', 'about_me',
+            'emergency_contact', 'authorized_household_members',
+            'last_booking', 'verified_payment_method',
+            'created_at'
         ]

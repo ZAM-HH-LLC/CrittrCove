@@ -1,31 +1,40 @@
 from rest_framework import serializers
-from django.contrib.auth.models import BaseUserManager
-from .models import User
+from django.contrib.auth import get_user_model
+from rest_framework.validators import UniqueValidator
+from django.contrib.auth.password_validation import validate_password
+
+User = get_user_model()
 
 class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
-    first_name = serializers.CharField(write_only=True)
-    last_name = serializers.CharField(write_only=True)
+    email = serializers.EmailField(
+        required=True,
+        validators=[UniqueValidator(queryset=User.objects.all())]
+    )
+    password = serializers.CharField(
+        write_only=True, 
+        required=True, 
+        validators=[validate_password]
+    )
+    password2 = serializers.CharField(write_only=True, required=True)
 
     class Meta:
         model = User
-        fields = [
-            'email', 'first_name', 'last_name', 'password',
-            'user_id', 'date_joined', 'approved_at', 'is_sitter',
-            'approved_for_dogs', 'approved_for_cats', 'approved_for_exotics'
-        ]
-        read_only_fields = [
-            'user_id', 'date_joined', 'approved_at', 'is_sitter',
-            'approved_for_dogs', 'approved_for_cats', 'approved_for_exotics'
-        ]
+        fields = ('email', 'password', 'password2', 'name', 'phone_number')
+        extra_kwargs = {
+            'name': {'required': True},
+            'phone_number': {'required': True}
+        }
+
+    def validate(self, attrs):
+        if attrs['password'] != attrs['password2']:
+            raise serializers.ValidationError(
+                {"password": "Password fields didn't match."}
+            )
+        return attrs
 
     def create(self, validated_data):
-        name = f"{validated_data['first_name']} {validated_data['last_name']}"
-        user = User.objects.create_user(
-            email=validated_data['email'],
-            name=name,
-            password=validated_data['password']
-        )
+        validated_data.pop('password2')
+        user = User.objects.create_user(**validated_data)
         return user
 
 class UserSerializer(serializers.ModelSerializer):
