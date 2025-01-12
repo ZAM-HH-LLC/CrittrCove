@@ -118,8 +118,9 @@ const PaymentMethods = () => {
 
   const handleAddMethod = async (isReceivePayment) => {
     setError(null);
+    setSelectedMethod({ isReceivePayment });
     setNewPaymentMethod({
-      type: 'card',
+      type: isReceivePayment ? 'bank' : 'card',
       cardNumber: '',
       expiryDate: '',
       cvc: '',
@@ -216,22 +217,26 @@ const PaymentMethods = () => {
   const renderAddMethodModal = () => (
     <Portal>
       <Dialog visible={modalVisible} onDismiss={() => setModalVisible(false)} style={styles.dialog}>
-        <Dialog.Title>Add Payment Method</Dialog.Title>
+        <Dialog.Title>
+          {selectedMethod?.isReceivePayment ? 'Add Bank Account' : 'Add Payment Method'}
+        </Dialog.Title>
         <IconButton
           icon={() => <MaterialCommunityIcons name="close" size={24} color={theme.colors.text} />}
           onPress={() => setModalVisible(false)}
           style={styles.closeButton}
         />
         <Dialog.Content>
-          <SegmentedButtons
-            value={newPaymentMethod.type}
-            onValueChange={(value) => setNewPaymentMethod({ ...newPaymentMethod, type: value })}
-            buttons={[
-              { value: 'card', label: 'Credit Card' },
-              { value: 'bank', label: 'Bank Account' },
-            ]}
-            style={styles.segmentedButtons}
-          />
+          {!selectedMethod?.isReceivePayment && (
+            <SegmentedButtons
+              value={newPaymentMethod.type}
+              onValueChange={(value) => setNewPaymentMethod({ ...newPaymentMethod, type: value })}
+              buttons={[
+                { value: 'card', label: 'Credit Card' },
+                { value: 'bank', label: 'Bank Account' },
+              ]}
+              style={styles.segmentedButtons}
+            />
+          )}
           <StripePaymentElement 
             onChange={handlePaymentChange}
             paymentType={newPaymentMethod.type}
@@ -417,6 +422,10 @@ const PaymentMethods = () => {
 
         let result;
         if (newPaymentMethod.type === 'card') {
+          if (selectedMethod?.isReceivePayment) {
+            throw new Error('Cannot add credit card for receiving payments. Please add a bank account.');
+          }
+          
           // Create payment method for cards
           result = await cardElement.stripe.createPaymentMethod({
             type: 'card',
@@ -436,16 +445,8 @@ const PaymentMethods = () => {
             is_verified: false
           };
 
-          // Update the appropriate list
-          if (selectedMethod?.isReceivePayment) {
-            setReceivePaymentMethods(prev => [...prev, paymentMethodData]);
-          } else {
-            setPayForServicesMethods(prev => [...prev, paymentMethodData]);
-          }
-
-          setError(
-            'Card added but requires verification. Click verify to confirm this is your card.'
-          );
+          // Update only payForServicesMethods for cards
+          setPayForServicesMethods(prev => [...prev, paymentMethodData]);
         } else {
           // For bank accounts
           result = await cardElement.stripe.createToken('bank_account', {
@@ -467,7 +468,7 @@ const PaymentMethods = () => {
               is_verified: false
             };
 
-            // Add to list but mark as unverified
+            // Update the appropriate list based on where it was added
             if (selectedMethod?.isReceivePayment) {
               setReceivePaymentMethods(prev => [...prev, paymentMethodData]);
             } else {
@@ -495,7 +496,7 @@ const PaymentMethods = () => {
           throw new Error(error.message);
         }
 
-        // Update local state with new payment method
+        // Update the appropriate list
         if (selectedMethod?.isReceivePayment) {
           setReceivePaymentMethods(prev => [...prev, paymentMethod]);
         } else {
@@ -541,7 +542,7 @@ const PaymentMethods = () => {
               onPress={() => handleAddMethod(true)}
               style={styles.addButton}
             >
-              Add Payment Method
+              Add Bank Account
             </Button>
           </View>
         )}
