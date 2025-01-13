@@ -31,7 +31,7 @@ const MoreScreen = ({ navigation }) => {
       setTimeout(() => {
         console.log('Navigating to:', newRole === 'sitter' ? 'SitterDashboard' : 'Dashboard');
         navigation.navigate(newRole === 'sitter' ? 'SitterDashboard' : 'Dashboard');
-      }, 100);
+      }, 0);
     } else {
       Alert.alert('Not Approved', 'You are not approved as a sitter yet.');
       navigation.navigate('BecomeSitter');
