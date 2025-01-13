@@ -12,6 +12,11 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 import os
+from dotenv import load_dotenv
+import dj_database_url
+
+# Load environment variables
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -90,10 +95,10 @@ WSGI_APPLICATION = "zenexotics_backend.wsgi.application"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
+    'default': dj_database_url.config(
+        default=os.getenv('DATABASE_URL'),
+        conn_max_age=600
+    )
 }
 
 
@@ -176,3 +181,34 @@ DEFAULT_FROM_EMAIL = 'zam.hh.llc@gmail.com'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Add this near your other logging configurations
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'django.db.backends': {
+            'handlers': ['console'],
+            'level': 'DEBUG',  # Change this to ERROR for less verbose output
+            'propagate': False,
+        },
+        # Add custom loggers for your apps
+        'users': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
+        'clients': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
+        'professionals': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
+    },
+}
