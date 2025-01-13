@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useContext } from 'react';
 import { View, ScrollView, StyleSheet, Platform, SafeAreaView, Dimensions, StatusBar, TouchableOpacity, Text } from 'react-native';
 import { Card, Title, Paragraph, List, Button, useTheme, Appbar } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -13,8 +13,7 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 const SitterDashboard = ({ navigation }) => {
   const { colors } = useTheme();
-  const [firstName, setFirstName] = useState('');
-  const { signOut } = useContext(AuthContext);
+  const { signOut, firstName } = useContext(AuthContext);
 
   const refreshToken = async () => {
     try {
@@ -31,33 +30,6 @@ const SitterDashboard = ({ navigation }) => {
       navigation.navigate('SignIn');
     }
   };
-
-  const fetchUserName = async () => {
-    try {
-      let token = await AsyncStorage.getItem('userToken');
-      if (!token) {
-        console.error('No token found');
-        return;
-      }
-      const response = await axios.get(`${API_BASE_URL}/api/users/get-name/`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setFirstName(response.data.first_name);
-    } catch (error) {
-      if (error.response && error.response.status === 401) {
-        const newToken = await refreshToken();
-        if (newToken) {
-          fetchUserName();
-        }
-      } else {
-        console.error('Error fetching user name:', error.response ? error.response.data : error.message);
-      }
-    }
-  };
-
-  useEffect(() => {
-    fetchUserName();
-  }, []);
 
   // TODO: Fetch upcoming bookings from the backend
   const upcomingBookings = [

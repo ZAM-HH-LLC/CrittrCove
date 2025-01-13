@@ -15,6 +15,23 @@ export const AuthProvider = ({ children }) => {
   const [isApprovedSitter, setIsApprovedSitter] = useState(false);
   const [loading, setLoading] = useState(true);
   const [screenWidth, setScreenWidth] = useState(Dimensions.get('window').width);
+  const [firstName, setFirstName] = useState('');
+
+  const fetchUserName = async () => {
+    try {
+      let token = await AsyncStorage.getItem('userToken');
+      if (!token) {
+        console.error('No token found');
+        return;
+      }
+      const response = await axios.get(`${API_BASE_URL}/api/users/get-name/`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setFirstName(response.data.first_name);
+    } catch (error) {
+      console.error('Error fetching user name:', error.response ? error.response.data : error.message);
+    }
+  };
 
   // Single useEffect for auth state management
   useEffect(() => {
@@ -51,6 +68,12 @@ export const AuthProvider = ({ children }) => {
     loadAuthState();
   }, []); // Only run on mount
 
+  useEffect(() => {
+    if (isSignedIn) {
+      fetchUserName();
+    }
+  }, [isSignedIn]);
+
   const checkSitterStatus = async (token) => {
     try {
       console.log('Checking professional status with token:', token);
@@ -63,31 +86,24 @@ export const AuthProvider = ({ children }) => {
       if (response.data) {
         const { is_approved } = response.data;
         
-        // Use is_approved to determine if they're a professional
-        const isProfessional = is_approved;
+        // Set approval status
+        setIsApprovedSitter(is_approved);
+        await AsyncStorage.setItem('isApprovedSitter', String(is_approved));
         
-        console.log('Professional status check:', {
-          isProfessional,
-          is_approved,
-          responseData: response.data
-        });
-        
-        setUserRole(isProfessional ? 'sitter' : 'petOwner');
-        setIsApprovedSitter(isProfessional);
-        
-        // Update storage
-        await AsyncStorage.multiSet([
-          ['userRole', isProfessional ? 'sitter' : 'petOwner'],
-          ['isApprovedSitter', String(isProfessional)]
-        ]);
+        // Always set initial role based on approval status during sign in
+        const initialRole = is_approved ? 'sitter' : 'petOwner';
+        console.log('Setting initial role to:', initialRole);
+        setUserRole(initialRole);
+        await AsyncStorage.setItem('userRole', initialRole);
 
-        console.log('Updated storage with:', {
-          userRole: isProfessional ? 'sitter' : 'petOwner',
-          isApprovedSitter: isProfessional
-        });
+        return {
+          isApprovedSitter: is_approved,
+          userRole: initialRole
+        };
       }
     } catch (error) {
       console.error('Error checking professional status:', error.response?.data || error);
+      return null;
     }
   };
 
@@ -99,7 +115,12 @@ export const AuthProvider = ({ children }) => {
       ]);
       console.log('sign in token', token);
       setIsSignedIn(true);
-      await checkSitterStatus(token);
+      
+      // Wait for checkSitterStatus to complete and get the result
+      const status = await checkSitterStatus(token);
+      console.log('Sign in complete with status:', status);
+      
+      return status; // Return the status so the calling component can navigate appropriately
     } catch (error) {
       console.error('Error during sign in:', error);
       throw error;
@@ -125,8 +146,20 @@ export const AuthProvider = ({ children }) => {
   const switchRole = async () => {
     if (isApprovedSitter) {
       const newRole = userRole === 'sitter' ? 'petOwner' : 'sitter';
+      console.log('Switching role from', userRole, 'to', newRole);
+      
+      // Update state first
       setUserRole(newRole);
-      await AsyncStorage.setItem('userRole', newRole);
+      
+      // Then update AsyncStorage
+      try {
+        await AsyncStorage.setItem('userRole', newRole);
+        console.log('Successfully updated AsyncStorage with new role:', newRole);
+      } catch (error) {
+        console.error('Error updating role in AsyncStorage:', error);
+      }
+    } else {
+      console.log('User is not an approved sitter, cannot switch roles');
     }
   };
 
@@ -159,28 +192,26 @@ export const AuthProvider = ({ children }) => {
         console.log('Fresh professional status:', response.data);
         
         const { is_approved } = response.data;
-        const isProfessional = is_approved;
         
         console.log('Determined status:', {
-          isProfessional,
-          is_approved
+          is_approved,
+          currentRole: storedRole[1]
         });
 
-        // Update state immediately
+        // Update approval status
         setIsSignedIn(true);
-        setUserRole(isProfessional ? 'sitter' : 'petOwner');
-        setIsApprovedSitter(isProfessional);
-
-        // Update AsyncStorage
-        await AsyncStorage.multiSet([
-          ['userRole', isProfessional ? 'sitter' : 'petOwner'],
-          ['isApprovedSitter', String(isProfessional)]
-        ]);
+        setIsApprovedSitter(is_approved);
+        await AsyncStorage.setItem('isApprovedSitter', String(is_approved));
+        
+        // Always respect the stored role if it exists
+        if (storedRole[1]) {
+          setUserRole(storedRole[1]);
+        }
         
         return {
           isSignedIn: true,
-          userRole: isProfessional ? 'sitter' : 'petOwner',
-          isApprovedSitter: isProfessional
+          userRole: storedRole[1],
+          isApprovedSitter: is_approved
         };
       } catch (error) {
         console.error('Error getting fresh professional status:', error.response?.data || error);
@@ -222,7 +253,8 @@ export const AuthProvider = ({ children }) => {
       signOut,
       switchRole,
       screenWidth,
-      checkAuthStatus
+      checkAuthStatus,
+      firstName
     }}>
       {children}
     </AuthContext.Provider>

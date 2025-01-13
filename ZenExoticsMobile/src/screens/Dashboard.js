@@ -13,7 +13,7 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 const Dashboard = ({ navigation }) => {
   const { colors } = useTheme();
-  const [firstName, setFirstName] = useState('');
+  const { firstName } = useContext(AuthContext);
   const { signOut } = useContext(AuthContext);
 
   const refreshToken = async () => {
@@ -32,32 +32,6 @@ const Dashboard = ({ navigation }) => {
     }
   };
 
-  const fetchUserData = async () => {
-    try {
-      let token = await AsyncStorage.getItem('userToken');
-      if (!token) {
-        console.error('No token found');
-        return;
-      }
-      const response = await axios.get(`${API_BASE_URL}/api/users/get-info/`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setFirstName(response.data.first_name);
-    } catch (error) {
-      if (error.response && error.response.status === 401) {
-        const newToken = await refreshToken();
-        if (newToken) {
-          fetchUserData();
-        }
-      } else {
-        console.error('Error fetching user data:', error.response ? error.response.data : error.message);
-      }
-    }
-  };
-
-  useEffect(() => {
-    fetchUserData();
-  }, []);
 
   // Mock data - replace with actual API calls
   const upcomingBookings = [

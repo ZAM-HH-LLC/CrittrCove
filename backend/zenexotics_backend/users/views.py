@@ -107,7 +107,7 @@ class SitterStatusView(APIView):
 def get_user_name(request):
     user = request.user
     return Response({
-        'full_name': user.full_name,
+        'name': user.name,
         'first_name': user.get_first_name()
     })
 

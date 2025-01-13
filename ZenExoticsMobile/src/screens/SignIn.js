@@ -6,7 +6,6 @@ import { theme } from '../styles/theme';
 import CustomButton from '../components/CustomButton';
 import { AuthContext } from '../context/AuthContext';
 import { API_BASE_URL } from '../config/config';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -18,38 +17,7 @@ export default function SignIn() {
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const navigation = useNavigation();
-  const { signIn, setUserRole, setIsApprovedSitter } = useContext(AuthContext);
-
-  const checkSitterStatus = async (token) => {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/api/users/sitter-status/`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const { is_sitter, is_approved_sitter } = response.data;
-      
-      // Update AuthContext
-      setUserRole(is_sitter ? 'sitter' : 'petOwner');
-      setIsApprovedSitter(is_approved_sitter);
-
-      // Store in AsyncStorage
-      await AsyncStorage.setItem('userRole', is_sitter ? 'sitter' : 'petOwner');
-      await AsyncStorage.setItem('isApprovedSitter', JSON.stringify(is_approved_sitter));
-
-      return is_approved_sitter;
-    } catch (error) {
-      console.error('Error checking sitter status:', error);
-      
-      // Set default values in case of error
-      setUserRole('petOwner');
-      setIsApprovedSitter(false);
-      
-      // Store default values in AsyncStorage
-      await AsyncStorage.setItem('userRole', 'petOwner');
-      await AsyncStorage.setItem('isApprovedSitter', 'false');
-
-      return false;
-    }
-  };
+  const { signIn } = useContext(AuthContext);
 
   const handleLogin = async () => {
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
@@ -65,14 +33,16 @@ export default function SignIn() {
 
       const { access, refresh } = response.data;
       
-      // Pass both tokens to signIn
-      await signIn(access, refresh);
-      
-      // Get the status after signing in
-      const status = await checkSitterStatus(access);
+      // Pass both tokens to signIn and get the status
+      const status = await signIn(access, refresh);
+      console.log('Sign in status:', status);
       
       // Navigate based on status
-      navigation.navigate(status.isApprovedSitter ? 'SitterDashboard' : 'Dashboard');
+      if (status && status.userRole === 'sitter') {
+        navigation.navigate('SitterDashboard');
+      } else {
+        navigation.navigate('Dashboard');
+      }
     } catch (error) {
       console.error('Login failed', error);
       const errorMessage = error.response && error.response.status === 401
