@@ -1,8 +1,25 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.utils import timezone
+from django.conf import settings
+from django.core.exceptions import ValidationError
 import secrets
 import string
+import os
+
+def validate_image_file(value):
+    if value.size > settings.MAX_UPLOAD_SIZE:
+        raise ValidationError(f'File size must be no more than {settings.MAX_UPLOAD_SIZE/1024/1024}MB')
+    if value.content_type not in settings.ALLOWED_IMAGE_TYPES:
+        raise ValidationError('File type not supported. Please upload a valid image file.')
+
+def user_profile_photo_path(instance, filename):
+    # Get the file extension
+    ext = filename.split('.')[-1]
+    # Generate a unique filename
+    filename = f"{instance.user_id}_{secrets.token_hex(8)}.{ext}"
+    # Return the complete path
+    return os.path.join(settings.USER_PROFILE_PHOTOS_DIR, filename)
 
 # Create your models here.
 
@@ -27,7 +44,13 @@ class User(AbstractBaseUser, PermissionsMixin):
     user_id = models.CharField(max_length=50, unique=True, blank=True)
     email = models.EmailField(unique=True)
     name = models.CharField(max_length=255)
-    profile_picture = models.ImageField(upload_to='user_photos/', null=True, blank=True)
+    profile_picture = models.ImageField(
+        upload_to=user_profile_photo_path,
+        validators=[validate_image_file],
+        null=True,
+        blank=True,
+        help_text="Profile picture for the user. Maximum size: 5MB. Allowed formats: JPEG, PNG, GIF, WebP"
+    )
     phone_number = models.CharField(max_length=20, blank=True)
     birthday = models.DateTimeField(null=True, blank=True)
     

@@ -21,6 +21,30 @@ load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Media files configuration
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Storage configuration
+DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+FILE_UPLOAD_PERMISSIONS = 0o644  # Set appropriate file permissions
+
+# Storage paths for different apps
+USER_PROFILE_PHOTOS_DIR = 'users/profile_photos'
+PET_PROFILE_PHOTOS_DIR = 'pets/profile_photos'
+PET_GALLERY_PHOTOS_DIR = 'pets/gallery_photos'
+
+# Maximum upload size (5MB)
+MAX_UPLOAD_SIZE = 5242880
+
+# Allowed image file types
+ALLOWED_IMAGE_TYPES = [
+    'image/jpeg',
+    'image/jpg',
+    'image/png',
+    'image/gif',
+    'image/webp'
+]
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -184,9 +208,6 @@ EMAIL_USE_SSL = False
 
 CONTACT_EMAIL = 'zam.hh.llc@gmail.com'
 DEFAULT_FROM_EMAIL = 'zam.hh.llc@gmail.com'
-
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Add this near your other logging configurations
 LOGGING = {

@@ -1,6 +1,56 @@
 from django.db import models
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.exceptions import ValidationError
+import os
+import json
+import imghdr
+import secrets
+
+def validate_image_file(value):
+    if value:
+        # Check file size
+        if value.size > settings.MAX_UPLOAD_SIZE:
+            raise ValidationError(f'File size must be no more than {settings.MAX_UPLOAD_SIZE/1024/1024}MB')
+        
+        # Check file type using imghdr
+        valid_image_extensions = ['jpeg', 'jpg', 'png', 'gif', 'webp']
+        file_extension = value.name.split('.')[-1].lower()
+        
+        # First check the file extension
+        if file_extension not in valid_image_extensions:
+            raise ValidationError('Invalid image file extension. Allowed formats: JPEG, PNG, GIF, WebP')
+        
+        # If it's a newly uploaded file, check its content
+        if hasattr(value, 'temporary_file_path'):
+            image_type = imghdr.what(value.temporary_file_path())
+            if image_type not in valid_image_extensions:
+                raise ValidationError('Invalid image content. File must be a valid image.')
+
+def validate_gallery_paths(value):
+    if not isinstance(value, list):
+        raise ValidationError('Gallery must be a list of image paths')
+    for path in value:
+        if not isinstance(path, str):
+            raise ValidationError('Each gallery item must be a string path')
+        if not path.startswith(settings.PET_GALLERY_PHOTOS_DIR):
+            raise ValidationError('Invalid gallery photo path')
+
+def pet_profile_photo_path(instance, filename):
+    # Get the file extension
+    ext = filename.split('.')[-1]
+    # Generate a unique filename
+    filename = f"{instance.pet_id}_{secrets.token_hex(8)}.{ext}"
+    # Return the complete path
+    return os.path.join(settings.PET_PROFILE_PHOTOS_DIR, filename)
+
+def pet_gallery_photo_path(instance, filename):
+    # Get the file extension
+    ext = filename.split('.')[-1]
+    # Generate a unique filename
+    filename = f"{instance.pet_id}_{secrets.token_hex(8)}.{ext}"
+    # Return the complete path
+    return os.path.join(settings.PET_GALLERY_PHOTOS_DIR, filename)
 
 class Pet(models.Model):
     SPECIES_CHOICES = [
@@ -54,8 +104,19 @@ class Pet(models.Model):
     sex = models.CharField(max_length=1, choices=SEX_CHOICES, null=True, blank=True)
     
     # Photos
-    profile_photo = models.ImageField(upload_to='pet_photos/', null=True, blank=True)
-    photo_gallery = models.JSONField(default=list, blank=True)
+    profile_photo = models.ImageField(
+        upload_to=pet_profile_photo_path,
+        validators=[validate_image_file],
+        null=True,
+        blank=True,
+        help_text="Profile photo for the pet. Maximum size: 5MB. Allowed formats: JPEG, PNG, GIF, WebP"
+    )
+    photo_gallery = models.JSONField(
+        default=list,
+        blank=True,
+        validators=[validate_gallery_paths],
+        help_text="List of paths to gallery photos"
+    )
     
     # Dates
     adoption_date = models.DateField(null=True, blank=True)
@@ -93,3 +154,83 @@ class Pet(models.Model):
 
     class Meta:
         ordering = ['name']
+
+    def save(self, *args, **kwargs):
+        # Ensure photo_gallery is always a list
+        if self.photo_gallery is None:
+            self.photo_gallery = []
+        super().save(*args, **kwargs)
+
+    def add_gallery_photo(self, photo):
+        """
+        Add a photo to the gallery
+        :param photo: UploadedFile object
+        :return: path of the saved photo
+        """
+        validate_image_file(photo)
+        filename = pet_gallery_photo_path(self, photo.name)
+        
+        # Save the file using Django's storage
+        storage = self.profile_photo.storage
+        filename = storage.save(filename, photo)
+        
+        # Get the URL/path
+        path = filename
+        
+        # Update the gallery
+        gallery = self.photo_gallery or []
+        gallery.append(path)
+        self.photo_gallery = gallery
+        self.save()
+        
+        return path
+
+    def remove_gallery_photo(self, path):
+        """
+        Remove a photo from the gallery
+        :param path: path of the photo to remove
+        """
+        if path in self.photo_gallery:
+            # Remove from storage
+            storage = self.profile_photo.storage
+            if storage.exists(path):
+                storage.delete(path)
+            
+            # Remove from gallery
+            gallery = self.photo_gallery
+            gallery.remove(path)
+            self.photo_gallery = gallery
+            self.save()
+
+    def clean_gallery(self):
+        """
+        Clean up any gallery photos that no longer exist in storage
+        """
+        if not self.photo_gallery:
+            return
+        
+        storage = self.profile_photo.storage
+        valid_paths = []
+        
+        for path in self.photo_gallery:
+            if storage.exists(path):
+                valid_paths.append(path)
+        
+        self.photo_gallery = valid_paths
+        self.save()
+
+    def delete(self, *args, **kwargs):
+        # Clean up all photos when deleting the pet
+        storage = self.profile_photo.storage
+        
+        # Delete profile photo
+        if self.profile_photo:
+            storage.delete(self.profile_photo.path)
+        
+        # Delete gallery photos
+        if self.photo_gallery:
+            for path in self.photo_gallery:
+                if storage.exists(path):
+                    storage.delete(path)
+        
+        super().delete(*args, **kwargs)
