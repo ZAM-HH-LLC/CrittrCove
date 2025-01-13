@@ -85,40 +85,24 @@ export default function SignUp() {
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <Text style={styles.title}>Sign Up</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="First Name"
-          value={firstName}
-          onChangeText={setFirstName}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Last Name"
-          value={lastName}
-          onChangeText={setLastName}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Confirm Password"
-          secureTextEntry
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-        />
+        {[
+          { placeholder: "First Name", value: firstName, onChangeText: setFirstName },
+          { placeholder: "Last Name", value: lastName, onChangeText: setLastName },
+          { placeholder: "Email", value: email, onChangeText: setEmail, keyboardType: "email-address", autoCapitalize: "none" },
+          { placeholder: "Password", value: password, onChangeText: setPassword, secureTextEntry: true },
+          { placeholder: "Confirm Password", value: confirmPassword, onChangeText: setConfirmPassword, secureTextEntry: true }
+        ].map((input, index) => (
+          <TextInput
+            key={index}
+            style={styles.input}
+            placeholder={input.placeholder}
+            value={input.value}
+            onChangeText={input.onChangeText}
+            keyboardType={input.keyboardType}
+            autoCapitalize={input.autoCapitalize}
+            secureTextEntry={input.secureTextEntry}
+          />
+        ))}
         <CustomButton title="Sign Up" onPress={handleSignUp} />
         {loading && <ActivityIndicator size="large" color={theme.colors.primary} />}
         {successMessage ? <Text style={styles.message}>{successMessage}</Text> : null}

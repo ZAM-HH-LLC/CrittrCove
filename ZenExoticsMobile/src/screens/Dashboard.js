@@ -111,7 +111,7 @@ const Dashboard = ({ navigation }) => {
                 onPress={() => navigation.navigate('SearchSitters')}
                 style={styles.quickActionButton}
               >
-                Find a Sitter
+                Find a Professional
               </Button>
               <Button 
                 icon={Platform.OS === 'web' ? ({ size, color }) => <MaterialCommunityIcons name="paw" size={size} color={color} /> : "paw"}
