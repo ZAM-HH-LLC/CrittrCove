@@ -16,82 +16,107 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [screenWidth, setScreenWidth] = useState(Dimensions.get('window').width);
 
-  const checkAuthStatus = async () => {
-    try {
-      const token = await AsyncStorage.getItem('userToken');
-      if (token) {
-        const response = await axios.get(`${API_BASE_URL}/api/users/sitter-status/`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        
-        const { 
-          is_sitter, 
-          is_approved_sitter,
-          approved_dog_sitting,
-          approved_cat_sitting,
-          approved_exotics_sitting 
-        } = response.data;
-        
-        setIsSignedIn(true);
-        setUserRole(is_sitter ? 'sitter' : 'petOwner');
-        setIsApprovedSitter(is_approved_sitter);
-        
-        return { 
-          isSignedIn: true, 
-          userRole: is_sitter ? 'sitter' : 'petOwner', 
-          isApprovedSitter: is_approved_sitter 
-        };
+  // Single useEffect for auth state management
+  useEffect(() => {
+    const loadAuthState = async () => {
+      try {
+        const [token, storedRole, storedApproval] = await AsyncStorage.multiGet([
+          'userToken',
+          'userRole',
+          'isApprovedSitter'
+        ]);
+
+        console.log('login token', token[1]);
+        console.log('storedRole', storedRole[1]);
+        console.log('storedApproval', storedApproval[1]);
+        console.log('isApprovedSitter', isApprovedSitter);
+
+        // If we have stored values, use them
+        if (token[1]) {
+          setIsSignedIn(true);
+          setUserRole(storedRole[1] || 'petOwner');
+          setIsApprovedSitter(storedApproval[1] === 'true');
+        } else {
+          setIsSignedIn(false);
+          setUserRole(null);
+          setIsApprovedSitter(false);
+        }
+      } catch (error) {
+        console.error('Error loading auth state:', error);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Error checking auth status:', error.response?.data || error.message);
-    }
-    return { isSignedIn: false, userRole: null, isApprovedSitter: false };
-  };
+    };
+
+    loadAuthState();
+  }, []); // Only run on mount
 
   const checkSitterStatus = async (token) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/users/sitter-status/`, {
+      console.log('Checking professional status with token:', token);
+      const response = await axios.get(`${API_BASE_URL}/api/professional-status/`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      console.log('Sitter status check response:', response.data);  // Debug log
       
-      setIsApprovedSitter(response.data.is_approved_sitter);
-      setUserRole(response.data.is_sitter ? 'sitter' : 'petOwner');
+      console.log('Professional status response:', response.data);
+      
+      if (response.data) {
+        const { is_approved } = response.data;
+        
+        // Use is_approved to determine if they're a professional
+        const isProfessional = is_approved;
+        
+        console.log('Professional status check:', {
+          isProfessional,
+          is_approved,
+          responseData: response.data
+        });
+        
+        setUserRole(isProfessional ? 'sitter' : 'petOwner');
+        setIsApprovedSitter(isProfessional);
+        
+        // Update storage
+        await AsyncStorage.multiSet([
+          ['userRole', isProfessional ? 'sitter' : 'petOwner'],
+          ['isApprovedSitter', String(isProfessional)]
+        ]);
+
+        console.log('Updated storage with:', {
+          userRole: isProfessional ? 'sitter' : 'petOwner',
+          isApprovedSitter: isProfessional
+        });
+      }
     } catch (error) {
-      console.error('Error checking sitter status:', error.response?.data || error.message);
-      setIsApprovedSitter(false);
-      setUserRole('petOwner');
+      console.error('Error checking professional status:', error.response?.data || error);
     }
   };
 
-  useEffect(() => {
-    checkAuthStatus();
-  }, []);
-
-  useEffect(() => {
-    const updateScreenWidth = () => {
-      setScreenWidth(Dimensions.get('window').width);
-    };
-
-    Dimensions.addEventListener('change', updateScreenWidth);
-
-    return () => {
-      // For older React Native versions:
-      // Dimensions.removeEventListener('change', updateScreenWidth);
-      
-      // For newer React Native versions:
-      // The event listener cleanup is handled automatically
-    };
-  }, []);
-
-  const signIn = async (token) => {
-    await AsyncStorage.setItem('userToken', token);
-    setIsSignedIn(true);
-    await checkSitterStatus(token);
+  const signIn = async (token, refreshTokenValue) => {
+    try {
+      await AsyncStorage.multiSet([
+        ['userToken', token],
+        ['refreshToken', refreshTokenValue],
+      ]);
+      console.log('sign in token', token);
+      setIsSignedIn(true);
+      await checkSitterStatus(token);
+    } catch (error) {
+      console.error('Error during sign in:', error);
+      throw error;
+    }
   };
 
   const signOut = async () => {
-    await AsyncStorage.removeItem('userToken');
+    try {
+      await AsyncStorage.multiRemove([
+        'userToken', 
+        'refreshToken', 
+        'userRole', 
+        'isApprovedSitter'
+      ]);
+    } catch (error) {
+      console.error('Error clearing storage:', error);
+    }
     setIsSignedIn(false);
     setIsApprovedSitter(false);
     setUserRole(null);
@@ -101,26 +126,88 @@ export const AuthProvider = ({ children }) => {
     if (isApprovedSitter) {
       const newRole = userRole === 'sitter' ? 'petOwner' : 'sitter';
       setUserRole(newRole);
-      // Persist the role in AsyncStorage
       await AsyncStorage.setItem('userRole', newRole);
     }
   };
 
-  // Add this useEffect to load the persisted role on app start
-  useEffect(() => {
-    const loadPersistedRole = async () => {
-      try {
-        const persistedRole = await AsyncStorage.getItem('userRole');
-        if (persistedRole) {
-          setUserRole(persistedRole);
-        }
-      } catch (error) {
-        console.error('Error loading persisted role:', error);
-      }
-    };
+  const checkAuthStatus = async () => {
+    try {
+      const [token, storedRole, storedApproval] = await AsyncStorage.multiGet([
+        'userToken',
+        'userRole',
+        'isApprovedSitter'
+      ]);
 
-    loadPersistedRole();
-  }, []);
+      console.log('Checking auth status with stored values:', {
+        token: token[1] ? 'exists' : 'missing',
+        storedRole: storedRole[1],
+        storedApproval: storedApproval[1]
+      });
+
+      if (!token[1]) {
+        setIsSignedIn(false);
+        setUserRole(null);
+        setIsApprovedSitter(false);
+        return { isSignedIn: false, userRole: null, isApprovedSitter: false };
+      }
+
+      try {
+        const response = await axios.get(`${API_BASE_URL}/api/professional-status/`, {
+          headers: { Authorization: `Bearer ${token[1]}` }
+        });
+        
+        console.log('Fresh professional status:', response.data);
+        
+        const { is_approved } = response.data;
+        const isProfessional = is_approved;
+        
+        console.log('Determined status:', {
+          isProfessional,
+          is_approved
+        });
+
+        // Update state immediately
+        setIsSignedIn(true);
+        setUserRole(isProfessional ? 'sitter' : 'petOwner');
+        setIsApprovedSitter(isProfessional);
+
+        // Update AsyncStorage
+        await AsyncStorage.multiSet([
+          ['userRole', isProfessional ? 'sitter' : 'petOwner'],
+          ['isApprovedSitter', String(isProfessional)]
+        ]);
+        
+        return {
+          isSignedIn: true,
+          userRole: isProfessional ? 'sitter' : 'petOwner',
+          isApprovedSitter: isProfessional
+        };
+      } catch (error) {
+        console.error('Error getting fresh professional status:', error.response?.data || error);
+        console.log('Falling back to stored values:', {
+          storedRole: storedRole[1],
+          storedApproval: storedApproval[1]
+        });
+        
+        // Update state with stored values
+        setIsSignedIn(true);
+        setUserRole(storedRole[1] || 'petOwner');
+        setIsApprovedSitter(storedApproval[1] === 'true');
+        
+        return {
+          isSignedIn: true,
+          userRole: storedRole[1] || 'petOwner',
+          isApprovedSitter: storedApproval[1] === 'true'
+        };
+      }
+    } catch (error) {
+      console.error('Error in checkAuthStatus:', error);
+      setIsSignedIn(false);
+      setUserRole(null);
+      setIsApprovedSitter(false);
+      return { isSignedIn: false, userRole: null, isApprovedSitter: false };
+    }
+  };
 
   return (
     <AuthContext.Provider value={{ 
@@ -133,9 +220,9 @@ export const AuthProvider = ({ children }) => {
       loading,
       signIn,
       signOut,
-      checkAuthStatus,
       switchRole,
-      screenWidth
+      screenWidth,
+      checkAuthStatus
     }}>
       {children}
     </AuthContext.Provider>

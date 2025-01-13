@@ -52,7 +52,6 @@ export default function SignIn() {
   };
 
   const handleLogin = async () => {
-    // Dismiss keyboard on mobile platforms
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
       Keyboard.dismiss();
     }
@@ -65,13 +64,15 @@ export default function SignIn() {
       });
 
       const { access, refresh } = response.data;
-      await AsyncStorage.setItem('userToken', access);
-      await AsyncStorage.setItem('refreshToken', refresh);
-      await signIn(access);
-      const isApprovedSitter = await checkSitterStatus(access);
-
-      const destinationScreen = isApprovedSitter ? 'SitterDashboard' : 'Dashboard';
-      navigation.navigate(destinationScreen);
+      
+      // Pass both tokens to signIn
+      await signIn(access, refresh);
+      
+      // Get the status after signing in
+      const status = await checkSitterStatus(access);
+      
+      // Navigate based on status
+      navigation.navigate(status.isApprovedSitter ? 'SitterDashboard' : 'Dashboard');
     } catch (error) {
       console.error('Login failed', error);
       const errorMessage = error.response && error.response.status === 401

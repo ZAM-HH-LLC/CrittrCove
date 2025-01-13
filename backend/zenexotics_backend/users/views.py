@@ -16,6 +16,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.contrib.auth import authenticate
+from professional_status.models import ProfessionalStatus
 
 
 logger = logging.getLogger(__name__)
@@ -159,11 +160,57 @@ class ChangePasswordView(APIView):
         return Response({'message': 'Password changed successfully'}, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
-@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def get_sitter_status(request):
+    try:
+        # Try to get professional status
+        prof_status = ProfessionalStatus.objects.filter(user=request.user).first()
+        
+        if prof_status:
+            return Response({
+                'is_sitter': True,
+                'is_approved_sitter': prof_status.is_approved,
+                'professional_status': {
+                    'is_approved': prof_status.is_approved,
+                    'approved_for_dogs': prof_status.approved_for_dogs,
+                    'approved_for_cats': prof_status.approved_for_cats,
+                    'approved_for_exotics': prof_status.approved_for_exotics,
+                }
+            })
+        else:
+            # If no professional status exists, return default values
+            return Response({
+                'is_sitter': False,
+                'is_approved_sitter': False,
+                'professional_status': None
+            })
+            
+    except Exception as e:
+        print(f"Error in get_sitter_status: {str(e)}")
+        return Response({
+            'is_sitter': False,
+            'is_approved_sitter': False,
+            'professional_status': None,
+            'error': str(e)
+        }, status=status.HTTP_200_OK)  # Return 200 even with error to prevent logout
+
+@api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_user_info(request):
-    user = request.user
-    return Response({
-        'first_name': user.get_first_name(),
-        'user_type': 'sitter' if user.is_sitter else 'client'
-    })
+    try:
+        user = request.user
+        return Response({
+            'first_name': user.name.split()[0] if len(user.name.split()) > 0 else '',
+            'last_name': user.name.split()[1] if len(user.name.split()) > 1 else '',
+            'email': user.email,
+            'phone_number': user.phone_number if hasattr(user, 'phone_number') else '',
+        })
+    except Exception as e:
+        print(f"Error in get_user_info: {str(e)}")
+        return Response({
+            'first_name': '',
+            'last_name': '',
+            'email': '',
+            'phone_number': '',
+            'error': str(e)
+        }, status=status.HTTP_200_OK)  # Return 200 even with error to prevent logout

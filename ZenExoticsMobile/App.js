@@ -163,19 +163,25 @@ function AppContent() {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const { isSignedIn, userRole, isApprovedSitter } = await checkAuthStatus();
-      if (isSignedIn) {
-        if (userRole === 'sitter' && isApprovedSitter) {
-          setInitialRoute('SitterDashboard');
+      try {
+        const authStatus = await checkAuthStatus();
+        if (authStatus.isSignedIn) {
+          console.log('authStatus', authStatus);
+          if (authStatus.userRole === 'sitter' && authStatus.isApprovedSitter) {
+            setInitialRoute('SitterDashboard');
+          } else {
+            setInitialRoute('Dashboard');
+          }
         } else {
-          setInitialRoute('Dashboard');
+          setInitialRoute('Home');
         }
-      } else {
+      } catch (error) {
+        console.error('Error checking auth status:', error);
         setInitialRoute('Home');
       }
     };
     checkAuth();
-  }, []);
+  }, [checkAuthStatus]);
 
   useEffect(() => {
     if (Platform.OS === 'web') {
