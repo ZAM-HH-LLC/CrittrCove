@@ -48,7 +48,7 @@ INSTALLED_APPS = [
     'corsheaders',  # Add CORS headers
     'contracts',
     'clients',
-    'sitters',
+    'professionals',
     'pets',
     'professional_status',
     'user_addresses',
