@@ -87,6 +87,13 @@ INSTALLED_APPS = [
     'availability',
     'default_availability',
     'shared_availability',
+    'bookings',
+    'booking_occurrences',
+    'booking_summary',
+    'booking_occurrence_rates',
+    'booking_details',
+    'booking_pets',
+    'booking_drafts',
 ]
 
 MIDDLEWARE = [
