@@ -81,6 +81,12 @@ INSTALLED_APPS = [
     'pets',
     'professional_status',
     'user_addresses',
+    'services',
+    'service_rates',
+    'service_moderation',
+    'availability',
+    'default_availability',
+    'shared_availability',
 ]
 
 MIDDLEWARE = [
