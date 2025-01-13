@@ -74,7 +74,7 @@ export const AuthProvider = ({ children }) => {
     }
   }, [isSignedIn]);
 
-  const checkSitterStatus = async (token) => {
+  const getProfessionalStatus = async (token) => {
     try {
       console.log('Checking professional status with token:', token);
       const response = await axios.get(`${API_BASE_URL}/api/professional-status/`, {
@@ -83,27 +83,22 @@ export const AuthProvider = ({ children }) => {
       
       console.log('Professional status response:', response.data);
       
-      if (response.data) {
-        const { is_approved } = response.data;
-        
-        // Set approval status
-        setIsApprovedSitter(is_approved);
-        await AsyncStorage.setItem('isApprovedSitter', String(is_approved));
-        
-        // Always set initial role based on approval status during sign in
-        const initialRole = is_approved ? 'sitter' : 'petOwner';
-        console.log('Setting initial role to:', initialRole);
-        setUserRole(initialRole);
-        await AsyncStorage.setItem('userRole', initialRole);
-
-        return {
-          isApprovedSitter: is_approved,
-          userRole: initialRole
-        };
-      }
+      const { is_approved } = response.data;
+      
+      // Set approval status
+      setIsApprovedSitter(is_approved);
+      await AsyncStorage.setItem('isApprovedSitter', String(is_approved));
+      
+      return {
+        isApprovedSitter: is_approved,
+        suggestedRole: is_approved ? 'sitter' : 'petOwner'
+      };
     } catch (error) {
-      console.error('Error checking professional status:', error.response?.data || error);
-      return null;
+      console.error('Error getting professional status:', error.response?.data || error);
+      return {
+        isApprovedSitter: false,
+        suggestedRole: 'petOwner'
+      };
     }
   };
 
@@ -116,11 +111,20 @@ export const AuthProvider = ({ children }) => {
       console.log('sign in token', token);
       setIsSignedIn(true);
       
-      // Wait for checkSitterStatus to complete and get the result
-      const status = await checkSitterStatus(token);
-      console.log('Sign in complete with status:', status);
+      // Get professional status and set initial role
+      const status = await getProfessionalStatus(token);
+      const initialRole = status.suggestedRole;
       
-      return status; // Return the status so the calling component can navigate appropriately
+      // Set and store the role
+      setUserRole(initialRole);
+      await AsyncStorage.setItem('userRole', initialRole);
+      
+      console.log('Sign in complete with role:', initialRole);
+      
+      return {
+        userRole: initialRole,
+        isApprovedSitter: status.isApprovedSitter
+      };
     } catch (error) {
       console.error('Error during sign in:', error);
       throw error;
@@ -184,53 +188,19 @@ export const AuthProvider = ({ children }) => {
         return { isSignedIn: false, userRole: null, isApprovedSitter: false };
       }
 
-      try {
-        const response = await axios.get(`${API_BASE_URL}/api/professional-status/`, {
-          headers: { Authorization: `Bearer ${token[1]}` }
-        });
-        
-        console.log('Fresh professional status:', response.data);
-        
-        const { is_approved } = response.data;
-        
-        console.log('Determined status:', {
-          is_approved,
-          currentRole: storedRole[1]
-        });
+      // Get fresh professional status
+      const status = await getProfessionalStatus(token[1]);
+      setIsSignedIn(true);
 
-        // Update approval status
-        setIsSignedIn(true);
-        setIsApprovedSitter(is_approved);
-        await AsyncStorage.setItem('isApprovedSitter', String(is_approved));
-        
-        // Always respect the stored role if it exists
-        if (storedRole[1]) {
-          setUserRole(storedRole[1]);
-        }
-        
-        return {
-          isSignedIn: true,
-          userRole: storedRole[1],
-          isApprovedSitter: is_approved
-        };
-      } catch (error) {
-        console.error('Error getting fresh professional status:', error.response?.data || error);
-        console.log('Falling back to stored values:', {
-          storedRole: storedRole[1],
-          storedApproval: storedApproval[1]
-        });
-        
-        // Update state with stored values
-        setIsSignedIn(true);
-        setUserRole(storedRole[1] || 'petOwner');
-        setIsApprovedSitter(storedApproval[1] === 'true');
-        
-        return {
-          isSignedIn: true,
-          userRole: storedRole[1] || 'petOwner',
-          isApprovedSitter: storedApproval[1] === 'true'
-        };
-      }
+      // If we have a stored role, use it; otherwise use the suggested role
+      const currentRole = storedRole[1] || status.suggestedRole;
+      setUserRole(currentRole);
+      
+      return {
+        isSignedIn: true,
+        userRole: currentRole,
+        isApprovedSitter: status.isApprovedSitter
+      };
     } catch (error) {
       console.error('Error in checkAuthStatus:', error);
       setIsSignedIn(false);
