@@ -1,9 +1,8 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import DefaultAvailabilityViewSet
+from .v1 import views
 
 router = DefaultRouter()
-router.register(r'default-availability', DefaultAvailabilityViewSet)
 # Add your viewset routes here if needed
 
 app_name = 'default_availability'

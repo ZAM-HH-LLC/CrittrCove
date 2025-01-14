@@ -1,9 +1,8 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .v1.views import BookingOccurrenceRateViewSet
+from .v1 import views
 
 router = DefaultRouter()
-router.register(r'booking-occurrence-rates', BookingOccurrenceRateViewSet)
 
 app_name = 'booking_occurrence_rates'
 

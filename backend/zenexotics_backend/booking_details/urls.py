@@ -1,9 +1,8 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .v1.views import BookingDetailsViewSet
+from .v1 import views
 
 router = DefaultRouter()
-router.register(r'booking-details', BookingDetailsViewSet, basename='booking-details')
 
 app_name = 'booking_details'
 

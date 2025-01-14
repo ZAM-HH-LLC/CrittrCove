@@ -1,9 +1,9 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .v1.views import ServiceRateViewSet
+from .v1 import views
 
 router = DefaultRouter()
-router.register(r'service-rates', ServiceRateViewSet, basename='service-rates')
+# router.register(r'service-rates', ServiceRateViewSet, basename='service-rates')
 
 app_name = 'service_rates'
 
