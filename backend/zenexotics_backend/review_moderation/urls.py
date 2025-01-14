@@ -1,11 +1,10 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .v1 import views
+from . import views
+
+app_name = 'review_moderation'
 
 router = DefaultRouter()
-# Add your viewset routes here if needed
-
-app_name = 'contracts'
 
 urlpatterns = [
     path('v1/', include((router.urls, app_name), namespace='v1')),

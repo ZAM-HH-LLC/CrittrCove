@@ -1,6 +1,12 @@
-from django.urls import path
-from .views import ClientListView
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .v1 import views
+
+router = DefaultRouter()
+# Add your viewset routes here if needed
+
+app_name = 'clients'
 
 urlpatterns = [
-    path('', ClientListView.as_view(), name='client_list'),
+    path('v1/', include((router.urls, app_name), namespace='v1')),
 ]

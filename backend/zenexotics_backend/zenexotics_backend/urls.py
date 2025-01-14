@@ -28,11 +28,54 @@ urlpatterns = [
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/', include([
+        # User Management
         path('users/', include('users.urls')),
-        path('contracts/', include('contracts.urls')),
-        path('clients/', include('clients.urls')),
-        path('pets/', include('pets.urls')),
         path('professional-status/', include('professional_status.urls')),
+        path('clients/', include('clients.urls')),
+        path('professionals/', include('professionals.urls')),
+        
+        # Pet Management
+        path('pets/', include('pets.urls')),
+        
+        # Service Management
+        path('services/', include('services.urls')),
+        path('service-rates/', include('service_rates.urls')),
+        path('service-moderation/', include('service_moderation.urls')),
+        
+        # Availability Management
+        path('availability/', include('availability.urls')),
+        path('default-availability/', include('default_availability.urls')),
+        path('shared-availability/', include('shared_availability.urls')),
+        
+        # Booking Management
+        path('bookings/', include('bookings.urls')),
+        path('booking-occurrences/', include('booking_occurrences.urls')),
+        path('booking-summary/', include('booking_summary.urls')),
+        path('booking-occurrence-rates/', include('booking_occurrence_rates.urls')),
+        path('booking-details/', include('booking_details.urls')),
+        path('booking-pets/', include('booking_pets.urls')),
+        path('booking-drafts/', include('booking_drafts.urls')),
+        
+        # Review Management
+        path('review-moderation/', include('review_moderation.urls')),
+        path('client-reviews/', include('client_reviews.urls')),
+        path('professional-reviews/', include('professional_reviews.urls')),
+        
+        # Communication
+        path('user-messages/', include('user_messages.urls')),
+        
+        # Payment Management
+        path('payment-methods/', include('payment_methods.urls')),
+        path('payments/', include('payments.urls')),
+        
+        # Contracts
+        path('contracts/', include('contracts.urls')),
+        
+        # Logging
+        path('search-logs/', include('search_logs.urls')),
+        path('interaction-logs/', include('interaction_logs.urls')),
+        path('error-logs/', include('error_logs.urls')),
+        path('engagement-logs/', include('engagement_logs.urls')),
     ])),
 ]
 
