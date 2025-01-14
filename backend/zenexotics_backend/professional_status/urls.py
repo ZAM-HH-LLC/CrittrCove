@@ -1,6 +1,5 @@
-from django.urls import path
-from . import views
+from django.urls import path, include
 
 urlpatterns = [
-    path('', views.get_professional_status, name='get_professional_status'),
+    path('v1/', include('professional_status.v1.urls')),
 ] 

@@ -24,7 +24,7 @@ export const AuthProvider = ({ children }) => {
         console.error('No token found');
         return;
       }
-      const response = await axios.get(`${API_BASE_URL}/api/users/get-name/`, {
+      const response = await axios.get(`${API_BASE_URL}/api/users/v1/get-name/`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setFirstName(response.data.first_name);
@@ -77,7 +77,7 @@ export const AuthProvider = ({ children }) => {
   const getProfessionalStatus = async (token) => {
     try {
       console.log('Checking professional status with token:', token);
-      const response = await axios.get(`${API_BASE_URL}/api/professional-status/`, {
+      const response = await axios.get(`${API_BASE_URL}/api/professional-status/v1/`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       

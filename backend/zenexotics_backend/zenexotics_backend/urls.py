@@ -27,11 +27,13 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('api/users/', include('users.urls')),
-    path('api/contracts/', include('contracts.urls')),
-    path('api/clients/', include('clients.urls')),
-    path('api/pets/', include('pets.urls')),
-    path('api/professional-status/', include('professional_status.urls')),
+    path('api/', include([
+        path('users/', include('users.urls')),
+        path('contracts/', include('contracts.urls')),
+        path('clients/', include('clients.urls')),
+        path('pets/', include('pets.urls')),
+        path('professional-status/', include('professional_status.urls')),
+    ])),
 ]
 
 # Serve media files in development
