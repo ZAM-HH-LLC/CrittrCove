@@ -11,7 +11,7 @@ import { theme } from '../styles/theme';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-const SitterDashboard = ({ navigation }) => {
+const ProfessionalDashboard = ({ navigation }) => {
   const { colors } = useTheme();
   const { signOut, firstName } = useContext(AuthContext);
 
@@ -131,7 +131,7 @@ const SitterDashboard = ({ navigation }) => {
   return (
     <CrossPlatformView fullWidthHeader={true}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Sitter Dashboard</Text>
+        <Text style={styles.headerTitle}>Professional Dashboard</Text>
       </View>
       <Content />
     </CrossPlatformView>
@@ -188,4 +188,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SitterDashboard;
+export default ProfessionalDashboard;

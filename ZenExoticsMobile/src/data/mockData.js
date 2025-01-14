@@ -215,7 +215,7 @@ export const mockPets = [
   },
 ];
 
-export const mockSitters = [
+export const mockProfessionals = [
   {
     id: '1',
     name: 'John Doe',
@@ -276,7 +276,7 @@ export const mockSitters = [
     serviceTypes: ['Dog Walking', 'House Sitting'],
     animalTypes: ['dogs'],
   },
-  // Additional sitters further out
+  // Additional professionals further out
   {
     id: '6',
     name: 'Lisa Anderson',

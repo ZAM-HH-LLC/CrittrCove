@@ -30,7 +30,7 @@ const TermsOfService = () => {
 
         <Text style={styles.sectionTitle}>1. Description of Service</Text>
         <Text style={styles.paragraph}>
-          {appName} provides an online platform for connecting pet owners with sitters specializing in exotic animals, as well as dogs and cats. Users can book services, communicate with sitters, and manage pet-related services, including payments and reviews.
+          {appName} provides an online platform for connecting pet owners with professionals specializing in exotic animals, as well as dogs and cats. Users can book services, communicate with professionals, and manage pet-related services, including payments and reviews.
         </Text>
 
         <Text style={styles.sectionTitle}>2. User Accounts</Text>
@@ -56,22 +56,22 @@ const TermsOfService = () => {
 
         <Text style={styles.sectionTitle}>5. Payment Terms</Text>
         <Text style={styles.paragraph}>
-          All transactions between pet owners and sitters must be processed through the platform's payment system, powered by Stripe. You agree to the following:
+          All transactions between pet owners and professionals must be processed through the platform's payment system, powered by Stripe. You agree to the following:
         </Text>
         <Text style={styles.listItem}>• Booking Fees: You will be charged the agreed-upon amount at the time of booking.</Text>
         <Text style={styles.listItem}>• Cancellations and Refunds: Cancellations are subject to our cancellation policy, which may result in partial or no refunds.</Text>
-        <Text style={styles.listItem}>• Payouts to Sitters: Sitters must provide accurate payment information and comply with local tax regulations.</Text>
+        <Text style={styles.listItem}>• Payouts to Professionals: Professionals must provide accurate payment information and comply with local tax regulations.</Text>
 
         <Text style={styles.sectionTitle}>6. Liability and Disclaimer of Warranties</Text>
         <Text style={styles.paragraph}>
-          You acknowledge that {appName} does not guarantee the quality or safety of services provided by sitters. Our platform only facilitates connections between users.
+          You acknowledge that {appName} does not guarantee the quality or safety of services provided by professionals. Our platform only facilitates connections between users.
         </Text>
         <Text style={styles.listItem}>• We are not liable for any injury, damage, or loss caused during the provision of pet care services.</Text>
         <Text style={styles.listItem}>• The Service is provided "as is" and "as available" without warranties of any kind, express or implied.</Text>
 
         <Text style={styles.sectionTitle}>7. Dispute Resolution Between Users</Text>
         <Text style={styles.paragraph}>
-          Disputes between users (e.g., pet owners and sitters) must first be addressed directly between the parties. If no resolution is reached, {appName} may mediate but is not responsible for the outcome.
+          Disputes between users (e.g., pet owners and professionals) must first be addressed directly between the parties. If no resolution is reached, {appName} may mediate but is not responsible for the outcome.
         </Text>
 
         <Text style={styles.sectionTitle}>8. Limitation of Liability</Text>

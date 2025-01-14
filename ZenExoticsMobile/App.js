@@ -19,9 +19,9 @@ import SignUp from './src/screens/SignUp';
 import ResetPassword from './src/screens/ResetPassword';
 import ResetPasswordConfirm from './src/screens/ResetPasswordConfirm';
 import Dashboard from './src/screens/Dashboard';
-import SearchSitters from './src/screens/SearchSitters';
-import SitterDashboard from './src/screens/SitterDashboard';
-import BecomeSitter from './src/screens/BecomeSitter';
+import SearchProfessionals from './src/screens/SearchProfessionals';
+import ProfessionalDashboard from './src/screens/ProfessionalDashboard';
+import BecomeProfessional from './src/screens/BecomeProfessional';
 import MoreScreen from './src/screens/MoreScreen';
 import AvailabilitySettings from './src/screens/AvailabilitySettings';
 // import Messages from './src/screens/Messages';
@@ -31,16 +31,16 @@ import MessageHistory from './src/screens/MessageHistory';
 import PaymentMethods from './src/screens/PaymentMethods';
 import Settings from './src/screens/Settings';
 import PrivacyPolicy from './src/screens/PrivacyPolicy';
-import SitterSettings from './src/screens/SitterSettings';
+import ProfessionalSettings from './src/screens/ProfessionalSettings';
 import TermsOfService from './src/screens/TermsOfService';
 import HelpFAQ from './src/screens/HelpFAQ';
 import ContactUs from './src/screens/ContactUs';
 import Clients from './src/screens/Clients';
-import SitterProfile from './src/screens/SitterProfile';
+import ProfessionalProfile from './src/screens/ProfessionalProfile';
 import MyContracts from './src/screens/MyContracts';
 import ChangePassword from './src/screens/ChangePassword';
 import AddPet from './src/screens/AddPet';
-import SearchSittersListing from './src/screens/SearchSittersListing';
+import SearchProfessionalsListing from './src/screens/SearchProfessionalsListing';
 import MyBookings from './src/screens/MyBookings';
 import BookingDetails from './src/screens/BookingDetails';
 import ServiceManagerScreen from './src/screens/ServiceManagerScreen';
@@ -58,13 +58,13 @@ const screens = [
   { name: 'ResetPassword', component: ResetPassword },
   { name: 'ResetPasswordConfirm', component: ResetPasswordConfirm },
   { name: 'Dashboard', component: Dashboard },
-  { name: 'SearchSitters', component: SearchSitters },
-  { name: 'SearchSittersListing', component: SearchSittersListing },
+  { name: 'SearchProfessionals', component: SearchProfessionals },
+  { name: 'SearchProfessionalsListing', component: SearchProfessionalsListing },
   { name: 'ClientHistory', component: ClientHistory },
   { name: 'MessageHistory', component: MessageHistory },
   // { name: 'Messages', component: Messages },
-  { name: 'SitterDashboard', component: SitterDashboard },
-  { name: 'BecomeSitter', component: BecomeSitter },
+  { name: 'ProfessionalDashboard', component: ProfessionalDashboard },
+  { name: 'BecomeProfessional', component: BecomeProfessional },
   { name: 'More', component: MoreScreen },
   { name: 'Clients', component: Clients },
   { name: 'AvailabilitySettings', component: AvailabilitySettings },
@@ -72,11 +72,11 @@ const screens = [
   { name: 'PaymentMethods', component: PaymentMethods },
   { name: 'Settings', component: Settings },
   { name: 'PrivacyPolicy', component: PrivacyPolicy },
-  { name: 'SitterSettings', component: SitterSettings },
+  { name: 'ProfessionalSettings', component: ProfessionalSettings },
   { name: 'TermsOfService', component: TermsOfService },
   { name: 'HelpFAQ', component: HelpFAQ },
   { name: 'ContactUs', component: ContactUs },
-  { name: 'SitterProfile', component: SitterProfile },
+  { name: 'ProfessionalProfile', component: ProfessionalProfile },
   { name: 'MyContracts', component: MyContracts },
   { name: 'ChangePassword', component: ChangePassword },
   { name: 'AddPet', component: AddPet },
@@ -88,20 +88,20 @@ const screens = [
 const linking = {
   prefixes: [`${API_BASE_URL}`],
   config: {
+    initialRouteName: 'Home',
     screens: {
+      Home: 'Home',
+      About: 'About',
+      ClientProfile: 'ClientProfile',
+      MyProfile: 'MyProfile',
+      SignIn: 'SignIn',
+      SignUp: 'SignUp',
+      ResetPassword: 'ResetPassword',
       ResetPasswordConfirm: 'reset-password/:uid/:token',
-      AddPet: {
-        path: 'AddPet',
-        parse: {
-          pet: () => undefined
-        }
-      },
-      SitterProfile: {
-        path: 'SitterProfile',
-        parse: {
-          sitter: (sitter) => undefined
-        }
-      },
+      Dashboard: 'Dashboard',
+      SearchProfessionals: 'SearchProfessionals',
+      SearchProfessionalsListing: 'SearchProfessionalsListing',
+      ClientHistory: 'ClientHistory',
       MessageHistory: {
         path: 'MessageHistory',
         parse: {
@@ -109,10 +109,39 @@ const linking = {
           senderName: (senderName) => senderName || 'Unknown User'
         }
       },
-      // Add other screen paths as needed
-      '*': '*',
-    },
-  },
+      ProfessionalDashboard: 'ProfessionalDashboard',
+      BecomeProfessional: 'BecomeProfessional',
+      More: 'More',
+      Clients: 'Clients',
+      AvailabilitySettings: 'AvailabilitySettings',
+      MyPets: 'MyPets',
+      PaymentMethods: 'PaymentMethods',
+      Settings: 'Settings',
+      PrivacyPolicy: 'PrivacyPolicy',
+      ProfessionalSettings: 'ProfessionalSettings',
+      TermsOfService: 'TermsOfService',
+      HelpFAQ: 'HelpFAQ',
+      ContactUs: 'ContactUs',
+      ProfessionalProfile: {
+        path: 'ProfessionalProfile',
+        parse: {
+          professional: (professional) => undefined
+        }
+      },
+      MyContracts: 'MyContracts',
+      ChangePassword: 'ChangePassword',
+      AddPet: {
+        path: 'AddPet',
+        parse: {
+          pet: () => undefined
+        }
+      },
+      MyBookings: 'MyBookings',
+      BookingDetails: 'BookingDetails',
+      ServiceManager: 'ServiceManager',
+      '*': '*'
+    }
+  }
 };
 
 const globalStyles = `
@@ -139,7 +168,7 @@ function TabNavigator() {
 
 function AppContent() {
   const { checkAuthStatus } = useContext(AuthContext);
-  const [initialRoute, setInitialRoute] = useState(null);
+  const [initialRoute, setInitialRoute] = useState('Home');
 
   useEffect(() => {
     if (Platform.OS === 'web') {
@@ -167,8 +196,8 @@ function AppContent() {
         const authStatus = await checkAuthStatus();
         if (authStatus.isSignedIn) {
           console.log('authStatus', authStatus);
-          if (authStatus.userRole === 'sitter' && authStatus.isApprovedSitter) {
-            setInitialRoute('SitterDashboard');
+          if (authStatus.userRole === 'professional' && authStatus.isApprovedProfessional) {
+            setInitialRoute('ProfessionalDashboard');
           } else {
             setInitialRoute('Dashboard');
           }
@@ -197,25 +226,28 @@ function AppContent() {
     }
   }, []);
 
-  if (initialRoute === null) {
-    return null; // or a loading screen
-  }
-
   return (
     <NavigationContainer linking={linking}>
       {Platform.OS === 'web' ? (
         <Stack.Navigator
           initialRouteName={initialRoute}
           screenOptions={{
+            headerShown: true,
             header: ({ navigation }) => <Navigation navigation={navigation} />,
             ...TransitionPresets.SlideFromRightIOS,
+            presentation: 'card',
+            animation: 'slide_from_right'
           }}
         >
           {screens.map(screen => (
             <Stack.Screen 
               key={screen.name}
               name={screen.name} 
-              component={screen.component} 
+              component={screen.component}
+              options={{
+                headerShown: true,
+                animation: 'slide_from_right'
+              }}
             />
           ))}
         </Stack.Navigator>

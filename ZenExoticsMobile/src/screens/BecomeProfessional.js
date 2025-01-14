@@ -5,7 +5,7 @@ import { theme } from '../styles/theme';
 import * as ImagePicker from 'expo-image-picker';
 
 
-const BecomeSitter = ({ navigation }) => {
+const BecomeProfessional = ({ navigation }) => {
   const [selectedPets, setSelectedPets] = useState({
     dog: false,
     cat: false,
@@ -74,10 +74,10 @@ const BecomeSitter = ({ navigation }) => {
         <TouchableOpacity onPress={() => navigation.navigate('More')} style={styles.backButton}>
           <MaterialCommunityIcons name="arrow-left" size={24} color={theme.colors.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerText}>Become a Sitter</Text>
+        <Text style={styles.headerText}>Become a Professional</Text>
       </View>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.title}>Become a Sitter</Text>
+        <Text style={styles.title}>Become a Professional</Text>
         
         <Text style={styles.label}>Select Pets You Can Sit:</Text>
         <View style={styles.checkboxContainer}>
@@ -245,4 +245,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default BecomeSitter;
+export default BecomeProfessional;

@@ -32,7 +32,7 @@ const PaymentMethods = () => {
     accountNumber: '',
     routingNumber: '',
   });
-  const { isApprovedSitter } = useContext(AuthContext);
+  const { isApprovedProfessional } = useContext(AuthContext);
   const [isConfirming, setIsConfirming] = useState(false);
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
   const [methodToDelete, setMethodToDelete] = useState(null);
@@ -637,7 +637,7 @@ const PaymentMethods = () => {
         onBackPress={() => navigation.navigate('More')} 
       />
       <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-        {isApprovedSitter && (
+        {isApprovedProfessional && (
           <SegmentedButtons
             value={activeTab}
             onValueChange={setActiveTab}
@@ -657,7 +657,7 @@ const PaymentMethods = () => {
           />
         )}
 
-        {activeTab === 'receive' && isApprovedSitter && (
+        {activeTab === 'receive' && isApprovedProfessional && (
           <View style={styles.sectionContainer}>
             <Text style={styles.sectionTitle}>Receive Payments</Text>
             {receivePaymentMethods.map(method => renderPaymentMethod(method, true))}

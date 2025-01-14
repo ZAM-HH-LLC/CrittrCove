@@ -6,7 +6,7 @@ import { theme } from '../styles/theme';
 import { AuthContext } from '../context/AuthContext';
 
 const MoreScreen = ({ navigation }) => {
-  const { isSignedIn, isApprovedSitter, userRole, switchRole, signOut } = useContext(AuthContext);
+  const { isSignedIn, isApprovedProfessional, userRole, switchRole, signOut } = useContext(AuthContext);
 
   const handleLogout = async () => {
     try {
@@ -20,8 +20,8 @@ const MoreScreen = ({ navigation }) => {
   };
 
   const handleSwitchRole = async () => {
-    if (isApprovedSitter) {
-      const newRole = userRole === 'sitter' ? 'petOwner' : 'sitter';
+    if (isApprovedProfessional) {
+      const newRole = userRole === 'professional' ? 'petOwner' : 'professional';
       console.log('Current role:', userRole);
       console.log('Switching to:', newRole);
       
@@ -29,12 +29,12 @@ const MoreScreen = ({ navigation }) => {
       
       // Add a small delay to ensure state is updated before navigation
       setTimeout(() => {
-        console.log('Navigating to:', newRole === 'sitter' ? 'SitterDashboard' : 'Dashboard');
-        navigation.navigate(newRole === 'sitter' ? 'SitterDashboard' : 'Dashboard');
+        console.log('Navigating to:', newRole === 'professional' ? 'ProfessionalDashboard' : 'Dashboard');
+        navigation.navigate(newRole === 'professional' ? 'ProfessionalDashboard' : 'Dashboard');
       }, 0);
     } else {
-      Alert.alert('Not Approved', 'You are not approved as a sitter yet.');
-      navigation.navigate('BecomeSitter');
+      Alert.alert('Not Approved', 'You are not approved as a professional yet.');
+      navigation.navigate('BecomeProfessional');
     }
   };
 
@@ -51,13 +51,13 @@ const MoreScreen = ({ navigation }) => {
       { title: 'Profile', icon: 'account', route: 'MyProfile' },
       { title: 'My Bookings', icon: 'calendar-clock', route: 'MyBookings' },
       { title: 'Payment Methods', icon: 'credit-card', route: 'PaymentMethods' },
-      { title: 'Become a Sitter', icon: 'account-tie', route: 'BecomeSitter' },
+      { title: 'Become a Professional', icon: 'account-tie', route: 'BecomeProfessional' },
       { title: 'Settings', icon: 'cog', route: 'Settings' },
       { title: 'Privacy Policy', icon: 'shield-account', route: 'PrivacyPolicy' },
       { title: 'Terms of Service', icon: 'file-document', route: 'TermsOfService' },
       { title: 'Contact Us', icon: 'email', route: 'ContactUs' },
     ],
-    sitter: [
+    professional: [
       { title: 'Profile', icon: 'account', route: 'MyProfile' },
       { title: 'My Services', icon: 'briefcase-outline', route: 'ServiceManager' },
       { title: 'My Bookings', icon: 'calendar-clock', route: 'MyBookings' },
@@ -74,8 +74,8 @@ const MoreScreen = ({ navigation }) => {
     let items;
     if (!isSignedIn) {
       items = menuItems.notSignedIn;
-    } else if (userRole === 'sitter') {
-      items = menuItems.sitter;
+    } else if (userRole === 'professional') {
+      items = menuItems.professional;
     } else {
       items = menuItems.petOwner;
     }
@@ -100,10 +100,10 @@ const MoreScreen = ({ navigation }) => {
         <List.Section style={styles.webListSection}>
           {renderMenuItems()}
         </List.Section>
-        {isSignedIn && isApprovedSitter && (
+        {isSignedIn && isApprovedProfessional && (
           <View style={styles.webButtonContainer}>
             <Button mode="outlined" onPress={handleSwitchRole} style={styles.webButton}>
-              Switch to {userRole === 'sitter' ? 'Pet Owner' : 'Sitter'} Mode
+              Switch to {userRole === 'professional' ? 'Pet Owner' : 'Professional'} Mode
             </Button>
           </View>
         )}
@@ -123,10 +123,10 @@ const MoreScreen = ({ navigation }) => {
       <List.Section>
         {renderMenuItems()}
       </List.Section>
-      {isSignedIn && isApprovedSitter && (
+      {isSignedIn && isApprovedProfessional && (
         <View style={styles.switchRoleButtonContainer}>
           <Button mode="outlined" onPress={handleSwitchRole} style={styles.switchRoleButton}>
-            Switch to {userRole === 'sitter' ? 'Pet Owner' : 'Sitter'} Mode
+            Switch to {userRole === 'professional' ? 'Pet Owner' : 'Professional'} Mode
           </Button>
         </View>
       )}

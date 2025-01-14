@@ -23,7 +23,7 @@ const fetchProfileData = () => {
     setTimeout(() => {
       resolve({
         // profilePhoto: 'https://example.com/profile-photo.jpg',
-        bio: "Hi! I'm an experienced pet sitter who loves all animals. I have 5 years of experience caring for dogs, cats, and exotic pets.",
+        bio: "Hi! I'm an experienced pet professional who loves all animals. I have 5 years of experience caring for dogs, cats, and exotic pets.",
         petPhotos: [
           // 'https://example.com/pet-photo-1.jpg',
           // 'https://example.com/pet-photo-2.jpg',
@@ -114,9 +114,9 @@ if (Platform.OS === 'web') {
   document.head.appendChild(style);
 }
 
-const SitterProfile = ({ route, navigation }) => {
+const ProfessionalProfile = ({ route, navigation }) => {
   const { width: windowWidth } = useWindowDimensions();
-  const [sitterData, setSitterData] = useState(null);
+  const [professionalData, setProfessionalData] = useState(null);
   const [canGoBack, setCanGoBack] = useState(false);
   const [bioModalVisible, setBioModalVisible] = useState(false);
   const [reviewsModalVisible, setReviewsModalVisible] = useState(false);
@@ -144,17 +144,17 @@ const SitterProfile = ({ route, navigation }) => {
   };
 
   useEffect(() => {
-    // Check if we can go back and if SearchSittersListing exists in history
+    // Check if we can go back and if SearchProfessionalsListing exists in history
     const state = navigation.getState();
-    const hasHistory = state.routes.some(route => route.name === 'SearchSittersListing');
+    const hasHistory = state.routes.some(route => route.name === 'SearchProfessionalsListing');
     setCanGoBack(navigation.canGoBack() && hasHistory);
   }, [navigation]);
 
   const handleBack = () => {
     if (Platform.OS === 'web') {
-      sessionStorage.removeItem('currentSitter');
+      sessionStorage.removeItem('currentProfessional');
       // Always use navigate to ensure consistent behavior
-      navigation.navigate('SearchSittersListing');
+      navigation.navigate('SearchProfessionalsListing');
     } else {
       navigation.goBack();
     }
@@ -173,30 +173,30 @@ const SitterProfile = ({ route, navigation }) => {
   }, []);
 
   useEffect(() => {
-    const loadSitterData = async () => {
-      if (route?.params?.sitter) {
-        setSitterData(route.params.sitter);
+    const loadProfessionalData = async () => {
+      if (route?.params?.professional) {
+        setProfessionalData(route.params.professional);
       } else if (Platform.OS === 'web') {
-        // Try to get sitter data from sessionStorage on web reload
-        const storedSitter = sessionStorage.getItem('currentSitter');
-        if (storedSitter) {
-          setSitterData(JSON.parse(storedSitter));
+        // Try to get professional data from sessionStorage on web reload
+        const storedProfessional = sessionStorage.getItem('currentProfessional');
+        if (storedProfessional) {
+          setProfessionalData(JSON.parse(storedProfessional));
         } else {
           // If no data, redirect back to search
-          navigation.replace('SearchSittersListing');
+          navigation.replace('SearchProfessionalsListing');
         }
       }
     };
 
-    loadSitterData();
-  }, [route?.params?.sitter]);
+    loadProfessionalData();
+  }, [route?.params?.professional]);
 
-  // Store sitter data in AsyncStorage for mobile
+  // Store professional data in AsyncStorage for mobile
   useEffect(() => {
-    if (Platform.OS !== 'web' && sitterData) {
-      AsyncStorage.setItem('currentSitter', JSON.stringify(sitterData));
+    if (Platform.OS !== 'web' && professionalData) {
+      AsyncStorage.setItem('currentProfessional', JSON.stringify(professionalData));
     }
-  }, [sitterData]);
+  }, [professionalData]);
 
   const getContentWidth = () => {
     if (Platform.OS === 'web') {
@@ -241,8 +241,8 @@ const SitterProfile = ({ route, navigation }) => {
               service={service}
               onHeartPress={toggleFavorite}
               isFavorite={favoriteServices.includes(service.id)}
-              professionalName={sitterData.name}
-              professionalId={sitterData.id}
+              professionalName={professionalData.name}
+              professionalId={professionalData.id}
               navigation={navigation}
             />
           ))}
@@ -251,7 +251,7 @@ const SitterProfile = ({ route, navigation }) => {
     </View>
   );
 
-  if (!sitterData) {
+  if (!professionalData) {
     return (
       <CrossPlatformView fullWidthHeader={true}>
         <BackHeader 
@@ -266,8 +266,8 @@ const SitterProfile = ({ route, navigation }) => {
   }
 
   const renderProfilePhoto = () => {
-    if (sitterData.profilePicture) {
-      return <Image source={{ uri: sitterData.profilePicture }} style={styles.profilePhoto} />;
+    if (professionalData.profilePicture) {
+      return <Image source={{ uri: professionalData.profilePicture }} style={styles.profilePhoto} />;
     }
     return (
       <View style={[styles.profilePhoto, styles.profilePhotoPlaceholder]}>
@@ -279,15 +279,15 @@ const SitterProfile = ({ route, navigation }) => {
   const renderSpecialistExperience = () => (
     <View style={styles.specialistSection}>
       <Text style={styles.sectionTitle}>Specialist Experience</Text>
-      <TruncatedText text={sitterData?.bio || ''} />
+      <TruncatedText text={professionalData?.bio || ''} />
     </View>
   );
 
   const renderRatingStars = () => (
     <View style={styles.ratingContainer}>
       <MaterialCommunityIcons name="star" size={24} color={theme.colors.primary} />
-      <Text style={styles.rating}>{sitterData.reviews}</Text>
-      <Text style={[styles.reviewCount, { marginLeft: 12 }]}>({sitterData.reviewCount || 50} reviews)</Text>
+      <Text style={styles.rating}>{professionalData.reviews}</Text>
+      <Text style={[styles.reviewCount, { marginLeft: 12 }]}>({professionalData.reviewCount || 50} reviews)</Text>
     </View>
   );
 
@@ -374,7 +374,7 @@ const SitterProfile = ({ route, navigation }) => {
     },
   });
 
-  // Create services array from sitterData
+  // Create services array from professionalData
   const services = [
     { name: 'Boarding', price: "25" },
     { name: 'Doggy Day Care', price: "30" },
@@ -438,7 +438,7 @@ const SitterProfile = ({ route, navigation }) => {
 
   const renderAboutSection = () => (
     <View style={styles.aboutSection}>
-      <Text style={styles.sectionTitle}>About {sitterData.name}</Text>
+      <Text style={styles.sectionTitle}>About {professionalData.name}</Text>
       <View style={styles.aboutSubsections}>
         <View style={styles.communicationSection}>
           <Text style={styles.subsectionTitle}>Communication</Text>
@@ -517,7 +517,7 @@ const SitterProfile = ({ route, navigation }) => {
   const handleContactPress = () => {
     // Check if conversation already exists
     const existingConversation = mockConversations.find(
-      conv => conv.professionalId === sitterData.id
+      conv => conv.professionalId === professionalData.id
     );
 
     if (existingConversation) {
@@ -529,8 +529,8 @@ const SitterProfile = ({ route, navigation }) => {
       // Create new conversation
       const newConversation = {
         id: `conv_${Date.now()}`,
-        name: sitterData.name,
-        professionalId: sitterData.id,
+        name: professionalData.name,
+        professionalId: professionalData.id,
         lastMessage: '',
         timestamp: new Date().toISOString(),
         unread: false,
@@ -570,14 +570,14 @@ const SitterProfile = ({ route, navigation }) => {
                 !isWideScreen && styles.profileSectionMobile
               ]}>
                 {renderProfilePhoto()}
-                <Text style={styles.name}>{sitterData.name}</Text>
-                <Text style={styles.location}>{sitterData.location}</Text>
+                <Text style={styles.name}>{professionalData.name}</Text>
+                <Text style={styles.location}>{professionalData.location}</Text>
                 {renderRatingStars()}
                 <TouchableOpacity 
                   style={styles.contactButton}
                   onPress={handleContactPress}
                 >
-                  <Text style={styles.contactButtonText}>Contact {sitterData.name}</Text>
+                  <Text style={styles.contactButtonText}>Contact {professionalData.name}</Text>
                 </TouchableOpacity>
               </View>
 
@@ -627,7 +627,7 @@ const SitterProfile = ({ route, navigation }) => {
       >
         <View style={styles.modalContainer}>
           <View style={styles2.modalContent}>
-            <Text style={styles.bioText}>{sitterData.bio}</Text>
+            <Text style={styles.bioText}>{professionalData.bio}</Text>
             <TouchableOpacity 
               style={styles.closeButton}
               onPress={() => setBioModalVisible(false)}
@@ -692,7 +692,7 @@ const SitterProfile = ({ route, navigation }) => {
               style={styles.modalScroll}
               contentContainerStyle={styles.modalScrollContent}
             >
-              <Text style={styles.bioText}>{sitterData?.bio}</Text>
+              <Text style={styles.bioText}>{professionalData?.bio}</Text>
             </ScrollView>
           </View>
         </View>
@@ -1217,4 +1217,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SitterProfile;
+export default ProfessionalProfile;

@@ -8,8 +8,8 @@ const ProfessionalCard = ({ professional, onPress }) => {
   const navigation = useNavigation();
   
   const handlePress = () => {
-    navigation.navigate('SitterProfile', { 
-      sitter: professional 
+    navigation.navigate('ProfessionalProfile', { 
+      professional: professional 
     });
   };
 
@@ -22,9 +22,9 @@ const ProfessionalCard = ({ professional, onPress }) => {
       <View style={styles.infoContainer}>
         <View style={styles.header}>
           <Text style={styles.name}>{professional.id}. {professional.name}</Text>
-          <View style={styles.starSitterBadge}>
+          <View style={styles.starProfessionalBadge}>
             <Text style={styles.price}>from ${professional.startingRate}/night</Text>
-            {/* <Text style={styles.starSitterText}>Star Sitter</Text> */}
+            {/* <Text style={styles.starProfessionalText}>Star Professional</Text> */}
           </View>
         </View>
         <Text style={styles.location}>{professional.location}</Text>
@@ -107,13 +107,13 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSizes.medium,
     color: theme.colors.text,
   },
-  starSitterBadge: {
+  starProfessionalBadge: {
     backgroundColor: theme.colors.primary,
     padding: 4,
     borderRadius: 4,
     marginLeft: 8,
   },
-  starSitterText: {
+  starProfessionalText: {
     fontSize: theme.fontSizes.small,
     fontWeight: 'bold',
     color: theme.colors.surface,

@@ -15,14 +15,14 @@ const Messages = ({ navigation }) => {
   // Mock data - replace with actual data from your backend
   const messages = [
     { id: '1', name: 'John Doe', lastMessage: 'Hello, how are you?', date: '2023-05-15', time: '14:00', unread: true, type: 'client', bookingStatus: 'booked' },
-    { id: '2', name: 'Jane Smith', lastMessage: 'Can we reschedule?', date: '2023-05-17', time: '10:00', unread: false, type: 'sitter', bookingStatus: 'unconfirmed' },
+    { id: '2', name: 'Jane Smith', lastMessage: 'Can we reschedule?', date: '2023-05-17', time: '10:00', unread: false, type: 'professional', bookingStatus: 'unconfirmed' },
   ];
 
   const filters = [
     { label: 'Booked', value: 'booked' },
     { label: 'Unconfirmed', value: 'unconfirmed' },
     { label: 'Client Messages', value: 'client' },
-    { label: 'Sitter Messages', value: 'sitter' },
+    { label: 'Professional Messages', value: 'professional' },
     { label: 'Last Week', value: 'week' },
     { label: 'Last Month', value: 'month' },
     { label: 'Last Year', value: 'year' },

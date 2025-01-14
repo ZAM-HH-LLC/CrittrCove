@@ -35,8 +35,8 @@ const Dashboard = ({ navigation }) => {
 
   // Mock data - replace with actual API calls
   const upcomingBookings = [
-    { id: '1', sitter: 'Jane Doe', pet: 'Max (Dog)', date: '2023-05-15', time: '14:00' },
-    { id: '2', sitter: 'John Smith', pet: 'Whiskers (Cat)', date: '2023-05-17', time: '10:00' },
+    { id: '1', profepsronalsional: 'Jane Doe', pet: 'Max (Dog)', date: '2023-05-15', time: '14:00' },
+    { id: '2', profepsronalsional: 'John Smith', pet: 'Whiskers (Cat)', date: '2023-05-17', time: '10:00' },
   ];
 
   const IconComponent = Platform.OS === 'web'
@@ -62,7 +62,7 @@ const Dashboard = ({ navigation }) => {
                 onPress={() => navigation.navigate('BookingDetails', { bookingId: booking.id })}
               >
                 <List.Item
-                  title={`${booking.pet} with ${booking.sitter}`}
+                  title={`${booking.pet} with ${booking.profepsronalsional}`}
                   description={`${booking.date} at ${booking.time}`}
                   left={(props) => <IconComponent {...props} icon="calendar" name="calendar" />}
                   right={(props) => <IconComponent {...props} icon="chevron-right" name="chevron-right" />}
@@ -82,7 +82,7 @@ const Dashboard = ({ navigation }) => {
               <Button 
                 icon={Platform.OS === 'web' ? ({ size, color }) => <MaterialCommunityIcons name="magnify" size={size} color={color} /> : "magnify"}
                 mode="outlined" 
-                onPress={() => navigation.navigate('SearchSitters')}
+                onPress={() => navigation.navigate('SearchProfessionalsionals')}
                 style={styles.quickActionButton}
               >
                 Find a Professional

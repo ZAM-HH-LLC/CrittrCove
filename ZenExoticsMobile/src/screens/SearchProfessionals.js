@@ -20,9 +20,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../styles/theme';
 import CrossPlatformView from '../components/CrossPlatformView';
 import BackHeader from '../components/BackHeader';
-import { mockSitters } from '../data/mockData';
+import { mockProfessionals } from '../data/mockData';
 
-const SearchSitters = ({ navigation }) => {
+const SearchProfessionals = ({ navigation }) => {
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date());
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
@@ -176,9 +176,9 @@ const SearchSitters = ({ navigation }) => {
         serviceType,
         petCount,
         repeatService,
-        initialSitters: mockSitters.filter(sitter => 
-          (!serviceType || sitter.serviceTypes.includes(serviceType)) &&
-          (!animalType || sitter.animalTypes.includes(animalType))
+        initialProfessionals: mockProfessionals.filter(professional => 
+          (!serviceType || professional.serviceTypes.includes(serviceType)) &&
+          (!animalType || professional.animalTypes.includes(animalType))
         )
       };
 
@@ -189,7 +189,7 @@ const SearchSitters = ({ navigation }) => {
         await AsyncStorage.setItem('searchParams', JSON.stringify(searchParams));
       }
 
-      navigation.navigate('SearchSittersListing');
+      navigation.navigate('SearchProfessionalsListing');
     } catch (error) {
       console.error('Error getting location:', error);
       Alert.alert('Error', 'Failed to get location. Please try again.');
@@ -265,7 +265,7 @@ const SearchSitters = ({ navigation }) => {
   return (
     <CrossPlatformView fullWidthHeader={true}>
       <BackHeader 
-        title="Search Sitters" 
+        title="Search Professionals" 
         onBackPress={() => navigation.goBack()}
       />
       <KeyboardAvoidingView 
@@ -338,4 +338,4 @@ const SearchSitters = ({ navigation }) => {
   );
 };
 
-export default SearchSitters;
+export default SearchProfessionals;

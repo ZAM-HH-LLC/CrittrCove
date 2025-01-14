@@ -60,8 +60,8 @@ const ClientProfile = () => {
   const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0 });
   const questionMarkRef = useRef(null);
   const scrollViewRef = useRef(null);
-  const { isApprovedSitter, switchRole } = useContext(AuthContext);
-  const [localIsApprovedSitter, setLocalIsApprovedSitter] = useState(false);
+  const { isApprovedProfessional, switchRole } = useContext(AuthContext);
+  const [localIsApprovedProfessional, setLocalIsApprovedProfessional] = useState(false);
 
   useEffect(() => {
     fetchClientProfileData().then((data) => {
@@ -83,11 +83,11 @@ const ClientProfile = () => {
   }, []);
 
   useEffect(() => {
-    const fetchSitterStatus = async () => {
-      const storedIsApprovedSitter = await AsyncStorage.getItem('isApprovedSitter');
-      setLocalIsApprovedSitter(JSON.parse(storedIsApprovedSitter));
+    const fetchProfessionalStatus = async () => {
+      const storedIsApprovedProfessional = await AsyncStorage.getItem('isApprovedProfessional');
+      setLocalIsApprovedProfessional(JSON.parse(storedIsApprovedProfessional));
     };
-    fetchSitterStatus();
+    fetchProfessionalStatus();
   }, []);
 
   const pickImage = async () => {
@@ -200,9 +200,9 @@ const ClientProfile = () => {
     toggleEditMode(section);
   };
 
-  const handleSwitchToSitter = () => {
+  const handleSwitchToProfessional = () => {
     switchRole();
-    navigation.navigate('SitterProfile');
+    navigation.navigate('ProfessionalProfile');
   };
 
   const handleGoBack = () => {
@@ -251,8 +251,8 @@ const ClientProfile = () => {
     return '90%';
   };
 
-  // Use isApprovedSitter from context or localIsApprovedSitter from AsyncStorage
-  const showSwitchToSitterButton = isApprovedSitter || localIsApprovedSitter;
+  // Use isApprovedProfessional from context or localIsApprovedProfessional from AsyncStorage
+  const showSwitchToProfessionalButton = isApprovedProfessional || localIsApprovedProfessional;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -263,13 +263,13 @@ const ClientProfile = () => {
           </TouchableOpacity>
           <Text style={styles.headerText}>Client Profile</Text>
         </View>
-        {showSwitchToSitterButton && (
+        {showSwitchToProfessionalButton && (
           <Button 
             mode="contained" 
-            onPress={handleSwitchToSitter}
+            onPress={handleSwitchToProfessional}
             style={styles.switchProfileButton}
           >
-            Switch to Sitter
+            Switch to Professional
           </Button>
         )}
       </View>

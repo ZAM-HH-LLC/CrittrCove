@@ -29,27 +29,27 @@ const PrivacyPolicy = () => {
 
         <Text style={styles.sectionTitle}>Information We Collect</Text>
         <Text style={styles.paragraph}>
-          When you use {appName}, we collect several types of information to ensure the best experience for both sitters and pet owners. This includes:
+          When you use {appName}, we collect several types of information to ensure the best experience for both professionals and pet owners. This includes:
         </Text>
         <Text style={styles.listItem}>• Personal Information: Name, email, phone number, address, and service preferences.</Text>
         <Text style={styles.listItem}>• Payment Information: Card type, expiration date, and the last four digits of your payment card. Complete payment details are managed by third-party processors, and we do not store full card numbers.</Text>
         <Text style={styles.listItem}>• Health Data: Medical information about your pets (e.g., medical history, medications, vaccinations, behavioral traits). By using this service, you consent to our use of this health data as we deem necessary for analytics, research, marketing, or any other purpose related to improving our services.</Text>
         <Text style={styles.listItem}>• Device Data: We collect information about your device, including IP address, browser type, operating system, and other usage data.</Text>
-        <Text style={styles.listItem}>• Location Data: With your permission, we collect location information to match sitters and clients more effectively. Disabling location services may limit certain app features.</Text>
+        <Text style={styles.listItem}>• Location Data: With your permission, we collect location information to match professionals and clients more effectively. Disabling location services may limit certain app features.</Text>
         <Text style={styles.listItem}>• Cookies and Tracking: We use cookies and tracking technologies to improve user experience and monitor traffic patterns. You can disable cookies in your browser settings.</Text>
 
         <Text style={styles.sectionTitle}>How We Use Your Data</Text>
         <Text style={styles.paragraph}>We use the data we collect to:</Text>
-        <Text style={styles.listItem}>• Facilitate bookings and transactions between sitters and clients.</Text>
-        <Text style={styles.listItem}>• Verify sitter eligibility through background checks.</Text>
+        <Text style={styles.listItem}>• Facilitate bookings and transactions between professionals and clients.</Text>
+        <Text style={styles.listItem}>• Verify professional eligibility through background checks.</Text>
         <Text style={styles.listItem}>• Provide customer support and resolve disputes between users.</Text>
         <Text style={styles.listItem}>• Improve app functionality through analytics and feedback.</Text>
-        <Text style={styles.listItem}>• Manage communications between sitters and clients.</Text>
+        <Text style={styles.listItem}>• Manage communications between professionals and clients.</Text>
         <Text style={styles.listItem}>• Use health data for internal analysis and marketing purposes. We retain control over how this data is used.</Text>
 
         <Text style={styles.sectionTitle}>Sharing of Information</Text>
         <Text style={styles.paragraph}>We may share your data in the following ways:</Text>
-        <Text style={styles.listItem}>• With Other Users: For bookings, we share relevant information between sitters and pet owners.</Text>
+        <Text style={styles.listItem}>• With Other Users: For bookings, we share relevant information between professionals and pet owners.</Text>
         <Text style={styles.listItem}>• With Third-Party Providers: Payment processors, analytics providers, and background check services may access limited information to perform their services.</Text>
         <Text style={styles.listItem}>• Legal and Compliance Purposes: We may disclose information if required by law or to protect the safety and security of our users.</Text>
         <Text style={styles.listItem}>• Business Transfers: In case of a merger, sale, or acquisition, your data may be transferred to a new owner.</Text>

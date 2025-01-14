@@ -36,7 +36,7 @@ const MyProfile = () => {
   const [authorizedHouseholdMembers, setAuthorizedHouseholdMembers] = useState(['']);
   const [isLoading, setIsLoading] = useState(true);
   const [editMode, setEditMode] = useState({
-    sitter: false,
+    professional: false,
     services: false,
     bio: false,
     professionalBio: false,
@@ -55,8 +55,8 @@ const MyProfile = () => {
     boarding: '',
     dayCare: '',
   });
-  const { isApprovedSitter } = useContext(AuthContext);
-  const [localIsApprovedSitter, setLocalIsApprovedSitter] = useState(false);
+  const { isApprovedProfessional } = useContext(AuthContext);
+  const [localIsApprovedProfessional, setLocalIsApprovedProfessional] = useState(false);
   const [showAuthorizedMembersInfo, setShowAuthorizedMembersInfo] = useState(false);
   const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0 });
   const questionMarkRef = useRef(null);
@@ -116,11 +116,11 @@ const MyProfile = () => {
   }, []);
 
   useEffect(() => {
-    const fetchSitterStatus = async () => {
-      const storedIsApprovedSitter = await AsyncStorage.getItem('isApprovedSitter');
-      setLocalIsApprovedSitter(JSON.parse(storedIsApprovedSitter));
+    const fetchProfessionalStatus = async () => {
+      const storedIsApprovedProfessional = await AsyncStorage.getItem('isApprovedProfessional');
+      setLocalIsApprovedProfessional(JSON.parse(storedIsApprovedProfessional));
     };
-    fetchSitterStatus();
+    fetchProfessionalStatus();
   }, []);
 
   const pickImage = async () => {
@@ -275,12 +275,12 @@ const MyProfile = () => {
           >
             <Text style={[styles.tabText, activeTab === 'client' && styles.activeTabText]}>Account Info</Text>
           </TouchableOpacity>
-          {isApprovedSitter && (
+          {isApprovedProfessional && (
             <TouchableOpacity
-              style={[styles.tab, activeTab === 'sitter' && styles.activeTab]}
-              onPress={() => setActiveTab('sitter')}
+              style={[styles.tab, activeTab === 'professional' && styles.activeTab]}
+              onPress={() => setActiveTab('professional')}
             >
-              <Text style={[styles.tabText, activeTab === 'sitter' && styles.activeTabText]}>Professional</Text>
+              <Text style={[styles.tabText, activeTab === 'professional' && styles.activeTabText]}>Professional</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -391,7 +391,7 @@ const MyProfile = () => {
             </View>
           </View>
         )}
-        {activeTab === 'sitter' && (
+        {activeTab === 'professional' && (
           <ProfessionalTab
             services={services}
             setServices={setServices}

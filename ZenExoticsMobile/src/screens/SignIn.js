@@ -38,8 +38,8 @@ export default function SignIn() {
       console.log('Sign in status:', status);
       
       // Navigate based on status
-      if (status && status.userRole === 'sitter') {
-        navigation.navigate('SitterDashboard');
+      if (status && status.userRole === 'professional') {
+        navigation.navigate('ProfessionalDashboard');
       } else {
         navigation.navigate('Dashboard');
       }

@@ -4,14 +4,14 @@ import SearchRefiner from '../components/SearchRefiner';
 import ProfessionalList from '../components/ProfessionalList';
 import MapView from '../components/MapView';
 import { theme } from '../styles/theme';
-import { mockSitters } from '../data/mockData'; // Import mock data
+import { mockProfessionals } from '../data/mockData'; // Import mock data
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
-const SearchSittersListing = ({ navigation, route }) => {
+const SearchProfessionalsListing = ({ navigation, route }) => {
   const { width } = useWindowDimensions();
   const isMobile = width < 1000;
   const [activeView, setActiveView] = useState(isMobile ? 'filters' : 'all');
-  const [professionals, setProfessionals] = useState(mockSitters); // Use mock data
+  const [professionals, setProfessionals] = useState(mockProfessionals); // Use mock data
   const [filters, setFilters] = useState({});
   const [region, setRegion] = useState({
     latitude: 38.8339,
@@ -45,7 +45,7 @@ const SearchSittersListing = ({ navigation, route }) => {
   };
 
   const handleProfessionalSelect = (professional) => {
-    navigation.navigate('SitterProfile', { professional });
+    navigation.navigate('ProfessionalProfile', { professional });
   };
 
   const renderContent = () => {
@@ -223,5 +223,5 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SearchSittersListing;
+export default SearchProfessionalsListing;
 

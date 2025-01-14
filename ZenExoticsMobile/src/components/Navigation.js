@@ -10,7 +10,7 @@ export default function Navigation({ navigation }) {
   const [visible, setVisible] = useState(false);
   const [isMobile, setIsMobile] = useState(Dimensions.get('window').width < 900);
   const { colors } = useTheme();
-  const { isSignedIn, setIsSignedIn, isApprovedSitter, userRole, signOut } = useContext(AuthContext);
+  const { isSignedIn, setIsSignedIn, isApprovedProfessional, userRole, signOut } = useContext(AuthContext);
 
   const openMenu = () => setVisible(true);
   const closeMenu = () => setVisible(false);
@@ -27,7 +27,7 @@ export default function Navigation({ navigation }) {
     };
   }, []);
 
-  const sittersTitle = Platform.OS === 'web' ? 'Search Pros' : 'Professionals';
+  const professionalsTitle = Platform.OS === 'web' ? 'Search Pros' : 'Professionals';
 
   const handleNavigation = (screenName) => {
     closeMenu();
@@ -42,9 +42,9 @@ export default function Navigation({ navigation }) {
         { title: 'Sign Up', icon: 'account-plus', onPress: () => handleNavigation('SignUp') },
         { title: 'More', icon: 'dots-horizontal', onPress: () => handleNavigation('More') },
       ];
-    } else if (userRole === 'sitter') {
+    } else if (userRole === 'professional') {
       return [
-        { title: 'Dashboard', icon: 'view-dashboard', onPress: () => handleNavigation('SitterDashboard') },
+        { title: 'Dashboard', icon: 'view-dashboard', onPress: () => handleNavigation('ProfessionalDashboard') },
         { title: 'MyBookings', icon: 'account-group', onPress: () => handleNavigation('MyBookings') },
         { title: 'Messages', icon: 'message-text', onPress: () => navigation.navigate('MessageHistory') },
         { title: 'Availability', icon: 'clock-outline', onPress: () => handleNavigation('AvailabilitySettings') },
@@ -53,7 +53,7 @@ export default function Navigation({ navigation }) {
     } else {
       return [
         { title: 'Dashboard', icon: 'view-dashboard', onPress: () => handleNavigation('Dashboard') },
-        { title: sittersTitle, icon: 'magnify', onPress: () => handleNavigation('SearchSittersListing') },
+        { title: professionalsTitle, icon: 'magnify', onPress: () => handleNavigation('SearchProfessionalsListing') },
         { title: 'Messages', icon: 'message-text', onPress: () => navigation.navigate('MessageHistory') },
         { title: 'My Pets', icon: 'paw', onPress: () => handleNavigation('MyPets') },
         { title: 'More', icon: 'dots-horizontal', onPress: () => handleNavigation('More') },

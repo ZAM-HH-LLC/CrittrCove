@@ -623,7 +623,7 @@ const AddPet = ({ route }) => {
           {/* <View style={{ height: 16 }} /> */}
           <View style={styles.inputContainer}>
             <TextInput
-              label="Anything Else Sitter Should Know"
+              label="Anything Else Professional Should Know"
               value={additionalInstructions}
               onChangeText={handleInputChange(setAdditionalInstructions)}
               maxLength={1000}

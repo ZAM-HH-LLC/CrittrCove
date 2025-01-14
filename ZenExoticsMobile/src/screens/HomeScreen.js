@@ -30,13 +30,13 @@ export default function HomeScreen({ navigation }) {
         <Card style={styles.card}>
           <Card.Content>
             <Title>Secure Contract Handling</Title>
-            <Paragraph>We ensure all agreements between pet owners and sitters are clear and legally sound.</Paragraph>
+            <Paragraph>We ensure all agreements between pet owners and professionals are clear and legally sound.</Paragraph>
           </Card.Content>
         </Card>
         <Card style={styles.card}>
           <Card.Content>
             <Title>Real-time Pet Updates</Title>
-            <Paragraph>Our sitters provide regular updates and photos, keeping you connected with your pets.</Paragraph>
+            <Paragraph>Our professionals provide regular updates and photos, keeping you connected with your pets.</Paragraph>
           </Card.Content>
         </Card>
       </View>
@@ -44,7 +44,7 @@ export default function HomeScreen({ navigation }) {
       <View style={styles.section}>
         <Title style={styles.sectionTitle}>About Us</Title>
         <Paragraph>
-          ZenExotics is dedicated to providing top-quality care for all pets, with a special focus on exotic animals. Our network of experienced and passionate sitters ensures your beloved pets receive the best care possible.
+          ZenExotics is dedicated to providing top-quality care for all pets, with a special focus on exotic animals. Our network of experienced and passionate professionals ensures your beloved pets receive the best care possible.
         </Paragraph>
       </View>
 
@@ -53,7 +53,7 @@ export default function HomeScreen({ navigation }) {
         <Card style={styles.card}>
           <Card.Content>
             <Title>1. Search</Title>
-            <Paragraph>Read verified reviews and choose a screened sitter who's perfect for your pets.</Paragraph>
+            <Paragraph>Read verified reviews and choose a screened professional who's perfect for your pets.</Paragraph>
           </Card.Content>
         </Card>
         <Card style={styles.card}>

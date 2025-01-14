@@ -12,7 +12,7 @@ export const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [userRole, setUserRole] = useState(null);
-  const [isApprovedSitter, setIsApprovedSitter] = useState(false);
+  const [isApprovedProfessional, setIsApprovedProfessional] = useState(false);
   const [loading, setLoading] = useState(true);
   const [screenWidth, setScreenWidth] = useState(Dimensions.get('window').width);
   const [firstName, setFirstName] = useState('');
@@ -40,23 +40,23 @@ export const AuthProvider = ({ children }) => {
         const [token, storedRole, storedApproval] = await AsyncStorage.multiGet([
           'userToken',
           'userRole',
-          'isApprovedSitter'
+          'isApprovedProfessional'
         ]);
 
         console.log('login token', token[1]);
         console.log('storedRole', storedRole[1]);
         console.log('storedApproval', storedApproval[1]);
-        console.log('isApprovedSitter', isApprovedSitter);
+        console.log('isApprovedProfessional', isApprovedProfessional);
 
         // If we have stored values, use them
         if (token[1]) {
           setIsSignedIn(true);
           setUserRole(storedRole[1] || 'petOwner');
-          setIsApprovedSitter(storedApproval[1] === 'true');
+          setIsApprovedProfessional(storedApproval[1] === 'true');
         } else {
           setIsSignedIn(false);
           setUserRole(null);
-          setIsApprovedSitter(false);
+          setIsApprovedProfessional(false);
         }
       } catch (error) {
         console.error('Error loading auth state:', error);
@@ -86,17 +86,17 @@ export const AuthProvider = ({ children }) => {
       const { is_approved } = response.data;
       
       // Set approval status
-      setIsApprovedSitter(is_approved);
-      await AsyncStorage.setItem('isApprovedSitter', String(is_approved));
+      setIsApprovedProfessional(is_approved);
+      await AsyncStorage.setItem('isApprovedProfessional', String(is_approved));
       
       return {
-        isApprovedSitter: is_approved,
-        suggestedRole: is_approved ? 'sitter' : 'petOwner'
+        isApprovedProfessional: is_approved,
+        suggestedRole: is_approved ? 'professional' : 'petOwner'
       };
     } catch (error) {
       console.error('Error getting professional status:', error.response?.data || error);
       return {
-        isApprovedSitter: false,
+        isApprovedProfessional: false,
         suggestedRole: 'petOwner'
       };
     }
@@ -123,7 +123,7 @@ export const AuthProvider = ({ children }) => {
       
       return {
         userRole: initialRole,
-        isApprovedSitter: status.isApprovedSitter
+        isApprovedProfessional: status.isApprovedProfessional
       };
     } catch (error) {
       console.error('Error during sign in:', error);
@@ -137,19 +137,19 @@ export const AuthProvider = ({ children }) => {
         'userToken', 
         'refreshToken', 
         'userRole', 
-        'isApprovedSitter'
+        'isApprovedProfessional'
       ]);
     } catch (error) {
       console.error('Error clearing storage:', error);
     }
     setIsSignedIn(false);
-    setIsApprovedSitter(false);
+    setIsApprovedProfessional(false);
     setUserRole(null);
   };
 
   const switchRole = async () => {
-    if (isApprovedSitter) {
-      const newRole = userRole === 'sitter' ? 'petOwner' : 'sitter';
+    if (isApprovedProfessional) {
+      const newRole = userRole === 'professional' ? 'petOwner' : 'professional';
       console.log('Switching role from', userRole, 'to', newRole);
       
       // Update state first
@@ -163,7 +163,7 @@ export const AuthProvider = ({ children }) => {
         console.error('Error updating role in AsyncStorage:', error);
       }
     } else {
-      console.log('User is not an approved sitter, cannot switch roles');
+      console.log('User is not an approved professional, cannot switch roles');
     }
   };
 
@@ -172,7 +172,7 @@ export const AuthProvider = ({ children }) => {
       const [token, storedRole, storedApproval] = await AsyncStorage.multiGet([
         'userToken',
         'userRole',
-        'isApprovedSitter'
+        'isApprovedProfessional'
       ]);
 
       console.log('Checking auth status with stored values:', {
@@ -184,8 +184,8 @@ export const AuthProvider = ({ children }) => {
       if (!token[1]) {
         setIsSignedIn(false);
         setUserRole(null);
-        setIsApprovedSitter(false);
-        return { isSignedIn: false, userRole: null, isApprovedSitter: false };
+        setIsApprovedProfessional(false);
+        return { isSignedIn: false, userRole: null, isApprovedProfessional: false };
       }
 
       // Get fresh professional status
@@ -199,14 +199,14 @@ export const AuthProvider = ({ children }) => {
       return {
         isSignedIn: true,
         userRole: currentRole,
-        isApprovedSitter: status.isApprovedSitter
+        isApprovedProfessional: status.isApprovedProfessional
       };
     } catch (error) {
       console.error('Error in checkAuthStatus:', error);
       setIsSignedIn(false);
       setUserRole(null);
-      setIsApprovedSitter(false);
-      return { isSignedIn: false, userRole: null, isApprovedSitter: false };
+      setIsApprovedProfessional(false);
+      return { isSignedIn: false, userRole: null, isApprovedProfessional: false };
     }
   };
 
@@ -216,8 +216,8 @@ export const AuthProvider = ({ children }) => {
       setIsSignedIn,
       userRole,
       setUserRole,
-      isApprovedSitter, 
-      setIsApprovedSitter,
+      isApprovedProfessional, 
+      setIsApprovedProfessional,
       loading,
       signIn,
       signOut,

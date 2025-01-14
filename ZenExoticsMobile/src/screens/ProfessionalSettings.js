@@ -2,11 +2,11 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { theme } from '../styles/theme';
 
-const SitterSettings = () => {
+const ProfessionalSettings = () => {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Sitter Settings</Text>
-      <Text>Manage your sitter profile and preferences here.</Text>
+      <Text style={styles.title}>Professional Settings</Text>
+      <Text>Manage your professional profile and preferences here.</Text>
     </View>
   );
 };
@@ -25,4 +25,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SitterSettings;
+export default ProfessionalSettings;
