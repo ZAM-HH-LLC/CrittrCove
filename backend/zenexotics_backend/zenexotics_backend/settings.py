@@ -94,6 +94,12 @@ INSTALLED_APPS = [
     'booking_details',
     'booking_pets',
     'booking_drafts',
+    'review_moderation',
+    'client_reviews',
+    'professional_reviews',
+    'user_messages',
+    'payment_methods',
+    'payments',
 ]
 
 MIDDLEWARE = [

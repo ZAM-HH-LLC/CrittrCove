@@ -1,3 +1,28 @@
 from django.db import models
 
-# Create your models here.
+class PaymentMethod(models.Model):
+    TYPE_CHOICES = [
+        ('CREDIT_CARD', 'Credit Card'),
+        ('DEBIT_CARD', 'Debit Card'),
+        ('BANK_ACCOUNT', 'Bank Account'),
+    ]
+
+    payment_method_id = models.AutoField(primary_key=True)
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE)
+    type = models.CharField(max_length=50, choices=TYPE_CHOICES)
+    stripe_payment_method_id = models.CharField(max_length=255)
+    last4 = models.CharField(max_length=4)
+    brand = models.CharField(max_length=50, null=True, blank=True)  # For cards
+    expiration_date = models.DateField(null=True, blank=True)  # For cards
+    bank_account_last4 = models.CharField(max_length=4, null=True, blank=True)  # For bank accounts
+    bank_name = models.CharField(max_length=255, null=True, blank=True)  # For bank accounts
+    is_verified = models.BooleanField(default=False)
+    is_primary = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.type} ending in {self.last4} for {self.user}"
+
+    class Meta:
+        db_table = 'payment_methods'
+        ordering = ['-created_at']
