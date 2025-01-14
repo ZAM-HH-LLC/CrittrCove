@@ -1,5 +1,6 @@
-from django.urls import path, include
+from core.url_factory import create_versioned_urls
 
-urlpatterns = [
-    path('v1/', include('users.v1.urls')),
-]
+app_name = 'users'
+
+# Create URLs using the factory
+router, urlpatterns = create_versioned_urls(app_name)

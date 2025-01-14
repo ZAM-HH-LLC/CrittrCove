@@ -1,12 +1,12 @@
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
+from core.url_factory import create_versioned_urls
 from .v1 import views
-
-router = DefaultRouter()
-router.register(r'pets', views.PetViewSet, basename='pet')
 
 app_name = 'pets'
 
-urlpatterns = [
-    path('v1/', include((router.urls, app_name), namespace='v1')),
-]
+# Create URLs using the factory with viewset registration
+router, urlpatterns = create_versioned_urls(
+    app_name,
+    viewset_registrations=[
+        ('pets', views.PetViewSet, 'pet'),
+    ]
+)

@@ -1,11 +1,6 @@
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-from .v1 import views
-
-router = DefaultRouter()
+from core.url_factory import create_versioned_urls
 
 app_name = 'booking_summary'
 
-urlpatterns = [
-    path('v1/', include((router.urls, app_name), namespace='v1')),
-]
+# Create URLs using the factory
+router, urlpatterns = create_versioned_urls(app_name)
