@@ -100,6 +100,10 @@ INSTALLED_APPS = [
     'user_messages',
     'payment_methods',
     'payments',
+    'search_logs',
+    'interaction_logs',
+    'error_logs',
+    'engagement_logs',
 ]
 
 MIDDLEWARE = [
