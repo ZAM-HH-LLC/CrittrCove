@@ -76,7 +76,7 @@ export const AuthProvider = ({ children }) => {
 
   const getProfessionalStatus = async (token) => {
     try {
-      console.log('Checking professional status with token:', token);
+      // console.log('Checking professional status with token:', token);
       const response = await axios.get(`${API_BASE_URL}/api/professional-status/v1/`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -84,14 +84,25 @@ export const AuthProvider = ({ children }) => {
       console.log('Professional status response:', response.data);
       
       const { is_approved } = response.data;
+      console.log('MBA is_approved', is_approved);
       
       // Set approval status
       setIsApprovedProfessional(is_approved);
       await AsyncStorage.setItem('isApprovedProfessional', String(is_approved));
       
+      // If approved and current role is petOwner, switch to professional
+      const currentRole = await AsyncStorage.getItem('userRole');
+      const suggestedRole = is_approved ? 'professional' : 'petOwner';
+      
+      // Only auto-switch to professional if they're approved and don't have a role set
+      if (is_approved && (!currentRole || currentRole === 'petOwner')) {
+        setUserRole(suggestedRole);
+        await AsyncStorage.setItem('userRole', suggestedRole);
+      }
+      
       return {
         isApprovedProfessional: is_approved,
-        suggestedRole: is_approved ? 'professional' : 'petOwner'
+        suggestedRole
       };
     } catch (error) {
       console.error('Error getting professional status:', error.response?.data || error);
@@ -113,6 +124,7 @@ export const AuthProvider = ({ children }) => {
       
       // Get professional status and set initial role
       const status = await getProfessionalStatus(token);
+      // console.log('professional status', status);
       const initialRole = status.suggestedRole;
       
       // Set and store the role

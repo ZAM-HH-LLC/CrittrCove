@@ -32,7 +32,7 @@ def create_versioned_urls(app_name: str, viewset_registrations: List[Tuple[str, 
     
     # Create the final URL patterns
     urlpatterns = [
-        path('v1/', include((router.urls + v1_patterns, app_name), namespace='v1')),
+        path('v1/', include((v1_patterns + list(router.urls), app_name), namespace='v1')),
     ]
     
     return router, urlpatterns 

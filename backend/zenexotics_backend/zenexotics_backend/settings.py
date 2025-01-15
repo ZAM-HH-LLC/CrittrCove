@@ -236,19 +236,34 @@ DEFAULT_FROM_EMAIL = 'zam.hh.llc@gmail.com'
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+    },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
         },
     },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
     'loggers': {
-        'django.db.backends': {
+        'django': {
             'handlers': ['console'],
-            'level': 'DEBUG',  # Change this to ERROR for less verbose output
+            'level': 'INFO',
             'propagate': False,
         },
         # Add custom loggers for your apps
         'users': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
+        'professional_status': {
             'handlers': ['console'],
             'level': 'DEBUG',
         },
