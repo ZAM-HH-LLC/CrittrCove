@@ -1,5 +1,4 @@
 from django.db import models
-from django.contrib import admin
 from users.models import User
 
 class Conversation(models.Model):
@@ -19,10 +18,3 @@ class Conversation(models.Model):
 
     def __str__(self):
         return f'Conversation between {self.participant1} and {self.participant2}'
-
-@admin.register(Conversation)
-class ConversationAdmin(admin.ModelAdmin):
-    list_display = ('conversation_id', 'participant1', 'participant2', 'last_message_time', 'unread_count')
-    list_filter = ('last_message_time',)
-    search_fields = ('participant1__email', 'participant2__email', 'last_message')
-    readonly_fields = ('last_message_time',)

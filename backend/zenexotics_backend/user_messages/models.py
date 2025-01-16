@@ -1,5 +1,4 @@
 from django.db import models
-from django.contrib import admin
 from users.models import User
 from bookings.models import Booking
 
@@ -27,10 +26,3 @@ class UserMessage(models.Model):
 
     def __str__(self):
         return f'Message from {self.sender} at {self.timestamp}'
-
-@admin.register(UserMessage)
-class UserMessageAdmin(admin.ModelAdmin):
-    list_display = ('message_id', 'sender', 'conversation', 'timestamp', 'status', 'is_booking_request')
-    list_filter = ('status', 'is_booking_request', 'timestamp')
-    search_fields = ('content', 'sender__email', 'conversation__conversation_id')
-    readonly_fields = ('timestamp',)
