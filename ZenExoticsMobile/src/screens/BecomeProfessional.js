@@ -5,6 +5,7 @@ import { theme } from '../styles/theme';
 import * as ImagePicker from 'expo-image-picker';
 
 
+// TODO: mention to user initially we are doing a manual verification process, will implement automation later.
 const BecomeProfessional = ({ navigation }) => {
   const [selectedPets, setSelectedPets] = useState({
     dog: false,

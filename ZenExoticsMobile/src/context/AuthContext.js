@@ -84,7 +84,6 @@ export const AuthProvider = ({ children }) => {
       console.log('Professional status response:', response.data);
       
       const { is_approved } = response.data;
-      console.log('MBA is_approved', is_approved);
       
       // Set approval status
       setIsApprovedProfessional(is_approved);

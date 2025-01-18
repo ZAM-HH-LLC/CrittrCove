@@ -401,22 +401,22 @@ export const fetchAvailabilityData = () => {
     setTimeout(() => {
       resolve({
         availableDates: {
-          '2024-12-01': { startTime: '09:00', endTime: '17:00' },
-          '2024-12-02': { startTime: '10:00', endTime: '18:00' },
-          '2024-12-03': { startTime: '09:00', endTime: '17:00' },
+          '2025-01-01': { startTime: '09:00', endTime: '17:00' },
+          '2025-01-02': { startTime: '10:00', endTime: '18:00' },
+          '2025-01-03': { startTime: '09:00', endTime: '17:00' },
         },
         unavailableDates: {
-          '2024-12-04': { startTime: '00:00', endTime: '24:00' },
-          '2024-12-05': { startTime: '10:00', endTime: '18:00' },
+          '2025-01-04': { startTime: '00:00', endTime: '24:00' },
+          '2025-01-05': { startTime: '10:00', endTime: '18:00' },
         },
         bookings: {
-          '2024-12-06': [
+          '2025-01-06': [
             { id: 'bk1', startTime: '14:00', endTime: '16:00', client_name: 'Charlie' },
             { id: 'bk2', startTime: '16:00', endTime: '18:00', client_name: 'Bob' },
             { id: 'bk3', startTime: '18:00', endTime: '20:00', client_name: 'Nick' },
             { id: 'bk4', startTime: '20:00', endTime: '22:00', client_name: 'Alfred' }
           ],
-          '2024-12-07': [
+          '2025-01-07': [
             { id: 'bk5', startTime: '10:00', endTime: '12:00', client_name: 'Uhtred' }
           ],
         },

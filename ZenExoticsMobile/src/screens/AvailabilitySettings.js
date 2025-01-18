@@ -279,13 +279,6 @@ const AvailabilitySettings = () => {
     setSelectedDates([]);
   };
 
-  const handleUpdateDefaultSettings = (newSettings) => {
-    console.log('Updating default settings:', newSettings);
-    setDefaultSettings(newSettings);
-    applyDefaultSettingsToCalendar(newSettings);
-    setIsSettingsModalVisible(false);
-  };
-
   const applyDefaultSettingsToCalendar = (settings) => {
     const newMarkedDates = { ...markedDates };
     const newCurrentAvailability = { ...currentAvailability };
@@ -354,11 +347,12 @@ const AvailabilitySettings = () => {
     setCurrentAvailability(newCurrentAvailability);
   };
 
-  const handleClientPress = (clientId) => {
-    // Navigate to the client history page
-    // You'll need to implement this navigation logic
-    console.log(`Navigating to client history for client ID: ${clientId}`);
-  };
+  //TODO: implement this in future for making clients on bookings clickable
+  // const handleClientPress = (clientId) => {
+  //   // Navigate to the client history page
+  //   // You'll need to implement this navigation logic
+  //   console.log(`Navigating to client history for client ID: ${clientId}`);
+  // };
 
   const IconComponent = Platform.OS === 'web' ? MaterialCommunityIcons : Icon;
 
@@ -393,19 +387,21 @@ const AvailabilitySettings = () => {
     setIsSettingsModalVisible(false);
   };
 
-  const handleSaveAvailability = (data) => {
-    if (data.isRemoval) {
-      // Just update the availability directly
-      setCurrentAvailability(prev => ({
-        ...prev,
-        ...data.updatedAvailability
-      }));
-      return;
-    }
+  // TODO: implement this with the backend data so we can save to the backend.
+  // const handleSaveAvailability = (data) => {
+  //   if (data.isRemoval) {
+  //     // Just update the availability directly
+  //     setCurrentAvailability(prev => ({
+  //       ...prev,
+  //       ...data.updatedAvailability
+  //     }));
+  //     return;
+  //   }
 
-    // ... rest of your existing save logic ...
-  };
+  //   // ... rest of your existing save logic ...
+  // };
 
+  // TODO: make this actually remove the timeslot on the backend
   const handleRemoveTimeSlot = (date, timeSlot, updatedAvailability, selectedDates) => {
     if (updatedAvailability && selectedDates) {
       // Handle multiple dates
@@ -507,7 +503,7 @@ const AvailabilitySettings = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Calendar Component */}
+      {/* TODO: make the calendar look more user friendly */}
       <Calendar
         markedDates={{
           ...markedDates,
@@ -588,12 +584,13 @@ const AvailabilitySettings = () => {
         </View>
       </View>
 
-      <TouchableOpacity 
+        {/* Removed this because we don't want or need the add button */}
+      {/* <TouchableOpacity 
         style={styles.addButton} 
         onPress={() => setIsAddModalVisible(true)}
       >
         <IconComponent name={Platform.OS === 'web' ? 'plus' : 'add'} size={24} color="white" />
-      </TouchableOpacity>
+      </TouchableOpacity> */}
       <AddAvailabilityModal
         isVisible={isAddModalVisible}
         onClose={() => {

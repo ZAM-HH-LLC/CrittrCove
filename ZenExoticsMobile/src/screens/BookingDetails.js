@@ -21,8 +21,9 @@ const LAST_VIEWED_BOOKING_ID = 'last_viewed_booking_id';
 
 // Replace with Services that professional offers
 const SERVICE_OPTIONS = ['Dog Walking', 'Pet Sitting', 'House Sitting', 'Drop-In Visits'];
-// Replace with Animals that the client owns
+// Replace with Animal types that the client owns
 const ANIMAL_OPTIONS = ['Dog', 'Cat', 'Bird', 'Small Animal'];
+// Replace with the pets that the client has in their "my pets" tab
 const PET_OPTIONS = [
   { id: 'dog1', name: 'Max', type: 'Dog', breed: 'Golden Retriever' },
   { id: 'cat1', name: 'Luna', type: 'Cat', breed: 'Siamese' },
@@ -274,42 +275,43 @@ const BookingDetails = () => {
     }
   }, [booking]);
 
-  const measureTimeDropdown = () => {
-    if (timeInputRef.current && Platform.OS === 'web') {
-      timeInputRef.current.measure((x, y, width, height, pageX, pageY) => {
-        setTimeDropdownPosition({
-          top: pageY + height,
-          left: pageX,
-          width: width,
-        });
-      });
-    }
-  };
+  // const measureTimeDropdown = () => {
+  //   if (timeInputRef.current && Platform.OS === 'web') {
+  //     timeInputRef.current.measure((x, y, width, height, pageX, pageY) => {
+  //       setTimeDropdownPosition({
+  //         top: pageY + height,
+  //         left: pageX,
+  //         width: width,
+  //       });
+  //     });
+  //   }
+  // };
 
-  const handleTimeOptionSelect = (option) => {
-    setEditedBooking(prev => ({
-      ...prev,
-      lengthOfService: option
-    }));
-    setShowTimeDropdown(false);
-    recalculateTotals();
-  };
+  // const handleTimeOptionSelect = (option) => {
+  //   setEditedBooking(prev => ({
+  //     ...prev,
+  //     lengthOfService: option
+  //   }));
+  //   setShowTimeDropdown(false);
+  //   recalculateTotals();
+  // };
 
-  const handleApprove = () => {
-    // Implement approval logic
-    console.log('Booking approved');
-  };
+  // const handleApprove = () => {
+  //   // Implement approval logic
+  //   console.log('Booking approved');
+  // };
 
-  const handleModify = () => {
-    // Navigate to modification screen
-    console.log('Modify booking');
-  };
+  // const handleModify = () => {
+  //   // Navigate to modification screen
+  //   console.log('Modify booking');
+  // };
 
-  const handleCancel = () => {
-    // Implement cancellation logic
-    console.log('Booking cancelled');
-  };
+  // const handleCancel = () => {
+  //   // Implement cancellation logic
+  //   console.log('Booking cancelled');
+  // };
 
+  // TODO: I believe this is where we need to change the status to disallow edits from pros when pending client approval
   const handleStatusUpdateAfterEdit = () => {
     const currentPets = booking.pets || [];
     const currentOccurrences = booking.occurrences || [];
@@ -419,15 +421,15 @@ const BookingDetails = () => {
     }
   };
 
-  const handleAddPet = (pet) => {
-    setSelectedPets(prev => [...prev, pet]);
-    handleStatusUpdateAfterEdit();
-  };
+  // const handleAddPet = (pet) => {
+  //   setSelectedPets(prev => [...prev, pet]);
+  //   handleStatusUpdateAfterEdit();
+  // };
 
-  const handleRemovePet = (petId) => {
-    setSelectedPets(prev => prev.filter(p => p.id !== petId));
-    handleStatusUpdateAfterEdit();
-  };
+  // const handleRemovePet = (petId) => {
+  //   setSelectedPets(prev => prev.filter(p => p.id !== petId));
+  //   handleStatusUpdateAfterEdit();
+  // };
 
   const toggleServiceEditMode = async () => {
     if (isServiceEditMode) {

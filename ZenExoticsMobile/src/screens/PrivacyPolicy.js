@@ -7,6 +7,26 @@ import { useNavigation } from '@react-navigation/native';
 
 const appName = 'Zen Exotics';
 
+const privacy_policy_info = [
+  {sectionTitle: "Information We Collect", 
+    paragraph: "When you use {appName}, we collect several types of information to ensure the best experience for both professionals and pet owners. This includes:", 
+    listItems: {listItem: "Personal Information: Name, email, phone number, address, and service preferences.",
+                listItem: "Payment Information: Card type, expiration date, and the last four digits of your payment card. Complete payment details are managed by third-party processors, and we do not store full card numbers.",
+                listItem: "Health Data: Medical information about your pets (e.g., medical history, medications, vaccinations, behavioral traits). By using this service, you consent to our use of this health data as we deem necessary for analytics, research, marketing, or any other purpose related to improving our services.",
+                listItem: "Device Data: We collect information about your device, including IP address, browser type, operating system, and other usage data.",
+                listItem: "Location Data: With your permission, we collect location information to match professionals and clients more effectively. Disabling location services may limit certain app features.",
+                listItem: "Payment Information: Card type, expiration date, and the last four digits of your payment card. Complete payment details are managed by third-party processors, and we do not store full card numbers.",
+                listItem: "Payment Information: Card type, expiration date, and the last four digits of your payment card. Complete payment details are managed by third-party processors, and we do not store full card numbers.",
+                listItem: "Payment Information: Card type, expiration date, and the last four digits of your payment card. Complete payment details are managed by third-party processors, and we do not store full card numbers.",
+                listItem: "Payment Information: Card type, expiration date, and the last four digits of your payment card. Complete payment details are managed by third-party processors, and we do not store full card numbers.",
+                listItem: "Payment Information: Card type, expiration date, and the last four digits of your payment card. Complete payment details are managed by third-party processors, and we do not store full card numbers.",
+                listItem: "Payment Information: Card type, expiration date, and the last four digits of your payment card. Complete payment details are managed by third-party processors, and we do not store full card numbers.",
+                listItem: "Payment Information: Card type, expiration date, and the last four digits of your payment card. Complete payment details are managed by third-party processors, and we do not store full card numbers.",
+                listItem: "Payment Information: Card type, expiration date, and the last four digits of your payment card. Complete payment details are managed by third-party processors, and we do not store full card numbers.",
+    }},
+  {}
+];
+
 const PrivacyPolicy = () => {
   const navigation = useNavigation();
 

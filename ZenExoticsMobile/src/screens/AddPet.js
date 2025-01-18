@@ -428,7 +428,6 @@ const AddPet = ({ route }) => {
     }, 1000);
   };
 
-  // Add these new functions inside the AddPet component
   const pickVetDocuments = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
@@ -566,6 +565,7 @@ const AddPet = ({ route }) => {
             </>
             )}
           <Text style={styles.boldLabel}>Adoption Date:</Text>
+          {/* TODO: change this to the DatePicker.js file i have */}
           {Platform.OS === 'web' ? (
             <View style={styles.timePickerContainer}>
               <input
@@ -623,7 +623,7 @@ const AddPet = ({ route }) => {
           {/* <View style={{ height: 16 }} /> */}
           <View style={styles.inputContainer}>
             <TextInput
-              label="Anything Else Professional Should Know"
+              label="Anything Else The Professional Should Know"
               value={additionalInstructions}
               onChangeText={handleInputChange(setAdditionalInstructions)}
               maxLength={1000}
