@@ -2,11 +2,11 @@ from django.db import models
 
 class BookingDetails(models.Model):
     PET_TYPE_CHOICES = [
-        ('DOG', 'Dog'),
-        ('CAT', 'Cat'),
-        ('EXOTIC', 'Exotic'),
-        ('FARM', 'Farm Animal'),
-        ('OTHER', 'Other'),
+        ('Dog', 'Dog'),
+        ('Cat', 'Cat'),
+        ('Exotic', 'Exotic'),
+        ('Farm', 'Farm Animal'),
+        ('Other', 'Other'),
     ]
 
     detail_id = models.AutoField(primary_key=True)
