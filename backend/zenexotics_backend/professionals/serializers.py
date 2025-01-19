@@ -23,12 +23,10 @@ class BookingOccurrenceSerializer(serializers.ModelSerializer):
         return PetSerializer(pets, many=True).data
 
 class ProfessionalDashboardSerializer(serializers.ModelSerializer):
-    first_name = serializers.CharField(source='user.get_first_name')
     upcoming_bookings = BookingOccurrenceSerializer(many=True, read_only=True)
 
     class Meta:
         model = Professional
         fields = [
-            'first_name',
             'upcoming_bookings'
         ] 

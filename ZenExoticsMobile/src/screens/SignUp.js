@@ -42,7 +42,7 @@ export default function SignUp() {
 
     setLoading(true);
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/users/register/`, userData);
+      const response = await axios.post(`${API_BASE_URL}/api/users/v1/register/`, userData);
       if (Platform.OS === 'ios' || Platform.OS === 'android') {
         Alert.alert('Success', 'Account created successfully!', [
           { text: 'OK', onPress: () => navigation.navigate('MyProfile') }

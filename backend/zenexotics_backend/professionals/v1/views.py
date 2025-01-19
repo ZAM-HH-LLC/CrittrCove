@@ -48,7 +48,6 @@ def get_professional_dashboard(request):
 
         # Prepare response data
         response_data = {
-            'first_name': request.user.get_first_name(),
             'upcoming_bookings': serialized_occurrences
         }
 
