@@ -1,5 +1,6 @@
 from django.urls import path
+from . import views
 
 urlpatterns = [
-    # URL patterns for bookings API v1 will be added here
+    path('', views.BookingListView.as_view(), name='booking_list'),
 ]
