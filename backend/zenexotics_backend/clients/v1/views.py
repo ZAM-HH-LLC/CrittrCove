@@ -12,6 +12,9 @@ from professional_status.models import ProfessionalStatus
 from bookings.models import Booking
 from booking_occurrences.models import BookingOccurrence
 import logging
+from rest_framework.views import APIView
+from user_addresses.models import Address
+from ..serializers import ClientProfileEditSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -87,4 +90,33 @@ def get_client_dashboard(request):
         return Response(
             {'error': 'An error occurred while fetching dashboard data'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        ) 
+        )
+
+class ClientProfileEditView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        # Get the client profile or return 403 if user is not a client
+        try:
+            client = Client.objects.select_related('user').prefetch_related(
+                'user__owned_pets'
+            ).get(user=request.user)
+        except Client.DoesNotExist:
+            return Response(
+                {"error": "User is not a client"}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Get the service address for the client
+        address = Address.objects.filter(
+            user=request.user,
+            address_type='SERVICE'
+        ).first()
+        
+        # Add the address to the client object for serialization
+        client.address = address
+        
+        # Serialize the data
+        serializer = ClientProfileEditSerializer(client)
+        
+        return Response(serializer.data) 
