@@ -7,9 +7,21 @@ class PaymentMethod(models.Model):
         ('BANK_ACCOUNT', 'Bank Account'),
     ]
 
+    PAYMENT_TYPE_CHOICES = [
+        ('Pay_for', 'Pay For'),
+        ('Receive_payment', 'Receive Payment'),
+        ('both', 'Both'),
+    ]
+
     payment_method_id = models.AutoField(primary_key=True)
     user = models.ForeignKey('users.User', on_delete=models.CASCADE)
     type = models.CharField(max_length=50, choices=TYPE_CHOICES)
+    type_of_payment = models.CharField(
+        max_length=50,
+        choices=PAYMENT_TYPE_CHOICES,
+        default='Pay_for',
+        help_text='Determines if this payment method can be used for paying, receiving payments, or both'
+    )
     stripe_payment_method_id = models.CharField(max_length=255)
     last4 = models.CharField(max_length=4)
     brand = models.CharField(max_length=50, null=True, blank=True)  # For cards
