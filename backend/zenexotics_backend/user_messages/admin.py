@@ -13,7 +13,6 @@ class UserMessageAdmin(admin.ModelAdmin):
                 'sender',
                 'conversation',
                 'content',
-                'timestamp',
             ),
             'description': 'Basic message information'
         }),
