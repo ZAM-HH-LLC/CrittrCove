@@ -1,6 +1,11 @@
 from rest_framework import serializers
 from .models import Pet
 
+class UserPetListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Pet
+        fields = ['pet_id', 'name', 'species', 'breed', 'age_years', 'age_months', 'profile_photo']
+
 class PetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Pet

@@ -1,9 +1,9 @@
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db import models
 from ..models import Pet
-from ..serializers import PetSerializer
+from ..serializers import PetSerializer, UserPetListSerializer
 
 class PetViewSet(viewsets.ModelViewSet):
     queryset = Pet.objects.all()
@@ -13,19 +13,20 @@ class PetViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """
         Filter pets to return only those belonging to the current user
-        or pets assigned to the user as a sitter
         """
         user = self.request.user
-        return Pet.objects.filter(
-            models.Q(client__user=user) | 
-            models.Q(sitter__user=user)
-        )
+        return Pet.objects.filter(owner=user)
 
-    @action(detail=False, methods=['GET'])
-    def my_pets(self, request):
+    def list(self, request, *args, **kwargs):
         """
-        Return only pets owned by the current user
+        Return all pets owned by the current user in the specified format
         """
-        pets = Pet.objects.filter(client__user=request.user)
-        serializer = self.get_serializer(pets, many=True)
-        return Response(serializer.data) 
+        try:
+            pets = self.get_queryset()
+            serializer = UserPetListSerializer(pets, many=True)
+            return Response({'pets': serializer.data})
+        except Exception as e:
+            return Response(
+                {'error': 'An error occurred while fetching pets'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            ) 
