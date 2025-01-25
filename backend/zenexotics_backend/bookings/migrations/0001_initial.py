@@ -9,9 +9,10 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ("professionals", "0001_initial"),
-        ("clients", "0003_alter_client_authorized_household_members_and_more"),
-        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+        ('services', '0001_initial'),
+        ('clients', '0001_initial'),
+        ('professionals', '0001_initial'),
+        ('users', '0001_initial'),
     ]
 
     operations = [
@@ -19,94 +20,19 @@ class Migration(migrations.Migration):
             name="Booking",
             fields=[
                 ("booking_id", models.AutoField(primary_key=True, serialize=False)),
-                ("service_type", models.CharField(max_length=100)),
-                (
-                    "status",
-                    models.CharField(
-                        choices=[
-                            (
-                                "PENDING_INITIAL_PROFESSIONAL_CHANGES",
-                                "Pending Initial Professional Changes",
-                            ),
-                            (
-                                "PENDING_PROFESSIONAL_CHANGES",
-                                "Pending Professional Changes",
-                            ),
-                            ("PENDING_CLIENT_APPROVAL", "Pending Client Approval"),
-                            (
-                                "CONFIRMED_PENDING_PROFESSIONAL_CHANGES",
-                                "Confirmed Pending Professional Changes",
-                            ),
-                            ("CONFIRMED", "Confirmed"),
-                            ("DENIED", "Denied"),
-                            ("CANCELLED", "Cancelled"),
-                            ("DRAFT", "Draft"),
-                        ],
-                        max_length=100,
-                    ),
-                ),
+                ("status", models.CharField(choices=[('PENDING_INITIAL_PROFESSIONAL_CHANGES', 'Pending Initial Professional Changes'), ('PENDING_PROFESSIONAL_CHANGES', 'Pending Professional Changes'), ('PENDING_CLIENT_APPROVAL', 'Pending Client Approval'), ('CONFIRMED_PENDING_PROFESSIONAL_CHANGES', 'Confirmed Pending Professional Changes'), ('CONFIRMED', 'Confirmed'), ('DENIED', 'Denied'), ('CANCELLED', 'Cancelled'), ('DRAFT', 'Draft')], max_length=100)),
                 ("subtotal", models.DecimalField(decimal_places=2, max_digits=10)),
-                (
-                    "total_client_cost",
-                    models.DecimalField(decimal_places=2, max_digits=10),
-                ),
-                (
-                    "total_sitter_payout",
-                    models.DecimalField(decimal_places=2, max_digits=10),
-                ),
+                ("total_client_cost", models.DecimalField(decimal_places=2, max_digits=10)),
+                ("total_sitter_payout", models.DecimalField(decimal_places=2, max_digits=10)),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
-                (
-                    "cancelled_by",
-                    models.ForeignKey(
-                        blank=True,
-                        null=True,
-                        on_delete=django.db.models.deletion.SET_NULL,
-                        related_name="cancelled_bookings",
-                        to=settings.AUTH_USER_MODEL,
-                    ),
-                ),
-                (
-                    "client",
-                    models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE, to="clients.client"
-                    ),
-                ),
-                (
-                    "denied_by",
-                    models.ForeignKey(
-                        blank=True,
-                        null=True,
-                        on_delete=django.db.models.deletion.SET_NULL,
-                        related_name="denied_bookings",
-                        to=settings.AUTH_USER_MODEL,
-                    ),
-                ),
-                (
-                    "initiated_by",
-                    models.ForeignKey(
-                        null=True,
-                        on_delete=django.db.models.deletion.SET_NULL,
-                        related_name="initiated_bookings",
-                        to=settings.AUTH_USER_MODEL,
-                    ),
-                ),
-                (
-                    "last_modified_by",
-                    models.ForeignKey(
-                        null=True,
-                        on_delete=django.db.models.deletion.SET_NULL,
-                        related_name="modified_bookings",
-                        to=settings.AUTH_USER_MODEL,
-                    ),
-                ),
-                (
-                    "professional",
-                    models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE,
-                        to="professionals.professional",
-                    ),
-                ),
+                ("cancelled_by", models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name="cancelled_bookings", to="users.user")),
+                ("client", models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to="clients.client")),
+                ("denied_by", models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name="denied_bookings", to="users.user")),
+                ("initiated_by", models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name="initiated_bookings", to="users.user")),
+                ("last_modified_by", models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name="modified_bookings", to="users.user")),
+                ("professional", models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to="professionals.professional")),
+                ("service_id", models.ForeignKey('services.Service', on_delete=django.db.models.deletion.PROTECT, null=True, related_name="bookings", db_column="service_type_id")),
             ],
             options={
                 "db_table": "bookings",

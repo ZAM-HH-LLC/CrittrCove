@@ -1,6 +1,6 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { View, ScrollView, StyleSheet, Platform, SafeAreaView, Dimensions, StatusBar, TouchableOpacity, Text } from 'react-native';
-import { Card, Title, Paragraph, List, Button, useTheme, Appbar } from 'react-native-paper';
+import { Card, Title, Paragraph, List, Button, useTheme, Appbar, ActivityIndicator } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import axios from 'axios';
 import { API_BASE_URL } from '../config/config';
@@ -14,6 +14,8 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 const ProfessionalDashboard = ({ navigation }) => {
   const { colors } = useTheme();
   const { signOut, firstName } = useContext(AuthContext);
+  const [upcomingBookings, setUpcomingBookings] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const refreshToken = async () => {
     try {
@@ -31,11 +33,38 @@ const ProfessionalDashboard = ({ navigation }) => {
     }
   };
 
-  // TODO: Fetch upcoming bookings from the backend
-  const upcomingBookings = [
-    { id: '1', client: 'John Doe', pet: 'Max (Dog)', date: '2023-05-15', time: '14:00' },
-    { id: '2', client: 'Jane Smith', pet: 'Whiskers (Cat)', date: '2023-05-17', time: '10:00' },
-  ];
+  const fetchDashboardData = async () => {
+    try {
+      setIsLoading(true);
+      let token = await AsyncStorage.getItem('userToken');
+      const response = await axios.get(`${API_BASE_URL}/api/professionals/v1/dashboard/`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setUpcomingBookings(response.data.upcoming_bookings || []);
+    } catch (error) {
+      if (error.response?.status === 401) {
+        const newToken = await refreshToken();
+        if (newToken) {
+          try {
+            const response = await axios.get(`${API_BASE_URL}/api/professionals/v1/dashboard/`, {
+              headers: { Authorization: `Bearer ${newToken}` }
+            });
+            setUpcomingBookings(response.data.upcoming_bookings || []);
+          } catch (retryError) {
+            console.error('Error fetching dashboard data after token refresh:', retryError);
+          }
+        }
+      } else {
+        console.error('Error fetching dashboard data:', error);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
 
   // TODO: Fetch client requests from the backend
   const clientRequests = [
@@ -60,23 +89,43 @@ const ProfessionalDashboard = ({ navigation }) => {
         <Card style={styles.card}>
           <Card.Content>
             <Title>Upcoming Bookings</Title>
-            {upcomingBookings.map((booking) => (
-              <TouchableOpacity
-                key={booking.id}
-                onPress={() => navigation.navigate('BookingDetails', { bookingId: booking.id })}
-              >
-                <List.Item
-                  title={`${booking.client} - ${booking.pet}`}
-                  description={`${booking.date} at ${booking.time}`}
-                  left={(props) => <IconComponent {...props} icon="calendar" name="calendar" />}
-                  right={(props) => <IconComponent {...props} icon="chevron-right" name="chevron-right" />}
-                />
-              </TouchableOpacity>
-            ))}
+            {isLoading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="small" color={colors.primary} />
+              </View>
+            ) : upcomingBookings.length > 0 ? (
+              upcomingBookings.map((booking) => (
+                <TouchableOpacity
+                  key={booking.booking_id}
+                  onPress={() => navigation.navigate('BookingDetails', { bookingId: booking.booking_id })}
+                  style={styles.bookingItem}
+                >
+                  <List.Item
+                    title={`${booking.client_name} - ${booking.pets.slice(0, 3).map(pet => pet.name).join(', ')}${booking.pets.length > 3 ? '...' : ''} (${booking.pets.slice(0, 3).map(pet => pet.species).join(', ')}${booking.pets.length > 3 ? '...' : ''})`}
+                    description={`${booking.start_date} at ${booking.start_time}`}
+                    left={(props) => <IconComponent {...props} icon="calendar" name="calendar" />}
+                    right={(props) => <IconComponent {...props} icon="chevron-right" name="chevron-right" />}
+                  />
+                </TouchableOpacity>
+              ))
+            ) : (
+              <View style={styles.emptyStateContainer}>
+                <Paragraph style={styles.emptyStateText}>No bookings yet!</Paragraph>
+                <Button 
+                  mode="contained" 
+                  onPress={() => navigation.navigate('ServiceManager')}
+                  style={styles.createServiceButton}
+                >
+                  Create Services
+                </Button>
+              </View>
+            )}
           </Card.Content>
-          <Card.Actions>
-            <Button onPress={() => navigation.navigate('MyBookings')}>View All Bookings</Button>
-          </Card.Actions>
+          {upcomingBookings.length > 0 && (
+            <Card.Actions>
+              <Button onPress={() => navigation.navigate('MyBookings')}>View All Bookings</Button>
+            </Card.Actions>
+          )}
         </Card>
 
         {/* <Card style={styles.card}>
@@ -147,6 +196,20 @@ const styles = StyleSheet.create({
     flex: 0,
     backgroundColor: '#f0f0f0',
   },
+  bookingItem: {
+    padding: 10,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+    backgroundColor: theme.colors.background,
+    marginVertical: 4,
+    borderRadius: 4,
+  },
   scrollView: {
     flex: 1,
   },
@@ -185,6 +248,22 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '500',
     color: theme.colors.text,
+  },
+  loadingContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  emptyStateContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  emptyStateText: {
+    fontSize: 16,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  createServiceButton: {
+    marginTop: 8,
   },
 });
 

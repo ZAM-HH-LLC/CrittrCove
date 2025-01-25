@@ -51,7 +51,7 @@ class AvailabilitySerializer(serializers.ModelSerializer):
 
 class BookingOccurrenceSerializer(serializers.ModelSerializer):
     client_name = serializers.CharField(source='booking.client.user.name')
-    service_type = serializers.CharField(source='booking.service_type')
+    service_type = serializers.CharField(source='booking.service_id.service_name')
     pets = serializers.SerializerMethodField()
     
     class Meta:

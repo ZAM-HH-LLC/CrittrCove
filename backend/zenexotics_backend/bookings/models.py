@@ -15,7 +15,7 @@ class Booking(models.Model):
     booking_id = models.AutoField(primary_key=True)
     client = models.ForeignKey('clients.Client', on_delete=models.CASCADE)
     professional = models.ForeignKey('professionals.Professional', on_delete=models.CASCADE)
-    service_type = models.CharField(max_length=100)
+    service_id = models.ForeignKey('services.Service', on_delete=models.PROTECT, null=True, related_name='bookings', db_column='service_type_id')
     status = models.CharField(max_length=100, choices=BOOKING_STATUS_CHOICES)
     initiated_by = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, related_name='initiated_bookings')
     cancelled_by = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='cancelled_bookings')

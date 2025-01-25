@@ -5,6 +5,7 @@ from pets.models import Pet
 class BookingListSerializer(serializers.ModelSerializer):
     client_name = serializers.SerializerMethodField()
     professional_name = serializers.SerializerMethodField()
+    service_name = serializers.SerializerMethodField()
     start_date = serializers.SerializerMethodField()
     start_time = serializers.SerializerMethodField()
 
@@ -14,7 +15,7 @@ class BookingListSerializer(serializers.ModelSerializer):
             'booking_id',
             'client_name',
             'professional_name',
-            'service_type',
+            'service_name',
             'start_date',
             'start_time',
             'total_client_cost',
@@ -27,6 +28,9 @@ class BookingListSerializer(serializers.ModelSerializer):
 
     def get_professional_name(self, obj):
         return obj.professional.user.name if obj.professional else None
+    
+    def get_service_name(self, obj):
+        return obj.service_id.service_name if obj.service_id else None
     
     def get_start_date(self, obj):
         # Get the first occurrence for this booking
@@ -49,19 +53,23 @@ class BookingDetailSerializer(serializers.ModelSerializer):
     service_details = serializers.SerializerMethodField()
     occurrences = serializers.SerializerMethodField()
     cost_summary = serializers.SerializerMethodField()
+    service_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Booking
         fields = [
             'booking_id',
             'status',
-            'service_type',
+            'service_name',
             'parties',
             'pets',
             'service_details',
             'occurrences',
             'cost_summary'
         ]
+
+    def get_service_name(self, obj):
+        return obj.service_id.service_name if obj.service_id else None
 
     def get_parties(self, obj):
         return {
