@@ -66,41 +66,59 @@ ALLOWED_HOSTS = [
 # Application definition
 
 INSTALLED_APPS = [
-    "django.contrib.admin",
-    "django.contrib.auth",
-    "django.contrib.contenttypes",
-    "django.contrib.sessions",
-    "django.contrib.messages",
-    "django.contrib.staticfiles",
-    'rest_framework',  # Ensure DRF is included
-    'users',  # Add your app here
-    'corsheaders',  # Add CORS headers
-    'contracts',
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'rest_framework',
+    'rest_framework_simplejwt',
+    'corsheaders',
+    
+    # Core apps
+    'users',
+    'user_addresses',
+    'professional_status',
     'clients',
     'professionals',
-    'pets',
-    'professional_status',
-    'user_addresses',
+    
+    # Professional related apps
+    'professional_facilities',
     'services',
     'service_rates',
     'service_moderation',
     'availability',
     'default_availability',
     'shared_availability',
+    
+    # Pet related apps
+    'pets',
+    'booking_pets',
+    
+    # Booking related apps
     'bookings',
     'booking_occurrences',
     'booking_summary',
     'booking_occurrence_rates',
     'booking_details',
-    'booking_pets',
     'booking_drafts',
+    
+    # Review related apps
     'review_moderation',
     'client_reviews',
     'professional_reviews',
-    'payment_methods',
-    'payments',
+    
+    # Communication apps
     'user_messages',
     'conversations',
+    
+    # Payment apps
+    'payment_methods',
+    'payments',
+    
+    # Other apps
+    'contracts',
     'search_logs',
     'interaction_logs',
     'error_logs',

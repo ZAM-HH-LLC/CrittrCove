@@ -33,6 +33,7 @@ urlpatterns = [
         path('professional-status/', include('professional_status.urls')),
         path('clients/', include('clients.urls')),
         path('professionals/', include('professionals.urls')),
+        path('professional-facilities/', include('professional_facilities.urls')),
         
         # Pet Management
         path('pets/', include('pets.urls')),
