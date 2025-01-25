@@ -198,7 +198,6 @@ const styles = StyleSheet.create({
   },
   bookingItem: {
     padding: 10,
-    shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 2,
@@ -206,7 +205,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 3,
-    backgroundColor: theme.colors.background,
     marginVertical: 4,
     borderRadius: 4,
   },
