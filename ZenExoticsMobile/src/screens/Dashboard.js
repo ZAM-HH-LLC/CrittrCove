@@ -82,7 +82,7 @@ const Dashboard = ({ navigation }) => {
               <Button 
                 icon={Platform.OS === 'web' ? ({ size, color }) => <MaterialCommunityIcons name="magnify" size={size} color={color} /> : "magnify"}
                 mode="outlined" 
-                onPress={() => navigation.navigate('SearchProfessionalsionals')}
+                onPress={() => navigation.navigate('SearchProfessionalsListing')}
                 style={styles.quickActionButton}
               >
                 Find a Professional
