@@ -28,7 +28,7 @@ export default function ResetPasswordConfirm({ route }) {
 
     setLoading(true);
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/users/reset-password-confirm/${uid}/${token}/`, {
+      const response = await axios.post(`${API_BASE_URL}/api/users/v1/reset-password-confirm/${uid}/${token}/`, {
         new_password: newPassword,
       });
       if (Platform.OS === 'ios' || Platform.OS === 'android') {

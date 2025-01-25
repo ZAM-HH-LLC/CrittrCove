@@ -27,7 +27,7 @@ export default function ResetPassword() {
 
     setLoading(true);
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/users/reset-password/`, { email });
+      const response = await axios.post(`${API_BASE_URL}/api/users/v1/reset-password/`, { email });
       if (Platform.OS === 'ios' || Platform.OS === 'android') {
         Alert.alert('Success', 'A reset password link has been sent to your email.', [
           { text: 'OK', onPress: () => navigation.navigate('Home') }

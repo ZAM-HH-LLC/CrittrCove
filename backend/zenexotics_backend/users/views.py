@@ -48,16 +48,19 @@ class PasswordResetRequestView(APIView):
         
         # send email
         try:
+            logger.info(f"Attempting to send password reset email to: {email}")
             send_mail(
                 'Password Reset Request',
                 f'Click the link to reset your password: {reset_link}',
-                'from@example.com',
+                settings.DEFAULT_FROM_EMAIL,
                 [email],
                 fail_silently=False,
             )
+            logger.info(f"Successfully sent password reset email to: {email}")
             return Response({'message': 'Password reset link sent'}, status=status.HTTP_200_OK)
         except Exception as e:
-            logger.error(f"Failed to send email: {e}")
+            logger.error(f"Failed to send email to {email}. Error: {str(e)}")
+            logger.error(f"Reset link that failed: {reset_link}")
             return Response({'error': 'Failed to send email'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class PasswordResetConfirmView(APIView):
