@@ -23,7 +23,7 @@ logger.setLevel(logging.DEBUG)
 class SimplePetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Pet
-        fields = ['pet_id', 'name', 'species', 'breed']
+        fields = ['pet_id', 'name', 'species']
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
