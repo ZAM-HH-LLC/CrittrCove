@@ -17,6 +17,9 @@ export const AuthProvider = ({ children }) => {
   const [screenWidth, setScreenWidth] = useState(Dimensions.get('window').width);
   const [firstName, setFirstName] = useState('');
 
+  // SET TO TRUE FOR NO API CALLS
+  const [is_prototype, setIsPrototype] = useState(false);
+
   // Add resize listener for web
   useEffect(() => {
     if (Platform.OS === 'web') {
@@ -258,7 +261,9 @@ export const AuthProvider = ({ children }) => {
       switchRole,
       screenWidth,
       checkAuthStatus,
-      firstName
+      firstName,
+      is_prototype,
+      setIsPrototype
     }}>
       {children}
     </AuthContext.Provider>
