@@ -21,9 +21,6 @@ class Booking(models.Model):
     cancelled_by = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='cancelled_bookings')
     last_modified_by = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, related_name='modified_bookings')
     denied_by = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='denied_bookings')
-    subtotal = models.DecimalField(max_digits=10, decimal_places=2)
-    total_client_cost = models.DecimalField(max_digits=10, decimal_places=2)
-    total_sitter_payout = models.DecimalField(max_digits=10, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f0f0',
   },
   bookingItem: {
-    padding: 10,
+    padding: 6,
     shadowOffset: {
       width: 0,
       height: 2,
@@ -226,12 +226,16 @@ const styles = StyleSheet.create({
   },
   quickActions: {
     flexDirection: Platform.OS === 'web' ? 'row' : 'column',
-    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start',
+    gap: 8,
     marginTop: 16,
   },
   quickActionButton: {
     marginVertical: Platform.OS === 'web' ? 0 : 8,
-    marginHorizontal: Platform.OS === 'web' ? 4 : 0,
+    marginHorizontal: Platform.OS === 'web' ? 0 : 0,
+    flex: Platform.OS === 'web' ? 1 : 0,
+    minWidth: Platform.OS === 'web' ? 200 : 'auto',
   },
   header: {
     paddingVertical: 12,

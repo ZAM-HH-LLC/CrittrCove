@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import Booking
 from pets.models import Pet
+from decimal import Decimal
 
 class BookingListSerializer(serializers.ModelSerializer):
     client_name = serializers.SerializerMethodField()
@@ -84,30 +85,68 @@ class BookingDetailSerializer(serializers.ModelSerializer):
         return PetSerializer(pets, many=True).data
 
     def get_service_details(self, obj):
+        if not obj.service_id:
+            return None
+        
+        service = obj.service_id
         details = obj.booking_details.first()
-        if details:
-            return {
-                'base_rate': float(details.base_rate),
-                'additional_pet_rate': float(details.additional_pet_rate),
-                'num_pets': details.num_pets
-            }
-        return None
+        
+        return {
+            'service_type': service.service_name,
+            'animal_type': service.animal_type,
+            'num_pets': details.num_pets if details else len(self.get_pets(obj)),
+        }
 
     def get_occurrences(self, obj):
         occurrences = obj.occurrences.all().order_by('start_date', 'start_time')
+        is_prorated = self.context.get('is_prorated', True)
+        
+        def get_time_unit_info(occurrence):
+            if not hasattr(occurrence.booking, 'service_id'):
+                return None
+                
+            multiple = occurrence.calculate_time_units(is_prorated)
+            if multiple is not None:
+                return {
+                    'multiple': float(multiple),
+                    'unit': occurrence.booking.service_id.unit_of_time
+                }
+            return None
+        
         return [{
             'start_date': occurrence.start_date,
+            'end_date': occurrence.end_date,
             'start_time': occurrence.start_time,
-            'end_time': occurrence.end_time
+            'end_time': occurrence.end_time,
+            'calculated_cost': f"${float(occurrence.calculated_cost(is_prorated)):.2f}",
+            'rates': occurrence.rates.rates if hasattr(occurrence, 'rates') and occurrence.rates else [],
+            'time_units': get_time_unit_info(occurrence)
         } for occurrence in occurrences]
 
     def get_cost_summary(self, obj):
-        summary = obj.summary
-        if summary:
-            return {
-                'subtotal': float(summary.subtotal),
-                'client_fee': float(summary.client_fee),
-                'total_client_cost': float(summary.total_client_cost),
-                'sitter_payout': float(summary.total_sitter_payout)
-            }
+        try:
+            summary = obj.bookingsummary
+            if summary:
+                # Calculate total from all occurrences
+                is_prorated = self.context.get('is_prorated', True)
+                total = sum(
+                    occurrence.calculated_cost(is_prorated)
+                    for occurrence in obj.occurrences.all()
+                )
+                
+                # Calculate fees and taxes based on the new total
+                platform_fee = total * (summary.fee_percentage / Decimal('100.00'))
+                taxes = (total + platform_fee) * (summary.tax_percentage / Decimal('100.00'))
+                total_client_cost = total + platform_fee + taxes
+                total_sitter_payout = total - platform_fee
+                
+                return {
+                    'subtotal': float(total),
+                    'platform_fee': float(platform_fee),
+                    'taxes': float(taxes),
+                    'total_client_cost': float(total_client_cost),
+                    'total_sitter_payout': float(total_sitter_payout)
+                }
+        except:
+            return None
         return None 

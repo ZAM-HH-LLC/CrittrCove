@@ -9,6 +9,7 @@ from clients.models import Client
 from professionals.models import Professional
 from ..models import Booking
 from ..serializers import BookingListSerializer, BookingDetailSerializer
+from rest_framework import generics
 
 class BookingPagination(PageNumberPagination):
     page_size = 20
@@ -70,38 +71,29 @@ class BookingListView(APIView):
             'next_page': paginator.get_next_link()
         })
 
-class BookingDetailView(APIView):
+class BookingDetailView(generics.RetrieveAPIView):
+    queryset = Booking.objects.all()
+    serializer_class = BookingDetailSerializer
     permission_classes = [IsAuthenticated]
+    lookup_field = 'booking_id'
+    lookup_url_kwarg = 'booking_id'
 
-    def get(self, request, booking_id):
-        user = request.user
-        
-        # Get the booking with related data
-        booking = get_object_or_404(
-            Booking.objects.select_related(
-                'client__user',
-                'professional__user',
-                'summary'
-            ).prefetch_related(
-                'booking_details',
-                'occurrences',
-                'booking_pets__pet'
-            ),
-            booking_id=booking_id
+    def get_queryset(self):
+        return Booking.objects.select_related(
+            'service_id',
+            'client',
+            'professional',
+            'bookingsummary'
+        ).prefetch_related(
+            'booking_pets__pet',
+            'occurrences',
+            'occurrences__rates'
         )
-        
-        # Check if user has permission to view this booking
-        if not (
-            (booking.client.user == user) or 
-            (booking.professional.user == user)
-        ):
-            return Response(
-                {"detail": "You do not have permission to view this booking."},
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        # Serialize and return the booking data
-        serializer = BookingDetailSerializer(booking)
-        return Response(serializer.data)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        # Get is_prorated from query params, default to True if not provided
+        context['is_prorated'] = self.request.query_params.get('is_prorated', 'true').lower() == 'true'
+        return context
 
 # Placeholder: Ready for views to be added
