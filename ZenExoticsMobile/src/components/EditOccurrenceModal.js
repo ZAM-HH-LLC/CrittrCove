@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: theme.fontSizes.mediumLarge,
     fontWeight: 'bold',
     flex: 1,
     paddingRight: 24,
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   label: {
-    fontSize: 14,
+    fontSize: theme.fontSizes.smallMedium,
     marginBottom: 5,
     color: theme.colors.text,
   },
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
     borderRadius: 4,
     padding: 10,
-    fontSize: 16,
+    fontSize: theme.fontSizes.medium,
   },
   additionalRate: {
     marginBottom: 20,
@@ -280,11 +280,11 @@ const styles = StyleSheet.create({
     borderTopColor: theme.colors.border,
   },
   totalLabel: {
-    fontSize: 16,
+    fontSize: theme.fontSizes.medium,
     fontWeight: 'bold',
   },
   totalAmount: {
-    fontSize: 18,
+    fontSize: theme.fontSizes.mediumLarge,
     fontWeight: 'bold',
     color: theme.colors.primary,
   },
@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   additionalRateTitle: {
-    fontSize: 16,
+    fontSize: theme.fontSizes.medium,
     fontWeight: 'bold',
     color: theme.colors.text,
   },

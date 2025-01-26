@@ -113,13 +113,13 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   serviceName: {
-    fontSize: 18,
+    fontSize: theme.fontSizes.mediumLarge,
     fontWeight: '600',
     marginTop: 12,
     marginBottom: 8,
   },
   startingPrice: {
-    fontSize: 16,
+    fontSize: theme.fontSizes.medium,
     color: theme.colors.secondary,
     marginBottom: 8,
   },
@@ -130,11 +130,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   animalType: {
-    fontSize: 12,
+    fontSize: theme.fontSizes.small,
     color: theme.colors.secondary,
     backgroundColor: theme.colors.background,
-    // paddingHorizontal: 8,
-    // paddingVertical: 4,
     borderRadius: 12,
   },
   calculateButton: {
@@ -145,7 +143,7 @@ const styles = StyleSheet.create({
   },
   calculateButtonText: {
     color: theme.colors.surface,
-    fontSize: 14,
+    fontSize: theme.fontSizes.smallMedium,
     fontWeight: '600',
   },
 });

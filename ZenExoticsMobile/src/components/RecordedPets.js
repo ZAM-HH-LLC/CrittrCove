@@ -31,7 +31,7 @@ const styles = StyleSheet.create({
     borderBottomColor: theme.colors.border,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: theme.fontSizes.large,
     fontWeight: 'bold',
     color: theme.colors.primary,
     marginBottom: 10,
@@ -57,14 +57,14 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   petName: {
-    fontSize: 16,
+    fontSize: theme.fontSizes.medium,
     fontWeight: 'bold',
   },
   petInfo: {
     flex: 1,
   },
   petDetails: {
-    fontSize: 14,
+    fontSize: theme.fontSizes.smallMedium,
     color: theme.colors.placeholder,
     flexWrap: 'wrap',
   },

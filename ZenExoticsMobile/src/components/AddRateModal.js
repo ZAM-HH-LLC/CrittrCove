@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: theme.fontSizes.large,
     fontWeight: 'bold',
     color: theme.colors.text,
   },

@@ -340,7 +340,7 @@ const styles = StyleSheet.create({
     maxHeight: '80%',
   },
   modalTitle: {
-    fontSize: 24,
+    fontSize: theme.fontSizes.largeLarge,
     fontWeight: 'bold',
     marginBottom: 20,
     textAlign: 'center',
@@ -349,7 +349,7 @@ const styles = StyleSheet.create({
     maxHeight: '70%',
   },
   label: {
-    fontSize: 16,
+    fontSize: theme.fontSizes.medium,
     fontWeight: '500',
     marginTop: 15,
     marginBottom: 10,
@@ -442,12 +442,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   petName: {
-    fontSize: 16,
+    fontSize: theme.fontSizes.medium,
     fontWeight: '500',
     marginBottom: 4,
   },
   petDetails: {
-    fontSize: 14,
+    fontSize: theme.fontSizes.smallMedium,
     color: theme.colors.placeholder,
   },
   addPetButton: {
@@ -463,7 +463,7 @@ const styles = StyleSheet.create({
   addPetText: {
     marginLeft: 8,
     color: theme.colors.primary,
-    fontSize: 16,
+    fontSize: theme.fontSizes.medium,
   },
   occurrenceCard: {
     flexDirection: 'row',
@@ -480,12 +480,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   dateText: {
-    fontSize: 16,
+    fontSize: theme.fontSizes.medium,
     fontWeight: '500',
     marginBottom: 4,
   },
   timeText: {
-    fontSize: 14,
+    fontSize: theme.fontSizes.smallMedium,
     color: theme.colors.placeholder,
   },
   addOccurrenceButton: {
@@ -501,7 +501,7 @@ const styles = StyleSheet.create({
   addOccurrenceText: {
     marginLeft: 8,
     color: theme.colors.primary,
-    fontSize: 16,
+    fontSize: theme.fontSizes.medium,
   },
   occurrenceActions: {
     flexDirection: 'row',
@@ -529,7 +529,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   bookingRequestTitle: {
-    fontSize: 18,
+    fontSize: theme.fontSizes.mediumLarge,
     fontWeight: 'bold',
     color: theme.colors.primary,
   },
@@ -537,12 +537,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   detailLabel: {
-    fontSize: 14,
+    fontSize: theme.fontSizes.smallMedium,
     fontWeight: '500',
     color: theme.colors.placeholder,
   },
   detailText: {
-    fontSize: 16,
+    fontSize: theme.fontSizes.medium,
     color: theme.colors.text,
   },
   acceptButton: {
@@ -554,7 +554,7 @@ const styles = StyleSheet.create({
   },
   acceptButtonText: {
     color: theme.colors.surface,
-    fontSize: 16,
+    fontSize: theme.fontSizes.medium,
     fontWeight: '500',
   },
 });

@@ -320,14 +320,14 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   modalTitle: {
-    fontSize: 24,
+    fontSize: theme.fontSizes.largeLarge,
     fontWeight: 'bold',
   },
   closeButton: {
     padding: 5,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: theme.fontSizes.large,
     fontWeight: '500',
     marginBottom: 15,
   },
@@ -377,10 +377,10 @@ const styles = StyleSheet.create({
   },
   addRateButtonText: {
     color: theme.colors.primary,
-    fontSize: 16,
+    fontSize: theme.fontSizes.medium,
   },
   label: {
-    fontSize: 16,
+    fontSize: theme.fontSizes.medium,
     marginBottom: 8,
     color: theme.colors.text,
   },
@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   dollarSign: {
-    fontSize: 16,
+    fontSize: theme.fontSizes.medium,
     color: theme.colors.text,
     marginRight: 4,
   },
@@ -426,11 +426,11 @@ const styles = StyleSheet.create({
   },
   cancelButtonText: {
     color: theme.colors.text,
-    fontSize: 16,
+    fontSize: theme.fontSizes.medium,
   },
   addButtonText: {
+    fontSize: theme.fontSizes.medium,
     color: theme.colors.surface,
-    fontSize: 16,
     fontWeight: 'bold',
   },
   rateLabelContainer: {
@@ -440,12 +440,12 @@ const styles = StyleSheet.create({
   },
   rateTitleLabel: {
     flex: 2,
-    fontSize: 16,
+    fontSize: theme.fontSizes.medium,
     color: theme.colors.text,
   },
   rateAmountLabel: {
     flex: 1,
-    fontSize: 16,
+    fontSize: theme.fontSizes.medium,
     color: theme.colors.text,
     marginLeft: 10,
   },

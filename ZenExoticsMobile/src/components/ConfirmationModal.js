@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
     maxWidth: 400,
   },
   modalText: {
-    fontSize: 16,
+    fontSize: theme.fontSizes.medium,
     marginBottom: 20,
     textAlign: 'center',
     color: theme.colors.text,

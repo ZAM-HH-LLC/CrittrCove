@@ -129,13 +129,13 @@ const styles = StyleSheet.create({
     maxWidth: Platform.OS === 'web' ? 600 : '100%',
   },
   title: {
-    fontSize: 24,
+    fontSize: theme.fontSizes.largeLarge,
     fontWeight: 'bold',
     marginBottom: 10,
     color: theme.colors.primary,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: theme.fontSizes.medium,
     marginBottom: 20,
     color: theme.colors.text,
   },
@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 10,
     marginBottom: 15,
-    fontSize: 16,
+    fontSize: theme.fontSizes.medium,
   },
   messageInput: {
     height: 120,
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: theme.colors.whiteText,
-    fontSize: 18,
+    fontSize: theme.fontSizes.mediumLarge,
     fontWeight: 'bold',
   },
   contactInfo: {
@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   contactInfoText: {
-    fontSize: 16,
+    fontSize: theme.fontSizes.medium,
     marginBottom: 5,
     color: theme.colors.text,
   },
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
     color: theme.colors.success,
     textAlign: 'center',
     marginBottom: 10,
-    fontSize: 16,
+    fontSize: theme.fontSizes.medium,
   },
 });
 

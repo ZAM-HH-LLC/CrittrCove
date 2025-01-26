@@ -59,7 +59,7 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
   headerText: {
-    fontSize: 20,
+    fontSize: theme.fontSizes.large,
     fontWeight: 'bold',
     color: theme.colors.primary,
     flex: 1, // This allows the title to take up remaining space

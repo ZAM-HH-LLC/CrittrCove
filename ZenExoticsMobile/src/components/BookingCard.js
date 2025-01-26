@@ -75,20 +75,20 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   bookingId: {
-    fontSize: 16,
+    fontSize: theme.fontSizes.medium,
     fontWeight: 'bold',
     color: theme.colors.primary,
   },
   status: {
-    fontSize: 14,
+    fontSize: theme.fontSizes.smallMedium,
     fontWeight: '500',
   },
   name: {
-    fontSize: 16,
+    fontSize: theme.fontSizes.medium,
     marginBottom: 4,
   },
   datetime: {
-    fontSize: 14,
+    fontSize: theme.fontSizes.smallMedium,
     color: theme.colors.placeholder,
     marginBottom: 16,
   },

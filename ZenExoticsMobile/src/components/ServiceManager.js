@@ -347,7 +347,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   emptyText: {
-    fontSize: 18,
+    fontSize: theme.fontSizes.mediumLarge,
     color: theme.colors.text,
     marginBottom: 20,
   },
@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
   },
   addButtonText: {
     color: theme.colors.surface,
-    fontSize: 16,
+    fontSize: theme.fontSizes.medium,
     fontWeight: '500',
   },
 });

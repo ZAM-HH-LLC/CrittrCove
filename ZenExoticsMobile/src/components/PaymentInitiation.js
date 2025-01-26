@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Button } from 'react-native-paper';
+import { useTheme } from 'react-native-paper';
 
 const PaymentInitiation = ({ amount, onPaymentComplete }) => {
   const [loading, setLoading] = useState(false);
+  const theme = useTheme();
 
   const handlePayment = async () => {
     setLoading(true);
@@ -52,7 +54,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   amount: {
-    fontSize: 18,
+    fontSize: theme.fontSizes.mediumLarge,
     marginBottom: 16,
   },
 });

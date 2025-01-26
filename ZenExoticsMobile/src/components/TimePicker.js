@@ -37,7 +37,7 @@ const TimePicker = ({ label, value, onChange, fullWidth = false, containerStyle 
       borderColor: theme.colors.border,
       borderRadius: 8,
       backgroundColor: theme.colors.whiteText,
-      fontSize: 16,
+      fontSize: theme.fontSizes.medium,
       width: fullWidth ? '' : '90%',
     };
 
@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
     // width: '100%',
   },
   label: {
-    fontSize: 14,
+    fontSize: theme.fontSizes.smallMedium,
     color: theme.colors.placeholder,
     marginBottom: 4,
   },
@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
     width: 150,
   },
   timeText: {
-    fontSize: 16,
+    fontSize: theme.fontSizes.medium,
     color: theme.colors.text,
   }
 });

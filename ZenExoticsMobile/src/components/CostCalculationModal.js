@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
     marginRight: -7,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: theme.fontSizes.large,
     fontWeight: 'bold',
     marginBottom: 15,
     textAlign: 'center',
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
   },
   dateLabel: {
     marginBottom: 8,
-    fontSize: 14,
+    fontSize: theme.fontSizes.smallMedium,
     color: theme.colors.text,
   },
   rateItem: {
@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
   },
   counterText: {
     marginHorizontal: 10,
-    fontSize: 16,
+    fontSize: theme.fontSizes.medium,
   },
   totalSection: {
     marginTop: 20,
@@ -274,15 +274,15 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   totalLabel: {
-    fontSize: 16,
+    fontSize: theme.fontSizes.medium,
     fontWeight: '600',
   },
   totalAmount: {
-    fontSize: 16,
+    fontSize: theme.fontSizes.medium,
     fontWeight: 'bold',
   },
   finalTotalText: {
-    fontSize: 18,
+    fontSize: theme.fontSizes.mediumLarge,
     fontWeight: 'bold',
     color: theme.colors.primary,
   },
@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
   },
   closeButtonText: {
     color: theme.colors.surface,
-    fontSize: 16,
+    fontSize: theme.fontSizes.medium,
     fontWeight: '600',
   },
   closeIcon: {
@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
   },
   contactButtonText: {
     color: theme.colors.surface,
-    fontSize: 16,
+    fontSize: theme.fontSizes.medium,
     fontWeight: '600',
   },
 });

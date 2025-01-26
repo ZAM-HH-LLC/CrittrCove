@@ -78,13 +78,13 @@ const styles = StyleSheet.create({
     marginTop: 50,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: theme.fontSizes.mediumLarge,
     fontWeight: 'bold',
     marginBottom: 8,
     color: theme.colors.text,
   },
   noContractsText: {
-    fontSize: 16,
+    fontSize: theme.fontSizes.medium,
     color: theme.colors.text,
     textAlign: 'center',
     marginTop: 20,
@@ -96,12 +96,12 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   contractTitle: {
-    fontSize: 16,
+    fontSize: theme.fontSizes.medium,
     fontWeight: 'bold',
     color: theme.colors.primary,
   },
   clientName: {
-    fontSize: 14,
+    fontSize: theme.fontSizes.medium,
     color: theme.colors.text,
     marginTop: 4,
   },

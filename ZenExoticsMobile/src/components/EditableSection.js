@@ -66,7 +66,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: theme.fontSizes.large,
     marginBottom: 10,
     fontWeight: 'bold',
     color: theme.colors.primary,
