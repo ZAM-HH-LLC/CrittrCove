@@ -1,7 +1,7 @@
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, serializers
 from django.utils import timezone
 from datetime import date
 from ..models import Professional
@@ -9,6 +9,7 @@ from ..serializers import ProfessionalDashboardSerializer, BookingOccurrenceSeri
 from bookings.models import Booking
 from booking_occurrences.models import BookingOccurrence
 import logging
+from pets.models import Pet
 
 # Configure logging to print to console
 logger = logging.getLogger(__name__)
@@ -18,6 +19,11 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(messag
 console_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 logger.setLevel(logging.DEBUG)
+
+class SimplePetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Pet
+        fields = ['pet_id', 'name', 'species', 'breed']
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -35,27 +41,38 @@ def get_professional_dashboard(request):
         # Get current date
         today = date.today()
 
-        # Get upcoming confirmed bookings
+        # Get upcoming confirmed bookings with at least one upcoming occurrence
         confirmed_bookings = Booking.objects.filter(
             professional=professional,
-            status='CONFIRMED'
-        ).select_related('client__user')
+            status='CONFIRMED',
+            occurrences__start_date__gte=today,
+            occurrences__status='FINAL'
+        ).select_related('client__user', 'service_id').distinct()
 
-        upcoming_occurrences = []
+        # Serialize the bookings
+        serialized_bookings = []
         for booking in confirmed_bookings:
-            occurrences = BookingOccurrence.objects.filter(
+            # Get the next occurrence for this booking
+            next_occurrence = BookingOccurrence.objects.filter(
                 booking=booking,
                 start_date__gte=today,
                 status='FINAL'
-            ).order_by('start_date', 'start_time')
-            upcoming_occurrences.extend(occurrences)
-
-        # Serialize the occurrences
-        serialized_occurrences = BookingOccurrenceSerializer(upcoming_occurrences, many=True).data
+            ).order_by('start_date', 'start_time').first()
+            
+            if next_occurrence:
+                booking_data = {
+                    'booking_id': booking.booking_id,
+                    'client_name': booking.client.user.name,
+                    'start_date': next_occurrence.start_date,
+                    'start_time': next_occurrence.start_time,
+                    'service_type': booking.service_id.service_name,
+                    'pets': SimplePetSerializer(Pet.objects.filter(bookingpets__booking=booking), many=True).data
+                }
+                serialized_bookings.append(booking_data)
 
         # Prepare response data
         response_data = {
-            'upcoming_bookings': serialized_occurrences
+            'upcoming_bookings': serialized_bookings
         }
 
         return Response(response_data)
