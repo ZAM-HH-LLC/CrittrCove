@@ -8,7 +8,7 @@ const CrossPlatformView = ({
   useSafeArea = true,
   backgroundColor = theme.colors.background,
   fullWidthHeader = false,
-  contentWidth = '600px'
+  contentWidth = '800px'
 }) => {
   const [windowWidth, setWindowWidth] = useState(Dimensions.get('window').width);
 

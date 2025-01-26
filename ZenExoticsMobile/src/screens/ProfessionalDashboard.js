@@ -13,9 +13,40 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 const ProfessionalDashboard = ({ navigation }) => {
   const { colors } = useTheme();
-  const { signOut, firstName } = useContext(AuthContext);
+  const { signOut, firstName, screenWidth } = useContext(AuthContext);
   const [upcomingBookings, setUpcomingBookings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const isLargeScreen = screenWidth > 600;
+
+  // Dynamic styles based on screen size
+  const dynamicStyles = {
+    headerTitle: {
+      fontSize: isLargeScreen ? theme.fontSizes.extraLarge : theme.fontSizes.large,
+      fontWeight: '500',
+      color: theme.colors.text,
+    },
+    emptyStateText: {
+      fontSize: isLargeScreen ? theme.fontSizes.large : theme.fontSizes.smallMedium,
+      marginBottom: 16,
+      textAlign: 'center',
+    },
+    cardTitle: {
+      fontSize: isLargeScreen ? theme.fontSizes.largeLarge : theme.fontSizes.large,
+    },
+    cardParagraph: {
+      fontSize: isLargeScreen ? theme.fontSizes.large : theme.fontSizes.medium,
+    },
+    listItemTitle: {
+      fontSize: isLargeScreen ? theme.fontSizes.large : theme.fontSizes.medium,
+    },
+    listItemDescription: {
+      fontSize: isLargeScreen ? theme.fontSizes.mediumLarge : theme.fontSizes.smallMedium,
+    },
+    buttonText: {
+      fontSize: isLargeScreen ? theme.fontSizes.mediumLarge : theme.fontSizes.smallMedium,
+    },
+  };
 
   const refreshToken = async () => {
     try {
@@ -81,14 +112,14 @@ const ProfessionalDashboard = ({ navigation }) => {
       <View style={styles.cardContainer}>
         <Card style={styles.card}>
           <Card.Content>
-            <Title>Welcome back, {firstName}!</Title>
-            <Paragraph>Here's an overview of your upcoming activities.</Paragraph>
+            <Title style={dynamicStyles.cardTitle}>Welcome back, {firstName}!</Title>
+            <Paragraph style={dynamicStyles.cardParagraph}>Here's an overview of your upcoming activities.</Paragraph>
           </Card.Content>
         </Card>
 
         <Card style={styles.card}>
           <Card.Content>
-            <Title>Upcoming Bookings</Title>
+            <Title style={dynamicStyles.cardTitle}>Upcoming Bookings</Title>
             {isLoading ? (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="small" color={colors.primary} />
@@ -101,6 +132,8 @@ const ProfessionalDashboard = ({ navigation }) => {
                   style={styles.bookingItem}
                 >
                   <List.Item
+                    titleStyle={dynamicStyles.listItemTitle}
+                    descriptionStyle={dynamicStyles.listItemDescription}
                     title={`${booking.client_name} - ${booking.pets.slice(0, 3).map(pet => pet.name).join(', ')}${booking.pets.length > 3 ? '...' : ''} (${booking.pets.slice(0, 3).map(pet => pet.species).join(', ')}${booking.pets.length > 3 ? '...' : ''})`}
                     description={`${booking.start_date} at ${booking.start_time}`}
                     left={(props) => <IconComponent {...props} icon="calendar" name="calendar" />}
@@ -110,11 +143,12 @@ const ProfessionalDashboard = ({ navigation }) => {
               ))
             ) : (
               <View style={styles.emptyStateContainer}>
-                <Paragraph style={styles.emptyStateText}>No bookings yet!</Paragraph>
+                <Paragraph style={dynamicStyles.emptyStateText}>No bookings yet!</Paragraph>
                 <Button 
                   mode="contained" 
                   onPress={() => navigation.navigate('ServiceManager')}
                   style={styles.createServiceButton}
+                  labelStyle={dynamicStyles.buttonText}
                 >
                   Create Services
                 </Button>
@@ -123,7 +157,12 @@ const ProfessionalDashboard = ({ navigation }) => {
           </Card.Content>
           {upcomingBookings.length > 0 && (
             <Card.Actions>
-              <Button onPress={() => navigation.navigate('MyBookings')}>View All Bookings</Button>
+              <Button 
+                onPress={() => navigation.navigate('MyBookings')}
+                labelStyle={dynamicStyles.buttonText}
+              >
+                View All Bookings
+              </Button>
             </Card.Actions>
           )}
         </Card>
@@ -152,13 +191,14 @@ const ProfessionalDashboard = ({ navigation }) => {
 
         <Card style={styles.card}>
           <Card.Content>
-            <Title>Quick Actions</Title>
+            <Title style={dynamicStyles.cardTitle}>Quick Actions</Title>
             <View style={styles.quickActions}>
               <Button 
                 icon={Platform.OS === 'web' ? ({ size, color }) => <MaterialCommunityIcons name="clock" size={size} color={color} /> : "clock"}
                 mode="outlined" 
                 onPress={() => navigation.navigate('AvailabilitySettings')}
                 style={styles.quickActionButton}
+                labelStyle={dynamicStyles.buttonText}
               >
                 {Platform.OS === 'web' ? 'Update Availability' : 'Availability'}
               </Button>
@@ -167,6 +207,7 @@ const ProfessionalDashboard = ({ navigation }) => {
                 mode="outlined" 
                 onPress={() => navigation.navigate('ServiceManager')}
                 style={styles.quickActionButton}
+                labelStyle={dynamicStyles.buttonText}
               >
                 My Services
               </Button>
@@ -180,7 +221,7 @@ const ProfessionalDashboard = ({ navigation }) => {
   return (
     <CrossPlatformView fullWidthHeader={true}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Professional Dashboard</Text>
+        <Text style={dynamicStyles.headerTitle}>Professional Dashboard</Text>
       </View>
       <Content />
     </CrossPlatformView>
@@ -246,11 +287,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: Platform.OS === 'web' ? undefined : 'center',
   },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '500',
-    color: theme.colors.text,
-  },
   loadingContainer: {
     padding: 20,
     alignItems: 'center',
@@ -258,11 +294,6 @@ const styles = StyleSheet.create({
   emptyStateContainer: {
     padding: 20,
     alignItems: 'center',
-  },
-  emptyStateText: {
-    fontSize: 16,
-    marginBottom: 16,
-    textAlign: 'center',
   },
   createServiceButton: {
     marginTop: 8,

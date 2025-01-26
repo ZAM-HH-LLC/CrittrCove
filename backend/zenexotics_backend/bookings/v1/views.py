@@ -53,7 +53,8 @@ class BookingListView(APIView):
         # Get bookings for the user
         bookings = Booking.objects.filter(query).select_related(
             'client__user',
-            'professional__user'
+            'professional__user',
+            'bookingsummary'
         ).prefetch_related(
             'occurrences'
         ).order_by('-created_at')

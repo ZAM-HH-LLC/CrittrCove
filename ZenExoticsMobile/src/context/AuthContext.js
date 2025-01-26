@@ -2,7 +2,7 @@ import React, { createContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { API_BASE_URL } from '../config/config';
-import { Dimensions } from 'react-native';
+import { Dimensions, Platform } from 'react-native';
 
 export const SCREEN_WIDTH = Dimensions.get('window').width;
 export const SCREEN_HEIGHT = Dimensions.get('window').height;
@@ -16,6 +16,29 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [screenWidth, setScreenWidth] = useState(Dimensions.get('window').width);
   const [firstName, setFirstName] = useState('');
+
+  // Add resize listener for web
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      const handleResize = () => {
+        setScreenWidth(Dimensions.get('window').width);
+      };
+
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+    }
+
+    // For mobile, listen to dimension changes
+    const subscription = Dimensions.addEventListener('change', ({ window }) => {
+      setScreenWidth(window.width);
+    });
+
+    return () => {
+      if (subscription?.remove) {
+        subscription.remove();
+      }
+    };
+  }, []);
 
   const fetchUserName = async () => {
     try {

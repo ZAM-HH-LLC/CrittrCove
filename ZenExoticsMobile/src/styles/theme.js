@@ -25,8 +25,12 @@ export const theme = {
   },
   fontSizes: {
     small: 12,
+    smallMedium: 14,
     medium: 16,
+    mediumLarge: 18,
     large: 20,
+    largeLarge: 24,
+    extraLarge: 26,
   },
   spacing: {
     small: 8,

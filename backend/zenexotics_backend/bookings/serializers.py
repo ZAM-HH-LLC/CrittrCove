@@ -9,6 +9,8 @@ class BookingListSerializer(serializers.ModelSerializer):
     service_name = serializers.SerializerMethodField()
     start_date = serializers.SerializerMethodField()
     start_time = serializers.SerializerMethodField()
+    total_client_cost = serializers.SerializerMethodField()
+    total_sitter_payout = serializers.SerializerMethodField()
 
     class Meta:
         model = Booking
@@ -41,7 +43,23 @@ class BookingListSerializer(serializers.ModelSerializer):
     def get_start_time(self, obj):
         # Get the first occurrence for this booking
         first_occurrence = obj.occurrences.order_by('start_date', 'start_time').first()
-        return first_occurrence.start_time if first_occurrence else None 
+        return first_occurrence.start_time if first_occurrence else None
+
+    def get_total_client_cost(self, obj):
+        try:
+            if hasattr(obj, 'bookingsummary'):
+                return float(obj.bookingsummary.total_client_cost)
+        except:
+            pass
+        return 0.00
+
+    def get_total_sitter_payout(self, obj):
+        try:
+            if hasattr(obj, 'bookingsummary'):
+                return float(obj.bookingsummary.total_sitter_payout)
+        except:
+            pass
+        return 0.00
 
 class PetSerializer(serializers.ModelSerializer):
     class Meta:
