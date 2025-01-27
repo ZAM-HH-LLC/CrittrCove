@@ -152,7 +152,7 @@ const MyBookings = () => {
       {!error && (
         <TouchableOpacity
           style={styles.createServiceButton}
-          onPress={() => navigation.navigate('ServiceManager')}
+          onPress={() => navigation.navigate('SearchProfessionalsListing')}
         >
           <Text style={styles.createServiceButtonText}>
             {activeTab === 'professional' ? 'Create Service' : 'Browse Services'}

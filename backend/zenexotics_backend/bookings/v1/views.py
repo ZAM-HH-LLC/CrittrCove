@@ -43,33 +43,37 @@ class BookingListView(APIView):
             is_professional = False
             professional = None
 
-        # Build query based on user's role(s)
-        query = Q()
-        if is_client:
-            query |= Q(client=client)
+        # Get professional bookings
+        professional_bookings = []
         if is_professional:
-            query |= Q(professional=professional)
+            prof_bookings = Booking.objects.filter(professional=professional).select_related(
+                'client__user',
+                'professional__user',
+                'bookingsummary'
+            ).prefetch_related(
+                'occurrences'
+            ).order_by('-created_at')
+            professional_bookings = BookingListSerializer(prof_bookings, many=True).data
 
-        # Get bookings for the user
-        bookings = Booking.objects.filter(query).select_related(
-            'client__user',
-            'professional__user',
-            'bookingsummary'
-        ).prefetch_related(
-            'occurrences'
-        ).order_by('-created_at')
+        # Get client bookings
+        client_bookings = []
+        if is_client:
+            cli_bookings = Booking.objects.filter(client=client).select_related(
+                'client__user',
+                'professional__user',
+                'bookingsummary'
+            ).prefetch_related(
+                'occurrences'
+            ).order_by('-created_at')
+            client_bookings = BookingListSerializer(cli_bookings, many=True).data
 
-        # Paginate results
-        paginator = self.pagination_class()
-        paginated_bookings = paginator.paginate_queryset(bookings, request)
-        
-        # Serialize the paginated data
-        serializer = BookingListSerializer(paginated_bookings, many=True)
-        
-        # Return paginated response
+        # Return response with separated bookings
         return Response({
-            'bookings': serializer.data,
-            'next_page': paginator.get_next_link()
+            'bookings': {
+                'professional_bookings': professional_bookings,
+                'client_bookings': client_bookings
+            },
+            'next_page': None  # Since we're not paginating the separated lists
         })
 
 class BookingDetailView(generics.RetrieveAPIView):
