@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, Alert, Platform, Modal } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { theme } from '../styles/theme';
 import CrossPlatformView from '../components/CrossPlatformView';
 import BackHeader from '../components/BackHeader';
-import { fetchBookingDetails, createBooking, BOOKING_STATES, updateBookingStatus, mockMessages, mockConversations, CURRENT_USER_ID } from '../data/mockData';
+import { fetchBookingDetails, createBooking, updateBookingStatus, mockMessages, mockConversations, CURRENT_USER_ID, BOOKING_STATES } from '../data/mockData';
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DatePicker from '../components/DatePicker';
@@ -13,9 +13,11 @@ import AddRateModal from '../components/AddRateModal';
 import { format } from 'date-fns';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import TimePicker from '../components/TimePicker';
-import EditOccurrenceModal from '../components/EditOccurrenceModal';
 import AddOccurrenceModal from '../components/AddOccurrenceModal';
 import ConfirmationModal from '../components/ConfirmationModal';
+import { AuthContext } from '../context/AuthContext';
+import axios from 'axios';
+import { API_BASE_URL } from '../config/config';
 
 const LAST_VIEWED_BOOKING_ID = 'last_viewed_booking_id';
 
@@ -45,10 +47,10 @@ const mockUpdateBookingService = async (bookingId, serviceDetails) => {
 };
 
 const formatDateWithoutTimezone = (dateString) => {
-  const date = new Date(dateString);
-  // Adjust for timezone offset
-  date.setMinutes(date.getMinutes() + date.getTimezoneOffset());
-  return date;
+  if (!dateString) return new Date();
+  // Split the date string to avoid timezone issues
+  const [year, month, day] = dateString.split('-').map(num => parseInt(num, 10));
+  return new Date(year, month - 1, day); // month is 0-based in JS Date
 };
 
 const calculateTimeUnits = (startDate, endDate, startTime, endTime, timeUnit) => {
@@ -148,8 +150,11 @@ const RequestChangesModal = ({ visible, onClose, onSubmit, loading }) => {
 const BookingDetails = () => {
   const navigation = useNavigation();
   const route = useRoute();
+  const { is_prototype } = useContext(AuthContext);
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isProfessionalView, setIsProfessionalView] = useState(false);
   const [isPetsEditMode, setIsPetsEditMode] = useState(false);
   const [isServiceEditMode, setIsServiceEditMode] = useState(false);
   const [editedBooking, setEditedBooking] = useState({
@@ -178,7 +183,6 @@ const BookingDetails = () => {
   const [showHolidayRate, setShowHolidayRate] = useState(true);
   const [showWeekendRate, setShowWeekendRate] = useState(true);
   const [selectedOccurrence, setSelectedOccurrence] = useState(null);
-  const [showEditOccurrenceModal, setShowEditOccurrenceModal] = useState(false);
   const [showAddOccurrenceModal, setShowAddOccurrenceModal] = useState(false);
   const [expandedOccurrenceId, setExpandedOccurrenceId] = useState(null);
   const [selectedPets, setSelectedPets] = useState([]);
@@ -194,6 +198,8 @@ const BookingDetails = () => {
     onConfirm: null,
     isLoading: false
   });
+  const [availablePets, setAvailablePets] = useState([]);
+  const [isLoadingPets, setIsLoadingPets] = useState(false);
 
   useEffect(() => {
     const fetchBooking = async () => {
@@ -202,30 +208,61 @@ const BookingDetails = () => {
       try {
         let bookingId = route.params?.bookingId;
         let initialData = route.params?.initialData;
+        let isProfessional = route.params?.isProfessional;
+        setIsProfessionalView(isProfessional);
 
-        if (!bookingId && initialData) {
-          // If we have initial data but no booking ID, create a new booking
-          bookingId = await createBooking(
-            initialData.clientId || 'client123', // Get from auth context in real app
-            initialData.professionalId || 'professional123', // Get from context or params
-            initialData
+        if (is_prototype) {
+          if (!bookingId && initialData) {
+            bookingId = await createBooking(
+              initialData.clientId || 'client123',
+              initialData.professionalId || 'professional123',
+              initialData
+            );
+          }
+
+          if (!bookingId) {
+            bookingId = await AsyncStorage.getItem(LAST_VIEWED_BOOKING_ID);
+          }
+
+          if (!bookingId) {
+            navigation.replace('MyBookings');
+            return;
+          }
+
+          console.log('Fetching booking with ID:', bookingId);
+          await AsyncStorage.setItem(LAST_VIEWED_BOOKING_ID, bookingId);
+          const bookingData = await fetchBookingDetails(bookingId);
+          console.log('Fetched booking data:', bookingData);
+          setBooking(bookingData);
+        } else {
+          // Real API call
+          if (!bookingId) {
+            navigation.replace('MyBookings');
+            return;
+          }
+
+          let token = await AsyncStorage.getItem('userToken');
+          const response = await axios.get(
+            `${API_BASE_URL}/api/bookings/v1/${bookingId}/?is_prorated=true`,
+            { headers: { Authorization: `Bearer ${token}` }}
           );
-        }
 
-        if (!bookingId) {
-          bookingId = await AsyncStorage.getItem(LAST_VIEWED_BOOKING_ID);
-        }
+          // Transform API response to match the expected format
+          const transformedBooking = {
+            ...response.data,
+            id: response.data.booking_id,
+            clientName: response.data.parties.client_name,
+            professionalName: response.data.parties.professional_name,
+            serviceType: response.data.service_details.service_type,
+            animalType: response.data.service_details.animal_type,
+            numberOfPets: response.data.service_details.num_pets,
+            costs: response.data.cost_summary,
+            status: response.data.status
+          };
 
-        if (!bookingId) {
-          navigation.replace('MyBookings');
-          return;
+          console.log('Fetched and transformed booking data:', transformedBooking);
+          setBooking(transformedBooking);
         }
-
-        console.log('Fetching booking with ID:', bookingId);
-        await AsyncStorage.setItem(LAST_VIEWED_BOOKING_ID, bookingId);
-        const bookingData = await fetchBookingDetails(bookingId);
-        console.log('Fetched booking data:', bookingData);
-        setBooking(bookingData);
       } catch (error) {
         console.error('Error fetching booking details:', error);
         Alert.alert(
@@ -239,7 +276,7 @@ const BookingDetails = () => {
     };
 
     fetchBooking();
-  }, [route.params?.bookingId, navigation]);
+  }, [route.params?.bookingId, navigation, is_prototype]);
 
   // Add helper function to safely display data
   const getDisplayValue = (value, placeholder = 'TBD') => {
@@ -275,138 +312,73 @@ const BookingDetails = () => {
     }
   }, [booking]);
 
-  // const measureTimeDropdown = () => {
-  //   if (timeInputRef.current && Platform.OS === 'web') {
-  //     timeInputRef.current.measure((x, y, width, height, pageX, pageY) => {
-  //       setTimeDropdownPosition({
-  //         top: pageY + height,
-  //         left: pageX,
-  //         width: width,
-  //       });
-  //     });
-  //   }
-  // };
-
-  // const handleTimeOptionSelect = (option) => {
-  //   setEditedBooking(prev => ({
-  //     ...prev,
-  //     lengthOfService: option
-  //   }));
-  //   setShowTimeDropdown(false);
-  //   recalculateTotals();
-  // };
-
-  // const handleApprove = () => {
-  //   // Implement approval logic
-  //   console.log('Booking approved');
-  // };
-
-  // const handleModify = () => {
-  //   // Navigate to modification screen
-  //   console.log('Modify booking');
-  // };
-
-  // const handleCancel = () => {
-  //   // Implement cancellation logic
-  //   console.log('Booking cancelled');
-  // };
-
-  // TODO: I believe this is where we need to change the status to disallow edits from pros when pending client approval
-  const handleStatusUpdateAfterEdit = () => {
-    const currentPets = booking.pets || [];
-    const currentOccurrences = booking.occurrences || [];
+  // Add function to fetch available pets
+  const fetchAvailablePets = async () => {
+    if (!booking || !booking.parties?.client_id || is_prototype) return;
     
-    // Use the actual pets array length for both current and edited states
-    const currentServiceDetails = {
-      type: booking.serviceType || '',
-      animalType: booking.animalType || '',
-      numberOfPets: currentPets.length  // Use current pets array length
-    };
-    
-    const editedServiceDetails = {
-      type: editedBooking.serviceDetails?.type || booking.serviceType || '',
-      animalType: editedBooking.serviceDetails?.animalType || booking.animalType || '',
-      numberOfPets: selectedPets.length  // Use selected pets array length
-    };
-
-    console.log('Current Pets Length:', currentPets.length);
-    console.log('Selected Pets Length:', selectedPets.length);
-
-    const petsHaveChanged = JSON.stringify(currentPets) !== JSON.stringify(selectedPets);
-    const serviceDetailsHaveChanged = (
-      currentServiceDetails.type !== editedServiceDetails.type ||
-      currentServiceDetails.animalType !== editedServiceDetails.animalType ||
-      currentServiceDetails.numberOfPets !== editedServiceDetails.numberOfPets
-    );
-    const occurrencesHaveChanged = JSON.stringify(currentOccurrences) !== JSON.stringify(editedBooking.occurrences);
-
-    console.log('Current Service Details:', currentServiceDetails);
-    console.log('Edited Service Details:', editedServiceDetails);
-    console.log('serviceDetailsHaveChanged:', serviceDetailsHaveChanged);
-
-    if (petsHaveChanged || serviceDetailsHaveChanged || occurrencesHaveChanged) {
-      setHasUnsavedChanges(true);
-
-      // Update booking status if needed
-      if (booking.status === BOOKING_STATES.CONFIRMED) {
-        setBooking(prev => ({
-          ...prev,
-          status: BOOKING_STATES.CONFIRMED_PENDING_PROFESSIONAL_CHANGES,
-          numberOfPets: selectedPets.length  // Update the booking's numberOfPets
-        }));
+    setIsLoadingPets(true);
+    try {
+      const token = await AsyncStorage.getItem('userToken');
+      if (!token) {
+        throw new Error('No authentication token found');
       }
-      if (booking.status === BOOKING_STATES.PENDING_CLIENT_APPROVAL) {
-        setBooking(prev => ({
-          ...prev,
-          status: BOOKING_STATES.PENDING_PROFESSIONAL_CHANGES,
-          numberOfPets: selectedPets.length  // Update the booking's numberOfPets
-        }));
-      }
+
+      const response = await axios.get(
+        `${API_BASE_URL}/api/clients/v1/${booking.parties.client_id}/pets/`,
+        { 
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          params: {
+            exclude_booking: booking.booking_id
+          }
+        }
+      );
+      setAvailablePets(response.data);
+    } catch (error) {
+      console.error('Error fetching available pets:', error);
+      Alert.alert('Error', 'Failed to load available pets');
+    } finally {
+      setIsLoadingPets(false);
     }
   };
 
+  // Call fetchAvailablePets when edit mode is enabled
+  useEffect(() => {
+    if (isPetsEditMode) {
+      fetchAvailablePets();
+    }
+  }, [isPetsEditMode]);
+
   const togglePetsEditMode = async () => {
     if (isPetsEditMode) {
+      // Save changes
       try {
         setIsPetsSaving(true);
-        const petsHaveChanged = JSON.stringify(booking.pets) !== JSON.stringify(selectedPets);
-
-        if (petsHaveChanged) {
-          const response = await mockUpdateBookingPets(booking.id, selectedPets);
-          if (response.success) {
-            // Update both booking and editedBooking
+        if (!is_prototype) {
+          const token = await AsyncStorage.getItem('userToken');
+          if (!token) {
+            throw new Error('No authentication token found');
+          }
+          const response = await axios.patch(
+            `${API_BASE_URL}/api/bookings/v1/${booking.booking_id}/update_pets/`,
+            { pets: selectedPets.map(pet => pet.pet_id) },
+            { headers: { Authorization: `Bearer ${token}` }}
+          );
+          // Update the booking status based on the response
+          if (response.data.status) {
             setBooking(prev => ({
               ...prev,
-              pets: selectedPets,
-              numberOfPets: selectedPets.length
+              status: response.data.status,
+              pets: selectedPets
             }));
-            
-            setEditedBooking(prev => ({
-              ...prev,
-              numberOfPets: selectedPets.length,
-              serviceDetails: {
-                ...prev.serviceDetails,
-                numberOfPets: selectedPets.length
-              }
-            }));
-            
-            handleStatusUpdateAfterEdit();
           }
         } else {
-          console.log('No pets changes detected');
-          // Even if pets haven't changed, we should still update the numberOfPets
-          setEditedBooking(prev => {
-            console.log('Setting editedBooking (no changes) - prev state:', prev);
-            const newState = {
-              ...prev,
-              serviceDetails: {
-                ...prev.serviceDetails,
-                numberOfPets: selectedPets.length || 0
-              }
-            };
-            console.log('New editedBooking state (no changes):', newState);
-            return newState;
-          });
+          setBooking(prev => ({
+            ...prev,
+            pets: selectedPets
+          }));
         }
         setIsPetsEditMode(false);
       } catch (error) {
@@ -421,15 +393,81 @@ const BookingDetails = () => {
     }
   };
 
-  // const handleAddPet = (pet) => {
-  //   setSelectedPets(prev => [...prev, pet]);
-  //   handleStatusUpdateAfterEdit();
-  // };
+  const renderPetSelector = () => {
+    if (!isPetsEditMode) {
+      return (
+        <View>
+          {booking?.pets?.length > 0 ? (
+            booking.pets.map((pet, index) => (
+              <View key={index} style={styles.petRow}>
+                <Text style={styles.petName}>
+                  {pet.name} • {pet.species} {pet.breed && `• ${pet.breed}`}
+                </Text>
+              </View>
+            ))
+          ) : (
+            <Text style={styles.noContentText}>No pets added to this booking</Text>
+          )}
+        </View>
+      );
+    }
 
-  // const handleRemovePet = (petId) => {
-  //   setSelectedPets(prev => prev.filter(p => p.id !== petId));
-  //   handleStatusUpdateAfterEdit();
-  // };
+    return (
+      <View>
+        {selectedPets.map((pet, index) => (
+          <View key={index} style={styles.petRow}>
+            <Text style={styles.petName}>
+              {pet.name} • {pet.species} {pet.breed && `• ${pet.breed}`}
+            </Text>
+            <TouchableOpacity
+              onPress={() => setSelectedPets(prev => prev.filter((_, i) => i !== index))}
+            >
+              <MaterialCommunityIcons name="close" size={24} color={theme.colors.error} />
+            </TouchableOpacity>
+          </View>
+        ))}
+
+        <TouchableOpacity
+          style={styles.addPetButton}
+          onPress={() => setShowPetDropdown(!showPetDropdown)}
+        >
+          <Text style={styles.addPetText}>Add Pet</Text>
+          <MaterialCommunityIcons 
+            name={showPetDropdown ? "chevron-up" : "chevron-down"} 
+            size={24} 
+            color={theme.colors.text} 
+          />
+        </TouchableOpacity>
+
+        {showPetDropdown && (
+          <View style={styles.dropdownList}>
+            <ScrollView nestedScrollEnabled={true} style={{ maxHeight: 200 }}>
+              {isLoadingPets ? (
+                <ActivityIndicator style={{ padding: 10 }} />
+              ) : (
+                (is_prototype ? PET_OPTIONS : availablePets)
+                  .filter(pet => !selectedPets.some(selected => selected.pet_id === pet.pet_id))
+                  .map((pet) => (
+                    <TouchableOpacity
+                      key={pet.pet_id || pet.id}
+                      style={styles.dropdownItem}
+                      onPress={() => {
+                        setSelectedPets(prev => [...prev, pet]);
+                        setShowPetDropdown(false);
+                      }}
+                    >
+                      <Text style={styles.dropdownText}>
+                        {pet.name} • {pet.species} {pet.breed && `• ${pet.breed}`}
+                      </Text>
+                    </TouchableOpacity>
+                  ))
+              )}
+            </ScrollView>
+          </View>
+        )}
+      </View>
+    );
+  };
 
   const toggleServiceEditMode = async () => {
     if (isServiceEditMode) {
@@ -507,39 +545,35 @@ const BookingDetails = () => {
   };
 
   const canEdit = () => {
-    // First check if user is a professional (you might want to get this from auth/context later)
-    const userIsProfessional = true; // This can be replaced with actual auth check
+    if (!booking) return false;
 
-    // If not a professional, can't edit
-    if (!userIsProfessional) return false;
+    // If not a professional view, can't edit
+    if (!isProfessionalView) return false;
 
-    // If no booking or status is cancelled/denied, can't edit
-    if (!booking || [
-      BOOKING_STATES.CANCELLED,
-      BOOKING_STATES.DENIED
-    ].includes(booking?.status)) {
-      return false;
-    }
-
-    return true;
+    // Check if status allows professional edits
+    return BOOKING_STATES.PROFESSIONAL_EDITABLE_STATES.includes(booking.status);
   };
 
   const renderEditButton = () => (
     canEdit() && (
       <TouchableOpacity 
         onPress={togglePetsEditMode}
-        style={styles.editButton}
+        style={[styles.editButton, isPetsEditMode && styles.saveButton]}
         testID="edit-button"
         disabled={isPetsSaving}
       >
         {isPetsSaving ? (
           <ActivityIndicator size="small" color={theme.colors.primary} />
         ) : (
-          <MaterialCommunityIcons 
-            name={isPetsEditMode ? "check" : "pencil"} 
-            size={24} 
-            color={theme.colors.primary} 
-          />
+          isPetsEditMode ? (
+            <Text style={styles.saveButtonText}>Save Pets</Text>
+          ) : (
+            <MaterialCommunityIcons 
+              name="pencil" 
+              size={24} 
+              color={theme.colors.primary} 
+            />
+          )
         )}
       </TouchableOpacity>
     )
@@ -639,7 +673,7 @@ const BookingDetails = () => {
     }));
     
     handleStatusUpdateAfterEdit();
-    setShowEditOccurrenceModal(false);
+    setShowAddOccurrenceModal(false);
   };
 
   const handleAddOccurrence = (newOccurrence) => {
@@ -659,8 +693,24 @@ const BookingDetails = () => {
   };
 
   const handleDateTimeCardPress = (occurrence) => {
-    setSelectedOccurrence(occurrence);
-    setShowEditOccurrenceModal(true);
+    // Transform snake_case to camelCase
+    const transformedOccurrence = {
+      id: occurrence.id,
+      startDate: occurrence.start_date,
+      endDate: occurrence.end_date,
+      startTime: occurrence.start_time,
+      endTime: occurrence.end_time,
+      rates: {
+        baseRate: occurrence.rates?.baseRate || 0,
+        additionalAnimalRate: occurrence.rates?.additionalAnimalRate || 0,
+        appliesAfterAnimals: occurrence.rates?.appliesAfterAnimals || '1',
+        holidayRate: occurrence.rates?.holidayRate || 0,
+        additionalRates: occurrence.rates?.additionalRates || [],
+        timeUnit: occurrence.rates?.timeUnit || 'per visit'
+      }
+    };
+    setSelectedOccurrence(transformedOccurrence);
+    setShowAddOccurrenceModal(true);
   };
 
   const handleDeleteOccurrence = async (occurrenceId) => {
@@ -725,13 +775,13 @@ const BookingDetails = () => {
           >
             <View style={styles.occurrenceDetails}>
               <Text style={styles.dateText}>
-                {occurrence.endDate && occurrence.startDate !== occurrence.endDate ? 
-                  `${format(formatDateWithoutTimezone(occurrence.startDate), 'MMM d, yyyy')} - ${format(formatDateWithoutTimezone(occurrence.endDate), 'MMM d, yyyy')}` :
-                  format(formatDateWithoutTimezone(occurrence.startDate), 'MMM d, yyyy')
+                {occurrence.end_date && occurrence.start_date !== occurrence.end_date ? 
+                  `${format(formatDateWithoutTimezone(occurrence.start_date), 'MMM d, yyyy')} - ${format(formatDateWithoutTimezone(occurrence.end_date), 'MMM d, yyyy')}` :
+                  format(formatDateWithoutTimezone(occurrence.start_date), 'MMM d, yyyy')
                 }
               </Text>
               <Text style={styles.timeText}>
-                {`${occurrence.startTime} - ${occurrence.endTime}`}
+                {`${occurrence.start_time} - ${occurrence.end_time}`}
               </Text>
             </View>
             <View style={styles.occurrenceActions}>
@@ -753,13 +803,13 @@ const BookingDetails = () => {
           <View key={index} style={styles.occurrenceCard}>
             <View style={styles.occurrenceDetails}>
               <Text style={styles.dateText}>
-                {occurrence.endDate && occurrence.startDate !== occurrence.endDate ? 
-                  `${format(formatDateWithoutTimezone(occurrence.startDate), 'MMM d, yyyy')} - ${format(formatDateWithoutTimezone(occurrence.endDate), 'MMM d, yyyy')}` :
-                  format(formatDateWithoutTimezone(occurrence.startDate), 'MMM d, yyyy')
+                {occurrence.end_date && occurrence.start_date !== occurrence.end_date ? 
+                  `${format(formatDateWithoutTimezone(occurrence.start_date), 'MMM d, yyyy')} - ${format(formatDateWithoutTimezone(occurrence.end_date), 'MMM d, yyyy')}` :
+                  format(formatDateWithoutTimezone(occurrence.start_date), 'MMM d, yyyy')
                 }
               </Text>
               <Text style={styles.timeText}>
-                {`${occurrence.startTime} - ${occurrence.endTime}`}
+                {`${occurrence.start_time} - ${occurrence.end_time}`}
               </Text>
             </View>
           </View>
@@ -775,23 +825,6 @@ const BookingDetails = () => {
           <Text style={styles.addOccurrenceText}>Add Occurrence</Text>
         </TouchableOpacity>
       )}
-      
-      <ConfirmationModal
-        visible={confirmationModal.visible}
-        actionText={confirmationModal.actionText}
-        onClose={() => {
-          if (!confirmationModal.isLoading) {
-            setConfirmationModal({ 
-              visible: false, 
-              actionText: confirmationModal.actionText, 
-              onConfirm: null, 
-              isLoading: false 
-            });
-          }
-        }}
-        onConfirm={confirmationModal.onConfirm}
-        isLoading={confirmationModal.isLoading}
-      />
     </View>
   );
 
@@ -809,9 +842,9 @@ const BookingDetails = () => {
         >
           <View style={styles.occurrenceCostHeader}>
             <Text>
-              {occurrence.endDate && occurrence.startDate !== occurrence.endDate ? 
-                `${format(formatDateWithoutTimezone(occurrence.startDate), 'MMM d, yyyy')} - ${format(formatDateWithoutTimezone(occurrence.endDate), 'MMM d, yyyy')}` :
-                format(formatDateWithoutTimezone(occurrence.startDate), 'MMM d, yyyy')
+              {occurrence.end_date && occurrence.start_date !== occurrence.end_date ? 
+                `${format(formatDateWithoutTimezone(occurrence.start_date), 'MMM d, yyyy')} - ${format(formatDateWithoutTimezone(occurrence.end_date), 'MMM d, yyyy')}` :
+                format(formatDateWithoutTimezone(occurrence.start_date), 'MMM d, yyyy')
               }
             </Text>
             <View style={styles.costAndIcon}>
@@ -833,18 +866,18 @@ const BookingDetails = () => {
                 <Text>
                   ${parseFloat(occurrence.rates?.baseRate).toFixed(2)} × {
                     calculateTimeUnits(
-                      occurrence.startDate,
-                      occurrence.endDate,
-                      occurrence.startTime,
-                      occurrence.endTime,
+                      occurrence.start_date,
+                      occurrence.end_date,
+                      occurrence.start_time,
+                      occurrence.end_time,
                       occurrence.rates?.timeUnit
                     )
                   } = ${(parseFloat(occurrence.rates?.baseRate) * 
                         calculateTimeUnits(
-                          occurrence.startDate,
-                          occurrence.endDate,
-                          occurrence.startTime,
-                          occurrence.endTime,
+                          occurrence.start_date,
+                          occurrence.end_date,
+                          occurrence.start_time,
+                          occurrence.end_time,
                           occurrence.rates.timeUnit
                         )).toFixed(2)}
                 </Text>
@@ -919,10 +952,10 @@ const BookingDetails = () => {
           messageType: messageType,
           serviceType: booking.serviceType,
           dates: booking.occurrences.map(occ => ({
-            startDate: occ.startDate,
-            endDate: occ.endDate,
-            startTime: occ.startTime,
-            endTime: occ.endTime
+            startDate: occ.start_date,
+            endDate: occ.end_date,
+            startTime: occ.start_time,
+            endTime: occ.end_time
           })),
           totalCost: booking.costs.totalClientCost,
           status: booking.status
@@ -1035,13 +1068,13 @@ const BookingDetails = () => {
 
     const buttons = [];
 
-    if (canEdit()) {
-      // Send to Client button
-      if (([
+    if (isProfessionalView) {
+      // Send to Client button - Professional Only
+      if ([
         BOOKING_STATES.PENDING_INITIAL_PROFESSIONAL_CHANGES,
-        BOOKING_STATES.PENDING_PROFESSIONAL_CHANGES
-      ].includes(booking.status) || hasUnsavedChanges) && 
-      ![BOOKING_STATES.CANCELLED, BOOKING_STATES.DENIED].includes(booking.status)) {
+        BOOKING_STATES.PENDING_PROFESSIONAL_CHANGES,
+        BOOKING_STATES.CONFIRMED_PENDING_PROFESSIONAL_CHANGES
+      ].includes(booking.status)) {
         buttons.push(
           <TouchableOpacity
             key="send"
@@ -1056,7 +1089,7 @@ const BookingDetails = () => {
         );
       }
 
-      // Deny button
+      // Deny button - Professional Only
       if (booking.status === BOOKING_STATES.PENDING_INITIAL_PROFESSIONAL_CHANGES) {
         buttons.push(
           <TouchableOpacity
@@ -1064,37 +1097,43 @@ const BookingDetails = () => {
             style={[styles.button, styles.denyButton]}
             onPress={() => showConfirmation(
               'deny this booking',
-              () => handleStatusUpdate(BOOKING_STATES.DENIED, '', {
-                deniedBy: 'professional_id_here'
-              })
+              () => handleStatusUpdate(BOOKING_STATES.DENIED)
             )}
           >
             <Text style={styles.buttonText}>Deny</Text>
           </TouchableOpacity>
         );
       }
+    }
 
-      // Cancel button
+    // Cancel button - Both Professional and Client
+    if ([
+      BOOKING_STATES.PENDING_PROFESSIONAL_CHANGES,
+      BOOKING_STATES.CONFIRMED,
+      BOOKING_STATES.CONFIRMED_PENDING_PROFESSIONAL_CHANGES,
+      BOOKING_STATES.CONFIRMED_PENDING_CLIENT_APPROVAL
+    ].includes(booking.status)) {
+      buttons.push(
+        <TouchableOpacity
+          key="cancel"
+          style={[styles.button, styles.cancelButton]}
+          onPress={() => showConfirmation(
+            'cancel this booking',
+            () => handleStatusUpdate(BOOKING_STATES.CANCELLED)
+          )}
+        >
+          <Text style={styles.cancelButtonText}>Cancel Booking</Text>
+        </TouchableOpacity>
+      );
+    }
+
+    // Client-specific buttons
+    if (!isProfessionalView) {
+      // Approve button - Client Only
       if ([
-        BOOKING_STATES.PENDING_PROFESSIONAL_CHANGES,
-        BOOKING_STATES.CONFIRMED
+        BOOKING_STATES.PENDING_CLIENT_APPROVAL,
+        BOOKING_STATES.CONFIRMED_PENDING_CLIENT_APPROVAL
       ].includes(booking.status)) {
-        buttons.push(
-          <TouchableOpacity
-            key="cancel"
-            style={[styles.button, styles.cancelButton]}
-            onPress={() => showConfirmation(
-              'cancel this booking',
-              () => handleStatusUpdate(BOOKING_STATES.CANCELLED)
-            )}
-          >
-            <Text style={styles.cancelButtonText}>Cancel Booking</Text>
-          </TouchableOpacity>
-        );
-      }
-    } else {
-      // Client buttons
-      if (booking.status === BOOKING_STATES.PENDING_CLIENT_APPROVAL) {
         buttons.push(
           <TouchableOpacity
             key="approve"
@@ -1267,82 +1306,7 @@ const BookingDetails = () => {
               {renderEditButton()}
             </View>
             
-            {isPetsEditMode ? (
-              <View>
-                {selectedPets.map((pet, index) => (
-                  <View key={pet.id} style={styles.petItem}>
-                    <View style={styles.petInfo}>
-                      <Text style={styles.petName}>{pet.name}</Text>
-                      <Text style={styles.petDetails}>{pet.type} • {pet.breed}</Text>
-                    </View>
-                    <TouchableOpacity
-                      onPress={() => {
-                        setSelectedPets(prev => prev.filter(p => p.id !== pet.id));
-                      }}
-                    >
-                      <MaterialCommunityIcons 
-                        name="close" 
-                        size={24} 
-                        color={theme.colors.error} 
-                      />
-                    </TouchableOpacity>
-                  </View>
-                ))}
-                
-                <TouchableOpacity
-                  style={styles.addPetButton}
-                  onPress={() => setShowPetDropdown(!showPetDropdown)}
-                >
-                  <MaterialCommunityIcons 
-                    name={showPetDropdown ? "chevron-up" : "chevron-down"} 
-                    size={20} 
-                    color={theme.colors.primary} 
-                  />
-                  <Text style={styles.addPetText}>Add Pet</Text>
-                </TouchableOpacity>
-                
-                {showPetDropdown && (
-                  <View style={styles.dropdownList}>
-                    <ScrollView nestedScrollEnabled={true} style={styles.petDropdown}>
-                      {PET_OPTIONS
-                        .filter(pet => !selectedPets.find(p => p.id === pet.id))
-                        .map((pet) => (
-                          <TouchableOpacity
-                            key={pet.id}
-                            style={styles.dropdownItem}
-                            onPress={() => {
-                              setSelectedPets(prev => [...prev, pet]);
-                              setShowPetDropdown(false);
-                            }}
-                          >
-                            <View>
-                              <Text style={styles.dropdownPetName}>{pet.name}</Text>
-                              <Text style={styles.dropdownPetDetails}>
-                                {pet.type} • {pet.breed}
-                              </Text>
-                            </View>
-                          </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-                  </View>
-                )}
-              </View>
-            ) : (
-              <View>
-                {selectedPets.length > 0 ? (
-                  selectedPets.map((pet) => (
-                    <View key={pet.id} style={styles.petItem}>
-                      <View style={styles.petInfo}>
-                        <Text style={styles.petName}>{pet.name}</Text>
-                        <Text style={styles.petDetails}>{pet.type} • {pet.breed}</Text>
-                      </View>
-                    </View>
-                  ))
-                ) : (
-                  <Text style={styles.noPetsText}>No pets added to this booking</Text>
-                )}
-              </View>
-            )}
+            {renderPetSelector()}
           </View>
 
           <View style={[styles.section, { zIndex: 2 }]}>
@@ -1450,17 +1414,16 @@ const BookingDetails = () => {
           setShowAddRateModal(false);
         }}
       />
-      <EditOccurrenceModal
-        visible={showEditOccurrenceModal}
-        onClose={() => setShowEditOccurrenceModal(false)}
-        onSave={handleSaveOccurrence}
-        occurrence={selectedOccurrence}
-      />
       <AddOccurrenceModal
         visible={showAddOccurrenceModal}
-        onClose={() => setShowAddOccurrenceModal(false)}
-        onAdd={handleAddOccurrence}
+        onClose={() => {
+          setShowAddOccurrenceModal(false);
+          setSelectedOccurrence(null);
+        }}
+        onAdd={selectedOccurrence ? handleSaveOccurrence : handleAddOccurrence}
         defaultRates={booking?.rates}
+        initialOccurrence={selectedOccurrence}
+        isEditing={!!selectedOccurrence}
       />
       <ConfirmationModal
         visible={confirmationModal.visible}
@@ -1823,9 +1786,9 @@ const styles = StyleSheet.create({
   },
   summarySection: {
     marginTop: 20,
-    padding: 12,
-    backgroundColor: theme.colors.surface,
-    borderRadius: 8,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
   },
   summaryRow: {
     flexDirection: 'row',
@@ -2139,6 +2102,16 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     padding: 8,
+  },
+  saveButton: {
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  saveButtonText: {
+    color: 'white',
+    fontWeight: '600',
   },
 });
 

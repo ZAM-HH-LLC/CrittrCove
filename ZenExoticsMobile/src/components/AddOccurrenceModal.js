@@ -7,6 +7,8 @@ import TimePicker from './TimePicker';
 import { format } from 'date-fns';
 import { TIME_OPTIONS } from '../data/mockData';
 
+const ANIMAL_COUNT_OPTIONS = ['1', '2', '3', '4', '5'];
+
 const AddOccurrenceModal = ({ 
   visible, 
   onClose, 
@@ -14,7 +16,7 @@ const AddOccurrenceModal = ({
   defaultRates, 
   hideRates = false,
   initialOccurrence = null,
-  modalTitle = 'Add New Occurrence'
+  isEditing = false
 }) => {
   const [occurrence, setOccurrence] = useState(initialOccurrence || {
     startDate: new Date().toISOString().split('T')[0],
@@ -23,44 +25,55 @@ const AddOccurrenceModal = ({
     endTime: new Date(new Date().setHours(new Date().getHours() + 1)),
     rates: {
       baseRate: defaultRates?.baseRate || 0,
-      additionalRates: []
+      additionalAnimalRate: defaultRates?.additionalAnimalRate || 0,
+      appliesAfterAnimals: defaultRates?.appliesAfterAnimals || '1',
+      holidayRate: defaultRates?.holidayRate || 0,
+      additionalRates: defaultRates?.additionalRates || [],
+      timeUnit: defaultRates?.timeUnit || 'per visit'
     }
   });
 
   const [showAddRate, setShowAddRate] = useState(false);
   const [newRate, setNewRate] = useState({ name: '', amount: '' });
-  const [timeUnit, setTimeUnit] = useState('per visit');
+  const [timeUnit, setTimeUnit] = useState(initialOccurrence?.rates?.timeUnit || 'per visit');
   const [isLoading, setIsLoading] = useState(false);
+
+  const calculateTotal = () => {
+    const baseAmount = parseFloat(occurrence.rates.baseRate) || 0;
+    const additionalAnimalAmount = parseFloat(occurrence.rates.additionalAnimalRate) || 0;
+    const holidayAmount = parseFloat(occurrence.rates.holidayRate) || 0;
+    const customRatesAmount = occurrence.rates.additionalRates?.reduce((sum, rate) => 
+      sum + (parseFloat(rate.amount) || 0), 0) || 0;
+
+    return (baseAmount + additionalAnimalAmount + holidayAmount + customRatesAmount).toFixed(2);
+  };
 
   const handleAdd = async () => {
     try {
       setIsLoading(true);
       
-      const totalCost = parseFloat(occurrence.rates.baseRate) + 
-        occurrence.rates.additionalRates.reduce((sum, rate) => sum + parseFloat(rate.amount || 0), 0);
-
       const occurrenceData = {
         ...occurrence,
         startTime: format(occurrence.startTime, 'HH:mm'),
         endTime: format(occurrence.endTime, 'HH:mm'),
-        totalCost,
         rates: {
           ...occurrence.rates,
-          baseRate: parseFloat(occurrence.rates.baseRate),
+          baseRate: parseFloat(occurrence.rates.baseRate) || 0,
+          additionalAnimalRate: parseFloat(occurrence.rates.additionalAnimalRate) || 0,
+          appliesAfterAnimals: occurrence.rates.appliesAfterAnimals,
+          holidayRate: parseFloat(occurrence.rates.holidayRate) || 0,
           additionalRates: occurrence.rates.additionalRates.map(rate => ({
             ...rate,
-            amount: parseFloat(rate.amount)
+            amount: parseFloat(rate.amount) || 0
           })),
           timeUnit,
-        }
+        },
+        totalCost: parseFloat(calculateTotal())
       };
 
-      // Add a delay before calling onAdd to ensure loading state is visible
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
       await onAdd(occurrenceData);
 
-      // Reset the modal state
       setOccurrence({
         startDate: new Date().toISOString().split('T')[0],
         endDate: new Date().toISOString().split('T')[0],
@@ -68,20 +81,22 @@ const AddOccurrenceModal = ({
         endTime: new Date(new Date().setHours(new Date().getHours() + 1)),
         rates: {
           baseRate: defaultRates?.baseRate || 0,
-          additionalRates: []
+          additionalAnimalRate: defaultRates?.additionalAnimalRate || 0,
+          appliesAfterAnimals: defaultRates?.appliesAfterAnimals || '1',
+          holidayRate: defaultRates?.holidayRate || 0,
+          additionalRates: [],
+          timeUnit: 'per visit'
         }
       });
       setShowAddRate(false);
       setNewRate({ name: '', amount: '' });
       
-      // Add another delay before closing
       await new Promise(resolve => setTimeout(resolve, 500));
-      
     } catch (error) {
       console.error('Error adding occurrence:', error);
     } finally {
       setIsLoading(false);
-      onClose(); // Move onClose() here to ensure it happens after loading is complete
+      onClose();
     }
   };
 
@@ -122,7 +137,9 @@ const AddOccurrenceModal = ({
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{modalTitle}</Text>
+            <Text style={styles.modalTitle}>
+              {isEditing ? 'Edit Occurrence' : 'Add New Occurrence'}
+            </Text>
             <TouchableOpacity style={styles.closeButton} onPress={onClose}>
               <MaterialCommunityIcons name="close" size={24} color={theme.colors.text} />
             </TouchableOpacity>
@@ -151,8 +168,7 @@ const AddOccurrenceModal = ({
               </View>
             </View>
             <View style={styles.dateTimeSection}>
-              
-              <View style={styles.dateTimeContainer}>
+              <View style={[styles.dateTimeContainer, {marginTop: 15}]}>
                 <View style={styles.dateTimeColumn}>
                   <Text style={styles.label}>End Date</Text>
                   <DatePicker
@@ -174,7 +190,7 @@ const AddOccurrenceModal = ({
             {!hideRates && (
               <>
                 <View style={styles.rateSection}>
-                  <View style={styles.rateContainer}>
+                  <View style={[styles.rateContainer, {marginTop: 15}]}>
                     <View style={styles.baseRateInput}>
                       <Text style={styles.label}>Base Rate</Text>
                       <TextInput
@@ -204,6 +220,62 @@ const AddOccurrenceModal = ({
                       </Picker>
                     </View>
                   </View>
+
+                  <View style={[styles.rateContainer, styles.topSpacing]}>
+                    <View style={styles.baseRateInput}>
+                      <Text style={styles.label}>Additional Animal Rate</Text>
+                      <TextInput
+                        style={styles.input}
+                        value={occurrence.rates.additionalAnimalRate.toString()}
+                        onChangeText={(text) => setOccurrence(prev => ({
+                          ...prev,
+                          rates: {
+                            ...prev.rates,
+                            additionalAnimalRate: text.replace(/[^0-9.]/g, '')
+                          }
+                        }))}
+                        keyboardType="decimal-pad"
+                        placeholder="0.00"
+                      />
+                    </View>
+                    <View style={styles.timeUnitInput}>
+                      <Text style={styles.label}>Applies After</Text>
+                      <Picker
+                        selectedValue={occurrence.rates.appliesAfterAnimals}
+                        onValueChange={(itemValue) => setOccurrence(prev => ({
+                          ...prev,
+                          rates: {
+                            ...prev.rates,
+                            appliesAfterAnimals: itemValue
+                          }
+                        }))}
+                        style={styles.picker}
+                      >
+                        {ANIMAL_COUNT_OPTIONS.map((option) => (
+                          <Picker.Item key={option} label={`${option} animal${option === '1' ? '' : 's'}`} value={option} />
+                        ))}
+                      </Picker>
+                    </View>
+                  </View>
+
+                  <View style={[styles.rateContainer, styles.topSpacing]}>
+                    <View style={styles.baseRateInput}>
+                      <Text style={styles.label}>Holiday Rate</Text>
+                      <TextInput
+                        style={styles.input}
+                        value={occurrence.rates.holidayRate.toString()}
+                        onChangeText={(text) => setOccurrence(prev => ({
+                          ...prev,
+                          rates: {
+                            ...prev.rates,
+                            holidayRate: text.replace(/[^0-9.]/g, '')
+                          }
+                        }))}
+                        keyboardType="decimal-pad"
+                        placeholder="0.00"
+                      />
+                    </View>
+                  </View>
                 </View>
 
                 <View style={styles.rateSection}>
@@ -216,10 +288,9 @@ const AddOccurrenceModal = ({
                         editable={false}
                       />
                       <View style={[styles.rateAmountContainer]}>
-                        {/* <Text style={styles.dollarSign}>$</Text> */}
                         <TextInput
                           style={[styles.input, styles.rateAmountInput]}
-                          value={rate.amount}
+                          value={rate.amount.toString()}
                           editable={false}
                         />
                       </View>
@@ -243,7 +314,6 @@ const AddOccurrenceModal = ({
                           placeholder="Rate Title"
                         />
                         <View style={[styles.rateAmountContainer]}>
-                          {/* <Text style={styles.dollarSign}>$</Text> */}
                           <TextInput
                             style={[styles.input, styles.rateAmountInput]}
                             value={newRate.amount}
@@ -265,12 +335,17 @@ const AddOccurrenceModal = ({
                       style={styles.addRateButton}
                       onPress={() => setShowAddRate(true)}
                     >
-                      <Text style={styles.addRateButtonText}>Add another rate</Text>
+                      <Text style={styles.addRateButtonText}>Add custom rate</Text>
                     </TouchableOpacity>
                   )}
                 </View>
               </>
             )}
+
+            <View style={styles.totalSection}>
+              <Text style={styles.totalLabel}>Total:</Text>
+              <Text style={styles.totalAmount}>${calculateTotal()}</Text>
+            </View>
 
             <View style={styles.buttonContainer}>
               <TouchableOpacity
@@ -287,7 +362,7 @@ const AddOccurrenceModal = ({
                 {isLoading ? (
                   <ActivityIndicator color={theme.colors.surface} />
                 ) : (
-                  <Text style={styles.addButtonText}>Add</Text>
+                  <Text style={styles.addButtonText}>{isEditing ? 'Save' : 'Add'}</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -329,10 +404,10 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: theme.fontSizes.large,
     fontWeight: '500',
-    marginBottom: 15,
+    // marginBottom: 15,
   },
   dateTimeSection: {
-    // marginBottom: 20,
+    // marginBottom: 10,
   },
   dateTimeContainer: {
     display: 'flex',
@@ -340,7 +415,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: 15,
-    marginBottom: 15,
+    // marginBottom: 15,
   },
   dateTimeColumn: {
     flex: 1,
@@ -381,7 +456,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: theme.fontSizes.medium,
-    marginBottom: 8,
+    // marginBottom: 8,
     color: theme.colors.text,
   },
   inputContainer: {
@@ -466,6 +541,24 @@ const styles = StyleSheet.create({
     height: 39,
     borderWidth: 1,
     borderColor: theme.colors.border,
+  },
+  totalSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 20,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+  },
+  totalLabel: {
+    fontSize: theme.fontSizes.medium,
+    fontWeight: 'bold',
+  },
+  totalAmount: {
+    fontSize: theme.fontSizes.mediumLarge,
+    fontWeight: 'bold',
+    color: theme.colors.primary,
   },
 });
 

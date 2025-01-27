@@ -66,7 +66,7 @@ class HouseholdMemberSerializer(serializers.Serializer):
 class PetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Pet
-        fields = ['pet_id', 'name', 'species']
+        fields = ['pet_id', 'name', 'species', 'breed']
 
 class ClientBookingOccurrenceSerializer(serializers.ModelSerializer):
     professional_name = serializers.CharField(source='booking.professional.user.name')

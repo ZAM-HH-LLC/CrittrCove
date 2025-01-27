@@ -20,7 +20,16 @@ class Migration(migrations.Migration):
             name="Booking",
             fields=[
                 ("booking_id", models.AutoField(primary_key=True, serialize=False)),
-                ("status", models.CharField(choices=[('PENDING_INITIAL_PROFESSIONAL_CHANGES', 'Pending Initial Professional Changes'), ('PENDING_PROFESSIONAL_CHANGES', 'Pending Professional Changes'), ('PENDING_CLIENT_APPROVAL', 'Pending Client Approval'), ('CONFIRMED_PENDING_PROFESSIONAL_CHANGES', 'Confirmed Pending Professional Changes'), ('CONFIRMED', 'Confirmed'), ('DENIED', 'Denied'), ('CANCELLED', 'Cancelled'), ('DRAFT', 'Draft')], max_length=100)),
+                ("status", models.CharField(choices=[
+                    ('Pending initial Professional Changes', 'Pending Initial Professional Changes'),
+                    ('Pending Professional Changes', 'Pending Professional Changes'),
+                    ('Pending Client Approval', 'Pending Client Approval'),
+                    ('Confirmed Pending Professional Changes', 'Confirmed Pending Professional Changes'),
+                    ('Confirmed', 'Confirmed'),
+                    ('Denied', 'Denied'),
+                    ('Cancelled', 'Cancelled'),
+                    ('Draft', 'Draft')
+                ], max_length=100)),
                 ("subtotal", models.DecimalField(decimal_places=2, max_digits=10)),
                 ("total_client_cost", models.DecimalField(decimal_places=2, max_digits=10)),
                 ("total_sitter_payout", models.DecimalField(decimal_places=2, max_digits=10)),
@@ -32,7 +41,7 @@ class Migration(migrations.Migration):
                 ("initiated_by", models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name="initiated_bookings", to="users.user")),
                 ("last_modified_by", models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name="modified_bookings", to="users.user")),
                 ("professional", models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to="professionals.professional")),
-                ("service_id", models.ForeignKey('services.Service', on_delete=django.db.models.deletion.PROTECT, null=True, related_name="bookings", db_column="service_type_id")),
+                ("service_id", models.ForeignKey(db_column="service_type_id", null=True, on_delete=django.db.models.deletion.PROTECT, related_name="bookings", to="services.service")),
             ],
             options={
                 "db_table": "bookings",

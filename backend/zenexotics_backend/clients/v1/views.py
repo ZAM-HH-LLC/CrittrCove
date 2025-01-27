@@ -6,6 +6,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.utils import timezone
 from datetime import date
+
+from bookings.constants import BookingStates
 from ..models import Client
 from ..serializers import ClientSerializer, ClientBookingOccurrenceSerializer
 from professional_status.models import ProfessionalStatus
@@ -15,6 +17,9 @@ import logging
 from rest_framework.views import APIView
 from user_addresses.models import Address
 from ..serializers import ClientProfileEditSerializer
+from pets.models import Pet
+from booking_pets.models import BookingPets
+from ..serializers import PetSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +68,7 @@ def get_client_dashboard(request):
         # Get upcoming confirmed bookings
         confirmed_bookings = Booking.objects.filter(
             client=client,
-            status='CONFIRMED'
+            status=BookingStates.CONFIRMED
         ).select_related('professional__user')
 
         upcoming_occurrences = []
@@ -119,4 +124,64 @@ class ClientProfileEditView(APIView):
         # Serialize the data
         serializer = ClientProfileEditSerializer(client)
         
-        return Response(serializer.data) 
+        return Response(serializer.data)
+
+class ClientPetsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, client_id):
+        logger.info(f"Getting pets for client {client_id}")
+        
+        try:
+            # Check if the requesting user has permission to view this client's pets
+            if not request.user.is_staff:  # If not admin
+                try:
+                    # Check if user is the client
+                    if hasattr(request.user, 'client_profile') and request.user.client_profile.id != client_id:
+                        # Check if user is an approved professional
+                        professional_status = ProfessionalStatus.objects.get(user=request.user)
+                        if not professional_status.is_approved:
+                            return Response(
+                                {"error": "Not authorized to view client pets"},
+                                status=status.HTTP_403_FORBIDDEN
+                            )
+                except (Client.DoesNotExist, ProfessionalStatus.DoesNotExist):
+                    return Response(
+                        {"error": "Not authorized to view client pets"},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+
+            # Get the booking ID from query params if it exists
+            booking_id = request.query_params.get('exclude_booking')
+            logger.info(f"Excluding pets from booking ID: {booking_id}")
+            
+            # Get all pets for the client
+            client = Client.objects.get(id=client_id)
+            pets = Pet.objects.filter(owner=client.user)
+            
+            # If booking_id provided, exclude pets already in that booking
+            if booking_id:
+                existing_pet_ids = BookingPets.objects.filter(
+                    booking__booking_id=booking_id
+                ).values_list('pet__pet_id', flat=True)
+                logger.info(f"Found existing pet IDs in booking: {existing_pet_ids}")
+                pets = pets.exclude(pet_id__in=existing_pet_ids)
+            
+            # Serialize the pets
+            serializer = PetSerializer(pets, many=True)
+            
+            logger.info(f"Found {len(serializer.data)} available pets for client {client_id}")
+            return Response(serializer.data)
+            
+        except Client.DoesNotExist:
+            logger.warning(f"Client {client_id} not found")
+            return Response(
+                {"error": "Client not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            logger.error(f"Error getting client pets: {str(e)}")
+            return Response(
+                {"error": "An error occurred while fetching client pets"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            ) 

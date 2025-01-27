@@ -10,6 +10,7 @@ from bookings.models import Booking
 from booking_occurrences.models import BookingOccurrence
 import logging
 from pets.models import Pet
+from bookings.constants import BookingStates
 
 # Configure logging to print to console
 logger = logging.getLogger(__name__)
@@ -23,7 +24,7 @@ logger.setLevel(logging.DEBUG)
 class SimplePetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Pet
-        fields = ['pet_id', 'name', 'species']
+        fields = ['pet_id', 'name', 'species', 'breed']
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -44,7 +45,7 @@ def get_professional_dashboard(request):
         # Get upcoming confirmed bookings with at least one upcoming occurrence
         confirmed_bookings = Booking.objects.filter(
             professional=professional,
-            status='CONFIRMED',
+            status=BookingStates.CONFIRMED,
             occurrences__start_date__gte=today,
             occurrences__status='FINAL'
         ).select_related('client__user', 'service_id').distinct()

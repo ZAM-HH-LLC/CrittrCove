@@ -73,7 +73,7 @@ const TimePicker = ({ label, value, onChange, fullWidth = false, containerStyle 
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: 8,
+    // marginVertical: 8,
   },
   fullWidth: {
     // width: '100%',

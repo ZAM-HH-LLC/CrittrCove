@@ -1,13 +1,31 @@
 // First, declare the BOOKING_STATES constant
 export const BOOKING_STATES = {
-  PENDING_INITIAL_PROFESSIONAL_CHANGES: 'Pending Initial Professional Changes',
+  // # Initial States
+  DRAFT: 'Draft',
+  PENDING_INITIAL_PROFESSIONAL_CHANGES: 'Pending initial Professional Changes',
+    
+  // # Review States
   PENDING_PROFESSIONAL_CHANGES: 'Pending Professional Changes',
   PENDING_CLIENT_APPROVAL: 'Pending Client Approval',
-  CONFIRMED_PENDING_PROFESSIONAL_CHANGES: 'Confirmed Pending Professional Changes',
+    
+  // # Active States
   CONFIRMED: 'Confirmed',
+  CONFIRMED_PENDING_PROFESSIONAL_CHANGES: 'Confirmed Pending Professional Changes',
+  CONFIRMED_PENDING_CLIENT_APPROVAL: 'Confirmed Pending Client Approval',
+    
+  // # Terminal States
+  COMPLETED: 'Completed',
   DENIED: 'Denied',
   CANCELLED: 'Cancelled',
-  DRAFT: 'Draft'
+
+  // # States where professionals can edit
+  PROFESSIONAL_EDITABLE_STATES: [
+    'Draft',
+    'Pending initial Professional Changes',
+    'Pending Professional Changes',
+    'Confirmed Pending Professional Changes',
+    'Confirmed'
+  ]
 };
 
 export const ALL_SERVICES = "All Services";

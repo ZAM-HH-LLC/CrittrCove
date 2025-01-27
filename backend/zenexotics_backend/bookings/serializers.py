@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import Booking
 from pets.models import Pet
 from decimal import Decimal
+from .constants import BookingStates
 
 class BookingListSerializer(serializers.ModelSerializer):
     client_name = serializers.SerializerMethodField()
@@ -64,7 +65,7 @@ class BookingListSerializer(serializers.ModelSerializer):
 class PetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Pet
-        fields = ['name', 'species']
+        fields = ['pet_id', 'name', 'species', 'breed']
 
 class BookingDetailSerializer(serializers.ModelSerializer):
     parties = serializers.SerializerMethodField()

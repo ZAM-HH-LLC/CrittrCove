@@ -15,8 +15,8 @@ import { API_BASE_URL } from '../config/config';
 
 const MyBookings = () => {
   const navigation = useNavigation();
-  const { is_prototype } = useContext(AuthContext);
-  const [activeTab, setActiveTab] = useState('professional');
+  const { is_prototype, isApprovedProfessional } = useContext(AuthContext);
+  const [activeTab, setActiveTab] = useState(isApprovedProfessional ? 'professional' : 'client');
   const [searchQuery, setSearchQuery] = useState('');
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -105,8 +105,11 @@ const MyBookings = () => {
   };
 
   const handleViewDetails = (bookingId) => {
-    // Navigate to booking details screen
-    navigation.navigate('BookingDetails', { bookingId });
+    // Navigate to booking details screen with isProfessional flag based on active tab
+    navigation.navigate('BookingDetails', { 
+      bookingId,
+      isProfessional: activeTab === 'professional'
+    });
   };
 
   const handleCancelBooking = (bookingId) => {
@@ -145,17 +148,30 @@ const MyBookings = () => {
         {error 
           ? 'There was an error fetching your bookings. Please try again later.' 
           : activeTab === 'professional' 
-            ? 'Create a service to start receiving bookings'
+            ? isApprovedProfessional 
+              ? 'Create a service to start receiving bookings'
+              : 'Apply to become a professional to start receiving bookings'
             : 'Browse available services to make your first booking'
         }
       </Text>
       {!error && (
         <TouchableOpacity
           style={styles.createServiceButton}
-          onPress={() => navigation.navigate('SearchProfessionalsListing')}
+          onPress={() => navigation.navigate(
+            activeTab === 'professional'
+              ? isApprovedProfessional
+                ? 'ServiceManager'
+                : 'BecomeProfessional'
+              : 'SearchProfessionalsListing'
+          )}
         >
           <Text style={styles.createServiceButtonText}>
-            {activeTab === 'professional' ? 'Create Service' : 'Browse Services'}
+            {activeTab === 'professional'
+              ? isApprovedProfessional
+                ? 'Create Service'
+                : 'Become Professional'
+              : 'Browse Services'
+            }
           </Text>
         </TouchableOpacity>
       )}
@@ -178,24 +194,26 @@ const MyBookings = () => {
       />
       
       <View style={styles.container}>
-        <View style={styles.tabContainer}>
-          <TouchableOpacity
-            style={[styles.tab, activeTab === 'professional' && styles.activeTab]}
-            onPress={() => setActiveTab('professional')}
-          >
-            <Text style={[styles.tabText, activeTab === 'professional' && styles.activeTabText]}>
-              Professional Bookings
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.tab, activeTab === 'client' && styles.activeTab]}
-            onPress={() => setActiveTab('client')}
-          >
-            <Text style={[styles.tabText, activeTab === 'client' && styles.activeTabText]}>
-              Client Bookings
-            </Text>
-          </TouchableOpacity>
-        </View>
+        {isApprovedProfessional && (
+          <View style={styles.tabContainer}>
+            <TouchableOpacity
+              style={[styles.tab, activeTab === 'professional' && styles.activeTab]}
+              onPress={() => setActiveTab('professional')}
+            >
+              <Text style={[styles.tabText, activeTab === 'professional' && styles.activeTabText]}>
+                Professional Bookings
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.tab, activeTab === 'client' && styles.activeTab]}
+              onPress={() => setActiveTab('client')}
+            >
+              <Text style={[styles.tabText, activeTab === 'client' && styles.activeTabText]}>
+                Client Bookings
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         <View style={styles.searchContainer}>
           <MaterialCommunityIcons name="magnify" size={24} color={theme.colors.placeholder} />

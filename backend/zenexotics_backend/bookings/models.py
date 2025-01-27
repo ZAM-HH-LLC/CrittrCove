@@ -1,15 +1,16 @@
 from django.db import models
+from .constants import BookingStates
 
 class Booking(models.Model):
     BOOKING_STATUS_CHOICES = [
-        ('PENDING_INITIAL_PROFESSIONAL_CHANGES', 'Pending Initial Professional Changes'),
-        ('PENDING_PROFESSIONAL_CHANGES', 'Pending Professional Changes'),
-        ('PENDING_CLIENT_APPROVAL', 'Pending Client Approval'),
-        ('CONFIRMED_PENDING_PROFESSIONAL_CHANGES', 'Confirmed Pending Professional Changes'),
-        ('CONFIRMED', 'Confirmed'),
-        ('DENIED', 'Denied'),
-        ('CANCELLED', 'Cancelled'),
-        ('DRAFT', 'Draft'),
+        ('Pending initial Professional Changes', 'Pending Initial Professional Changes'),
+        ('Pending Professional Changes', 'Pending Professional Changes'),
+        ('Pending Client Approval', 'Pending Client Approval'),
+        ('Confirmed Pending Professional Changes', 'Confirmed Pending Professional Changes'),
+        ('Confirmed', 'Confirmed'),
+        ('Denied', 'Denied'),
+        ('Cancelled', 'Cancelled'),
+        ('Draft', 'Draft'),
     ]
 
     booking_id = models.AutoField(primary_key=True)

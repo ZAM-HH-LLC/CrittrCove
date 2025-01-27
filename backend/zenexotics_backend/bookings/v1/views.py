@@ -10,6 +10,12 @@ from professionals.models import Professional
 from ..models import Booking
 from ..serializers import BookingListSerializer, BookingDetailSerializer
 from rest_framework import generics
+from booking_pets.models import BookingPets
+from pets.models import Pet
+from ..constants import BookingStates
+import logging
+
+logger = logging.getLogger(__name__)
 
 class BookingPagination(PageNumberPagination):
     page_size = 20
@@ -100,5 +106,98 @@ class BookingDetailView(generics.RetrieveAPIView):
         # Get is_prorated from query params, default to True if not provided
         context['is_prorated'] = self.request.query_params.get('is_prorated', 'true').lower() == 'true'
         return context
+
+class BookingUpdatePetsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, booking_id):
+        try:
+            # Get the booking
+            booking = get_object_or_404(Booking, booking_id=booking_id)
+            
+            # Check if user has permission to update this booking
+            if not (request.user == booking.client.user or request.user == booking.professional.user):
+                return Response(
+                    {"error": "Not authorized to update this booking"},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+            # Get the list of pet IDs from the request
+            new_pet_ids = request.data.get('pets', [])
+            if not isinstance(new_pet_ids, list):
+                return Response(
+                    {"error": "Invalid pets data format"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Check if booking status allows edits
+            if booking.status in [
+                BookingStates.CANCELLED, 
+                BookingStates.DENIED, 
+                BookingStates.COMPLETED,
+                BookingStates.PENDING_CLIENT_APPROVAL,
+                BookingStates.CONFIRMED_PENDING_CLIENT_APPROVAL
+            ]:
+                return Response(
+                    {"error": f"Cannot update pets when booking is in {BookingStates.get_display_state(booking.status)} status"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Get current pets
+            current_pet_ids = list(BookingPets.objects.filter(
+                booking=booking
+            ).values_list('pet_id', flat=True))
+
+            # Sort both lists for comparison
+            current_pet_ids.sort()
+            new_pet_ids.sort()
+
+            # If pets are the same, return current status
+            if current_pet_ids == new_pet_ids:
+                return Response({
+                    "status": BookingStates.get_display_state(booking.status),
+                    "message": "No changes in pets"
+                })
+
+            # Validate that all pets belong to the client
+            client_pets = Pet.objects.filter(owner=booking.client.user)
+            invalid_pets = [pid for pid in new_pet_ids if pid not in client_pets.values_list('pet_id', flat=True)]
+            if invalid_pets:
+                return Response(
+                    {"error": f"Pets {invalid_pets} do not belong to the client"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Update booking status based on current status
+            if booking.status == BookingStates.CONFIRMED:
+                booking.status = BookingStates.CONFIRMED_PENDING_PROFESSIONAL_CHANGES
+            elif booking.status not in [
+                BookingStates.CONFIRMED_PENDING_PROFESSIONAL_CHANGES, 
+                BookingStates.PENDING_PROFESSIONAL_CHANGES
+            ]:
+                booking.status = BookingStates.PENDING_PROFESSIONAL_CHANGES
+
+            # Save the booking first to update its status
+            booking.save()
+
+            # Clear existing pets and add new ones
+            BookingPets.objects.filter(booking=booking).delete()
+            for pet_id in new_pet_ids:
+                BookingPets.objects.create(
+                    booking=booking,
+                    pet_id=pet_id
+                )
+
+            return Response({
+                "status": BookingStates.get_display_state(booking.status),
+                "message": "Pets updated successfully"
+            })
+
+        except Exception as e:
+            logger.error(f"Error updating pets for booking {booking_id}: {str(e)}")
+            return Response(
+                {"error": "Failed to update pets"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 # Placeholder: Ready for views to be added
