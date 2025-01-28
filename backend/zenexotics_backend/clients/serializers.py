@@ -70,12 +70,15 @@ class PetSerializer(serializers.ModelSerializer):
 
 class ClientBookingOccurrenceSerializer(serializers.ModelSerializer):
     professional_name = serializers.CharField(source='booking.professional.user.name')
-    service_type = serializers.CharField(source='booking.service_type')
+    service_type = serializers.SerializerMethodField()
     pets = serializers.SerializerMethodField()
     
     class Meta:
         model = BookingOccurrence
         fields = ['booking_id', 'professional_name', 'start_date', 'start_time', 'service_type', 'pets']
+    
+    def get_service_type(self, obj):
+        return obj.booking.service_id.service_name if obj.booking.service_id else None
     
     def get_pets(self, obj):
         pets = Pet.objects.filter(bookingpets__booking=obj.booking)

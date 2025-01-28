@@ -146,6 +146,7 @@ export const AuthProvider = ({ children }) => {
         ['refreshToken', refreshTokenValue],
       ]);
 
+      console.log('MBA sign in token', token, 'refreshToken', refreshTokenValue);
       setIsSignedIn(true);
       
       // Get professional status and set initial role

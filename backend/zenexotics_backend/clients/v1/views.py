@@ -65,27 +65,38 @@ def get_client_dashboard(request):
         # Get current date
         today = date.today()
 
-        # Get upcoming confirmed bookings
+        # Get upcoming confirmed bookings with at least one upcoming occurrence
         confirmed_bookings = Booking.objects.filter(
             client=client,
-            status=BookingStates.CONFIRMED
-        ).select_related('professional__user')
+            status=BookingStates.CONFIRMED,
+            occurrences__start_date__gte=today,
+            occurrences__status='FINAL'
+        ).select_related('professional__user', 'service_id').distinct()
 
-        upcoming_occurrences = []
+        # Serialize the bookings
+        serialized_bookings = []
         for booking in confirmed_bookings:
-            occurrences = BookingOccurrence.objects.filter(
+            # Get the next occurrence for this booking
+            next_occurrence = BookingOccurrence.objects.filter(
                 booking=booking,
                 start_date__gte=today,
                 status='FINAL'
-            ).order_by('start_date', 'start_time')
-            upcoming_occurrences.extend(occurrences)
-
-        # Serialize the occurrences
-        serialized_occurrences = ClientBookingOccurrenceSerializer(upcoming_occurrences, many=True).data
+            ).order_by('start_date', 'start_time').first()
+            
+            if next_occurrence:
+                booking_data = {
+                    'booking_id': booking.booking_id,
+                    'professional_name': booking.professional.user.name,
+                    'start_date': next_occurrence.start_date,
+                    'start_time': next_occurrence.start_time,
+                    'service_type': booking.service_id.service_name if booking.service_id else None,
+                    'pets': PetSerializer(Pet.objects.filter(bookingpets__booking=booking), many=True).data
+                }
+                serialized_bookings.append(booking_data)
 
         # Prepare response data
         response_data = {
-            'upcoming_bookings': serialized_occurrences
+            'upcoming_bookings': serialized_bookings
         }
 
         return Response(response_data)
