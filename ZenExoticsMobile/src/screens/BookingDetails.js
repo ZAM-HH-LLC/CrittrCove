@@ -314,42 +314,26 @@ const BookingDetails = () => {
 
   // Add function to fetch available pets
   const fetchAvailablePets = async () => {
-    if (!booking || !booking.parties?.client_id || is_prototype) return;
-    
-    setIsLoadingPets(true);
+    console.log('fetching available pets with booking id:', booking.booking_id);
     try {
       const token = await AsyncStorage.getItem('userToken');
       if (!token) {
         throw new Error('No authentication token found');
       }
-
+      setIsLoadingPets(true);
       const response = await axios.get(
-        `${API_BASE_URL}/api/clients/v1/${booking.parties.client_id}/pets/`,
-        { 
-          headers: { 
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          params: {
-            exclude_booking: booking.booking_id
-          }
-        }
+        `${API_BASE_URL}/api/booking-drafts/v1/${booking.booking_id}/available_pets/`,
+        { headers: { Authorization: `Bearer ${token}` }}
       );
       setAvailablePets(response.data);
+      console.log('available pets:', response.data);
     } catch (error) {
       console.error('Error fetching available pets:', error);
-      Alert.alert('Error', 'Failed to load available pets');
+      Alert.alert('Error', 'Failed to fetch available pets');
     } finally {
       setIsLoadingPets(false);
     }
   };
-
-  // Call fetchAvailablePets when edit mode is enabled
-  useEffect(() => {
-    if (isPetsEditMode) {
-      fetchAvailablePets();
-    }
-  }, [isPetsEditMode]);
 
   const togglePetsEditMode = async () => {
     if (isPetsEditMode) {
@@ -362,15 +346,21 @@ const BookingDetails = () => {
             throw new Error('No authentication token found');
           }
           const response = await axios.patch(
-            `${API_BASE_URL}/api/bookings/v1/${booking.booking_id}/update_pets/`,
-            { pets: selectedPets.map(pet => pet.pet_id) },
+            `${API_BASE_URL}/api/booking-drafts/v1/${booking.booking_id}/update_pets/`,
+            { pets: selectedPets.map(pet => ({
+                pet_id: pet.pet_id,
+                name: pet.name,
+                species: pet.species,
+                breed: pet.breed
+              }))
+            },
             { headers: { Authorization: `Bearer ${token}` }}
           );
-          // Update the booking status based on the response
-          if (response.data.status) {
-            setBooking(prev => ({
-              ...prev,
-              status: response.data.status,
+          // Update booking status and pets from response
+          if (response.data.booking_status) {
+            setBooking(prevBooking => ({
+              ...prevBooking,
+              status: response.data.booking_status,
               pets: selectedPets
             }));
           }
@@ -429,7 +419,12 @@ const BookingDetails = () => {
 
         <TouchableOpacity
           style={styles.addPetButton}
-          onPress={() => setShowPetDropdown(!showPetDropdown)}
+          onPress={async () => {
+            if (!showPetDropdown && !is_prototype) {
+              await fetchAvailablePets();
+            }
+            setShowPetDropdown(!showPetDropdown);
+          }}
         >
           <Text style={styles.addPetText}>Add Pet</Text>
           <MaterialCommunityIcons 
@@ -461,6 +456,9 @@ const BookingDetails = () => {
                       </Text>
                     </TouchableOpacity>
                   ))
+              )}
+              {!isLoadingPets && availablePets.length === 0 && (
+                <Text style={styles.noContentText}>No pets available</Text>
               )}
             </ScrollView>
           </View>
