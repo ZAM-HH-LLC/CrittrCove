@@ -45,7 +45,7 @@ class BookingOccurrence(models.Model):
                 end_datetime = datetime.combine(self.end_date, self.end_time)
                 duration_hours = (end_datetime - start_datetime).total_seconds() / 3600
                 
-                if service.unit_of_time == 'DAY':
+                if service.unit_of_time == 'PER_DAY':
                     multiple = duration_hours / 24
                 elif service.unit_of_time == 'WEEK':
                     multiple = duration_hours / (24 * 7)

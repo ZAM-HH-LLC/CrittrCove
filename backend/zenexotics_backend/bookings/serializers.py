@@ -3,6 +3,10 @@ from .models import Booking
 from pets.models import Pet
 from decimal import Decimal
 from .constants import BookingStates
+from booking_details.models import BookingDetails
+import logging
+
+logger = logging.getLogger(__name__)
 
 class BookingListSerializer(serializers.ModelSerializer):
     client_name = serializers.SerializerMethodField()
@@ -68,102 +72,157 @@ class PetSerializer(serializers.ModelSerializer):
         fields = ['pet_id', 'name', 'species', 'breed']
 
 class BookingDetailSerializer(serializers.ModelSerializer):
-    parties = serializers.SerializerMethodField()
-    pets = serializers.SerializerMethodField()
+    client_name = serializers.CharField(source='client.user.name')
+    professional_name = serializers.CharField(source='professional.user.name')
     service_details = serializers.SerializerMethodField()
+    pets = serializers.SerializerMethodField()
     occurrences = serializers.SerializerMethodField()
     cost_summary = serializers.SerializerMethodField()
-    service_name = serializers.SerializerMethodField()
+    original_status = serializers.CharField(required=False)
 
     class Meta:
         model = Booking
         fields = [
             'booking_id',
             'status',
-            'service_name',
-            'parties',
-            'pets',
+            'original_status',
+            'client_name',
+            'professional_name',
             'service_details',
+            'pets',
             'occurrences',
-            'cost_summary'
+            'cost_summary',
         ]
 
-    def get_service_name(self, obj):
-        return obj.service_id.service_name if obj.service_id else None
-
-    def get_parties(self, obj):
+    def get_service_details(self, obj):
         return {
-            'client_name': obj.client.user.name,
-            'client_id': obj.client.id,
-            'professional_name': obj.professional.user.name,
-            'professional_id': obj.professional.professional_id
+            'service_type': obj.service_id.service_name if obj.service_id else None,
+            'animal_type': obj.service_id.animal_type if obj.service_id else None,
+            'num_pets': obj.booking_pets.count()
         }
 
     def get_pets(self, obj):
-        pets = Pet.objects.filter(bookingpets__booking=obj)
-        return PetSerializer(pets, many=True).data
-
-    def get_service_details(self, obj):
-        if not obj.service_id:
-            return None
-        
-        service = obj.service_id
-        details = obj.booking_details.first()
-        
-        return {
-            'service_type': service.service_name,
-        }
+        return [
+            {
+                'pet_id': bp.pet.pet_id,
+                'name': bp.pet.name,
+                'species': bp.pet.species,
+                'breed': bp.pet.breed
+            }
+            for bp in obj.booking_pets.select_related('pet').all()
+        ]
 
     def get_occurrences(self, obj):
-        occurrences = obj.occurrences.all().order_by('start_date', 'start_time')
         is_prorated = self.context.get('is_prorated', True)
-        
-        def get_time_unit_info(occurrence):
-            if not hasattr(occurrence.booking, 'service_id'):
-                return None
-                
-            multiple = occurrence.calculate_time_units(is_prorated)
-            if multiple is not None:
-                return {
-                    'multiple': float(multiple),
-                    'unit': occurrence.booking.service_id.unit_of_time
-                }
-            return None
-        
-        return [{
-            'start_date': occurrence.start_date,
-            'end_date': occurrence.end_date,
-            'start_time': occurrence.start_time,
-            'end_time': occurrence.end_time,
-            'calculated_cost': f"${float(occurrence.calculated_cost(is_prorated)):.2f}",
-            'rates': occurrence.rates.rates if hasattr(occurrence, 'rates') and occurrence.rates else [],
-            'time_units': get_time_unit_info(occurrence)
-        } for occurrence in occurrences]
+        occurrences = []
+        logger.info(f"\nProcessing occurrences for booking {obj.booking_id}:")
+
+        for occ in obj.occurrences.prefetch_related('booking_details', 'rates').all():
+            booking_details = occ.booking_details.first()
+            if not booking_details:
+                logger.warning(f"  No booking details found for occurrence {occ.occurrence_id}")
+                continue
+
+            logger.info(f"\n  Processing occurrence {occ.occurrence_id}:")
+            # Get base_total from booking details calculated cost
+            base_total = booking_details.calculate_occurrence_cost(is_prorated)
+            logger.info(f"  Base total from booking details: ${base_total}")
+
+            # Get additional rates and their sum
+            additional_rates = []
+            additional_rates_total = Decimal('0')
+            if hasattr(occ, 'rates') and occ.rates.rates:
+                logger.info("  Processing additional rates:")
+                for rate in occ.rates.rates:
+                    if rate['title'] != 'Base Rate':  # Only exclude base rate
+                        rate_amount = Decimal(rate['amount'].replace('$', '').strip())
+                        logger.info(f"    Rate: {rate['title']}, Amount: ${rate_amount}")
+                        additional_rates.append({
+                            'title': rate['title'],
+                            'description': rate.get('description', ''),
+                            'amount': f"${rate_amount}"
+                        })
+                        additional_rates_total += rate_amount
+
+            # Total cost is base_total plus sum of all additional rates
+            total_cost = base_total + additional_rates_total
+            logger.info(f"  Additional rates total: ${additional_rates_total}")
+            logger.info(f"  Final total cost: ${total_cost}")
+
+            occurrences.append({
+                'occurrence_id': occ.occurrence_id,
+                'start_date': occ.start_date,
+                'end_date': occ.end_date,
+                'start_time': occ.start_time.strftime('%H:%M') if occ.start_time else None,
+                'end_time': occ.end_time.strftime('%H:%M') if occ.end_time else None,
+                'calculated_cost': f"{total_cost:.2f}",
+                'base_total': f"${base_total:.2f}",
+                'rates': self.get_occurrence_rates(occ, booking_details, additional_rates)
+            })
+
+        return occurrences
+
+    def get_occurrence_rates(self, occurrence, booking_details, additional_rates):
+        if not booking_details:
+            return {}
+
+        return {
+            'base_rate': str(booking_details.base_rate),
+            'additional_animal_rate': str(booking_details.additional_pet_rate),
+            'applies_after': booking_details.applies_after,
+            'unit_of_time': occurrence.booking.service_id.unit_of_time,
+            'holiday_rate': str(booking_details.holiday_rate),
+            'additional_rates': additional_rates
+        }
 
     def get_cost_summary(self, obj):
-        try:
-            summary = obj.bookingsummary
-            if summary:
-                # Calculate total from all occurrences
-                is_prorated = self.context.get('is_prorated', True)
-                total = sum(
-                    occurrence.calculated_cost(is_prorated)
-                    for occurrence in obj.occurrences.all()
-                )
-                
-                # Calculate fees and taxes based on the new total
-                platform_fee = total * (summary.fee_percentage / Decimal('100.00'))
-                taxes = (total + platform_fee) * (summary.tax_percentage / Decimal('100.00'))
-                total_client_cost = total + platform_fee + taxes
-                total_sitter_payout = total - platform_fee
-                
-                return {
-                    'subtotal': float(total),
-                    'platform_fee': float(platform_fee),
-                    'taxes': float(taxes),
-                    'total_client_cost': float(total_client_cost),
-                    'total_sitter_payout': float(total_sitter_payout)
-                }
-        except:
+        is_prorated = self.context.get('is_prorated', True)
+        logger.info(f"\nCalculating cost summary for booking {obj.booking_id}:")
+        
+        if not hasattr(obj, 'bookingsummary'):
+            logger.warning("  No booking summary found")
             return None
-        return None 
+
+        # Calculate subtotal from all occurrences
+        subtotal = Decimal('0')
+        for occ in obj.occurrences.prefetch_related('booking_details', 'rates').all():
+            booking_details = occ.booking_details.first()
+            if not booking_details:
+                logger.warning(f"  No booking details found for occurrence {occ.occurrence_id}")
+                continue
+
+            # Get base_total from booking details
+            base_total = booking_details.calculate_occurrence_cost(is_prorated)
+            logger.info(f"  Occurrence {occ.occurrence_id} base total: ${base_total}")
+            subtotal += base_total
+
+            # Add additional rates
+            if hasattr(occ, 'rates') and occ.rates.rates:
+                logger.info(f"  Processing additional rates for occurrence {occ.occurrence_id}:")
+                for rate in occ.rates.rates:
+                    if rate['title'] != 'Base Rate':  # Only exclude base rate
+                        rate_amount = Decimal(rate['amount'].replace('$', '').strip())
+                        logger.info(f"    Adding rate: {rate['title']}, Amount: ${rate_amount}")
+                        subtotal += rate_amount
+
+        # Calculate other costs
+        platform_fee = (subtotal * Decimal('0.10')).quantize(Decimal('0.01'))
+        taxes = ((subtotal + platform_fee) * Decimal('0.08')).quantize(Decimal('0.01'))
+        total_client_cost = subtotal + platform_fee + taxes
+        total_sitter_payout = subtotal - platform_fee
+
+        logger.info(f"  Final calculations:")
+        logger.info(f"    Subtotal: ${subtotal}")
+        logger.info(f"    Platform fee: ${platform_fee}")
+        logger.info(f"    Taxes: ${taxes}")
+        logger.info(f"    Total client cost: ${total_client_cost}")
+        logger.info(f"    Total sitter payout: ${total_sitter_payout}")
+
+        return {
+            'subtotal': float(subtotal.quantize(Decimal('0.01'))),
+            'platform_fee': float(platform_fee),
+            'taxes': float(taxes),
+            'total_client_cost': float(total_client_cost.quantize(Decimal('0.01'))),
+            'total_sitter_payout': float(total_sitter_payout.quantize(Decimal('0.01'))),
+            'is_prorated': is_prorated
+        } 

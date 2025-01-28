@@ -15,6 +15,7 @@ class BookingDraft(models.Model):
     draft_id = models.AutoField(primary_key=True)
     booking = models.ForeignKey('bookings.Booking', on_delete=models.CASCADE, related_name='drafts')
     draft_data = models.JSONField()  # Using Django's built-in JSONField
+    original_status = models.CharField(max_length=100, null=True)  # Store original booking status
     last_modified_by = models.CharField(max_length=50, choices=MODIFIER_CHOICES)
     status = models.CharField(max_length=50, choices=STATUS_CHOICES)
     created_at = models.DateTimeField(auto_now_add=True)

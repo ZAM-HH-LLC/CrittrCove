@@ -19,8 +19,18 @@ class Service(models.Model):
     UNIT_OF_TIME_CHOICES = [
         ('15_MIN', '15 Minutes'),
         ('30_MIN', '30 Minutes'),
+        ('45_MIN', '45 Minutes'),
         ('1_HOUR', '1 Hour'),
-        ('DAY', 'Day'),
+        ('2_HOUR', '2 Hours'),
+        ('3_HOUR', '3 Hours'),
+        ('4_HOUR', '4 Hours'),
+        ('5_HOUR', '5 Hours'),
+        ('6_HOUR', '6 Hours'),
+        ('7_HOUR', '7 Hours'),
+        ('8_HOUR', '8 Hours'),
+        ('24_HOUR', '24 Hours'),
+        ('PER_DAY', 'Per Day'),
+        ('PER_VISIT', 'Per Visit'),
         ('WEEK', 'Week'),
     ]
 

@@ -14,6 +14,7 @@ from booking_pets.models import BookingPets
 from pets.models import Pet
 from ..constants import BookingStates
 import logging
+from booking_drafts.models import BookingDraft
 
 logger = logging.getLogger(__name__)
 
@@ -103,9 +104,58 @@ class BookingDetailView(generics.RetrieveAPIView):
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        # Get is_prorated from query params, default to True if not provided
         context['is_prorated'] = self.request.query_params.get('is_prorated', 'true').lower() == 'true'
+        
+        # Add user role context
+        user = self.request.user
+        try:
+            professional = Professional.objects.get(user=user)
+            context['is_professional'] = True
+            context['professional'] = professional
+        except Professional.DoesNotExist:
+            context['is_professional'] = False
+            context['professional'] = None
+        
         return context
+
+    def retrieve(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+        except Booking.DoesNotExist:
+            return Response(
+                {"error": f"Booking with ID {kwargs.get('booking_id')} not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        context = self.get_serializer_context()
+        
+        # If user is a professional, check for draft
+        if context.get('is_professional') and context.get('professional') == instance.professional:
+            try:
+                draft = BookingDraft.objects.get(booking=instance)
+                if draft.draft_data:
+                    # Use draft data for response
+                    serializer = self.get_serializer(instance, context=context)
+                    data = serializer.data
+                    
+                    # Override only pets and service details from draft
+                    draft_data = draft.draft_data
+                    if 'service_details' in draft_data:
+                        data['service_details'] = draft_data['service_details']
+                    if 'pets' in draft_data:
+                        data['pets'] = draft_data['pets']
+                    
+                    # Use original status if available
+                    if draft.original_status:
+                        data['original_status'] = draft.original_status
+                    
+                    return Response(data)
+            except BookingDraft.DoesNotExist:
+                pass
+        
+        # If no draft or user is client, return original booking data
+        serializer = self.get_serializer(instance, context=context)
+        return Response(serializer.data)
 
 class BookingUpdatePetsView(APIView):
     permission_classes = [IsAuthenticated]

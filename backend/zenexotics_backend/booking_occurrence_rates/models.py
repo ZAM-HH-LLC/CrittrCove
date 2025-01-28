@@ -54,16 +54,20 @@ class BookingOccurrenceRate(models.Model):
                     'rates': f'Rate is missing required fields: {", ".join(missing_fields)}'
                 })
             
-            # Validate amount format
+            # Validate and fix amount format
             amount = rate['amount']
-            if not isinstance(amount, str) or not amount.startswith('$'):
+            if not isinstance(amount, str):
                 raise ValidationError({
-                    'rates': f'Amount must be a string starting with $'
+                    'rates': f'Amount must be a string'
                 })
+            
+            # Add '$' prefix if missing
+            if not amount.startswith('$'):
+                rate['amount'] = f"${amount}"
             
             try:
                 # Try to convert amount to Decimal (removing $ first)
-                Decimal(amount.replace('$', '').strip())
+                Decimal(rate['amount'].replace('$', '').strip())
             except:
                 raise ValidationError({
                     'rates': f'Invalid amount format: {amount}'

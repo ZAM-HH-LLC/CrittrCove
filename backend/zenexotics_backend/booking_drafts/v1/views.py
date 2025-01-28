@@ -17,15 +17,37 @@ from booking_occurrences.models import BookingOccurrence
 logger = logging.getLogger(__name__)
 
 def serialize_rates(rates):
-    if not rates:
+    """Safely serialize rates, handling cases where rates don't exist"""
+    try:
+        if not rates:
+            return None
+        
+        # Get the base rates
+        base_rate = str(rates.base_rate) if hasattr(rates, 'base_rate') else "0.00"
+        additional_animal_rate = str(rates.additional_animal_rate) if hasattr(rates, 'additional_animal_rate') else "0.00"
+        holiday_rate = str(rates.holiday_rate) if hasattr(rates, 'holiday_rate') else "0.00"
+        
+        # Format additional rates
+        additional_rates = []
+        if hasattr(rates, 'rates') and rates.rates:
+            for rate in rates.rates:
+                additional_rates.append({
+                    'title': rate.get('title', ''),
+                    'amount': f"${rate.get('amount', '0.00')}",
+                    'description': rate.get('description', '')
+                })
+        
+        return {
+            'base_rate': base_rate,
+            'additional_animal_rate': additional_animal_rate,
+            'applies_after': rates.applies_after_animals if hasattr(rates, 'applies_after_animals') else 1,
+            'unit_of_time': rates.time_unit if hasattr(rates, 'time_unit') else "DAY",
+            'holiday_rate': holiday_rate,
+            'additional_rates': additional_rates
+        }
+    except Exception as e:
+        logger.warning(f"Error serializing rates: {e}")
         return None
-    return {
-        'base_rate': float(rates.base_rate) if hasattr(rates, 'base_rate') else None,
-        'additional_animal_rate': float(rates.additional_animal_rate) if hasattr(rates, 'additional_animal_rate') else None,
-        'applies_after_animals': rates.applies_after_animals if hasattr(rates, 'applies_after_animals') else None,
-        'holiday_rate': float(rates.holiday_rate) if hasattr(rates, 'holiday_rate') else None,
-        'time_unit': rates.time_unit if hasattr(rates, 'time_unit') else None,
-    }
 
 # Views for booking_drafts app will be added here
 
@@ -41,19 +63,29 @@ class BookingDraftUpdatePetsView(APIView):
 
         # Get service details using service_id field
         service_details = {
-            'service_type': booking.service_id.service_name if booking.service_id else None
+            'service_type': booking.service_id.service_name if booking.service_id else None,
+            'animal_type': booking.service_id.animal_type if booking.service_id else "OTHER",
+            'num_pets': len(BookingPets.objects.filter(booking=booking))
         }
 
         # Get occurrences and format dates/times as strings
         occurrences = []
         for occurrence in BookingOccurrence.objects.filter(booking=booking):
-            occurrences.append({
-                'start_date': occurrence.start_date.isoformat() if occurrence.start_date else None,
-                'end_date': occurrence.end_date.isoformat() if occurrence.end_date else None,
-                'start_time': occurrence.start_time.strftime('%H:%M') if occurrence.start_time else None,
-                'end_time': occurrence.end_time.strftime('%H:%M') if occurrence.end_time else None,
-                'rates': serialize_rates(occurrence.rates)
-            })
+            try:
+                rates = occurrence.rates if hasattr(occurrence, 'rates') else None
+                occurrences.append({
+                    'occurrence_id': occurrence.occurrence_id,
+                    'start_date': occurrence.start_date.isoformat() if occurrence.start_date else None,
+                    'end_date': occurrence.end_date.isoformat() if occurrence.end_date else None,
+                    'start_time': occurrence.start_time.strftime('%H:%M') if occurrence.start_time else None,
+                    'end_time': occurrence.end_time.strftime('%H:%M') if occurrence.end_time else None,
+                    'calculated_cost': str(occurrence.booking_details.first().calculate_occurrence_cost(is_prorated=True)) if occurrence.booking_details.first() else "0.00",
+                    'base_total': f"${occurrence.booking_details.first().calculate_occurrence_cost(is_prorated=True)}" if occurrence.booking_details.first() else "$0.00",
+                    'rates': serialize_rates(rates)
+                })
+            except Exception as e:
+                logger.warning(f"Error processing occurrence {occurrence.occurrence_id}: {e}")
+                continue
 
         # Get or create booking draft
         draft, created = BookingDraft.objects.get_or_create(
@@ -69,8 +101,9 @@ class BookingDraftUpdatePetsView(APIView):
         )
 
         # If draft exists but doesn't have original_status, add it
-        if not created and 'original_status' not in draft.draft_data:
-            draft.draft_data['original_status'] = booking.status
+        if not created and not draft.original_status:
+            draft.original_status = booking.status
+            draft.save()
 
         # Update pets in draft_data
         draft.draft_data['pets'] = request.data.get('pets', [])
@@ -91,6 +124,11 @@ class BookingDraftUpdatePetsView(APIView):
             for pet in live_pets
         ]
 
+        logger.info(f"Comparing pets for booking {booking_id}:")
+        logger.info(f"Live pets: {formatted_live_pets}")
+        logger.info(f"Draft pets: {draft_pets}")
+        logger.info(f"Current booking status: {booking.status}")
+
         # Update booking status based on comparison
         new_status = None
         if sorted(formatted_live_pets, key=lambda x: x['pet_id']) != sorted(draft_pets, key=lambda x: x['pet_id']):
@@ -107,7 +145,7 @@ class BookingDraftUpdatePetsView(APIView):
 
         return Response({
             'status_code': status.HTTP_200_OK,
-            'booking_status': new_status or booking.status
+            'booking_status': new_status
         })
 
 class AvailablePetsView(APIView):

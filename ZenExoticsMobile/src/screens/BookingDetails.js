@@ -251,8 +251,8 @@ const BookingDetails = () => {
           const transformedBooking = {
             ...response.data,
             id: response.data.booking_id,
-            clientName: response.data.parties.client_name,
-            professionalName: response.data.parties.professional_name,
+            clientName: response.data.client_name,
+            professionalName: response.data.professional_name,
             serviceType: response.data.service_details.service_type,
             animalType: response.data.service_details.animal_type,
             numberOfPets: response.data.service_details.num_pets,
