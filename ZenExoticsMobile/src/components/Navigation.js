@@ -6,6 +6,41 @@ import { AuthContext } from '../context/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Appbar, Menu, useTheme } from 'react-native-paper';
 
+export const handleBack = async (navigation) => {
+  try {
+    if (Platform.OS === 'web') {
+      // Web: Use sessionStorage
+      const previousRoute = sessionStorage.getItem('previousRoute');
+      const currentRoute = sessionStorage.getItem('currentRoute');
+      
+      if (previousRoute) {
+        sessionStorage.setItem('currentRoute', previousRoute);
+        sessionStorage.setItem('previousRoute', currentRoute);
+        navigation.navigate(previousRoute);
+      } else {
+        // Default to More screen if no previous route
+        navigation.navigate('More');
+      }
+    } else {
+      // Mobile: Use AsyncStorage
+      const previousRoute = await AsyncStorage.getItem('previousRoute');
+      const currentRoute = await AsyncStorage.getItem('currentRoute');
+      
+      if (previousRoute) {
+        await AsyncStorage.setItem('currentRoute', previousRoute);
+        await AsyncStorage.setItem('previousRoute', currentRoute);
+        navigation.navigate(previousRoute);
+      } else {
+        // Default to More screen if no previous route
+        navigation.navigate('More');
+      }
+    }
+  } catch (error) {
+    console.error('Error handling back navigation:', error);
+    navigation.navigate('More');
+  }
+};
+
 export default function Navigation({ navigation }) {
   const [visible, setVisible] = useState(false);
   const [isMobile, setIsMobile] = useState(Dimensions.get('window').width < 900);
@@ -29,34 +64,86 @@ export default function Navigation({ navigation }) {
 
   const professionalsTitle = Platform.OS === 'web' ? 'Search Pros' : 'Professionals';
 
-  const handleNavigation = (screenName) => {
+  const handleNavigation = async (screenName) => {
     closeMenu();
-    navigation.navigate(screenName);
+    console.log('Screen name:', screenName);
+    try {
+      if (Platform.OS === 'web') {
+        // Web: Use sessionStorage
+        const currentRoute = sessionStorage.getItem('currentRoute');
+        if (currentRoute) {
+          sessionStorage.setItem('previousRoute', currentRoute);
+        }
+        sessionStorage.setItem('currentRoute', screenName);
+      } else {
+        // Mobile: Use AsyncStorage
+        const currentRoute = await AsyncStorage.getItem('currentRoute');
+        if (currentRoute) {
+          await AsyncStorage.setItem('previousRoute', currentRoute);
+        }
+        await AsyncStorage.setItem('currentRoute', screenName);
+      }
+      navigation.navigate(screenName);
+    } catch (error) {
+      console.error('Error handling navigation:', error);
+      navigation.navigate(screenName);
+    }
   };
+
+  // Initialize route tracking on component mount
+  useEffect(() => {
+    const initializeRouteTracking = async () => {
+      try {
+        if (Platform.OS === 'web') {
+          // Web: Use sessionStorage
+          const currentRoute = sessionStorage.getItem('currentRoute');
+          if (!currentRoute) {
+            const initialRoute = isSignedIn 
+              ? (userRole === 'professional' ? 'ProfessionalDashboard' : 'Dashboard')
+              : 'Home';
+            sessionStorage.setItem('currentRoute', initialRoute);
+          }
+        } else {
+          // Mobile: Use AsyncStorage
+          const currentRoute = await AsyncStorage.getItem('currentRoute');
+          if (!currentRoute) {
+            const initialRoute = isSignedIn 
+              ? (userRole === 'professional' ? 'ProfessionalDashboard' : 'Dashboard')
+              : 'Home';
+            await AsyncStorage.setItem('currentRoute', initialRoute);
+          }
+        }
+      } catch (error) {
+        console.error('Error initializing route tracking:', error);
+      }
+    };
+
+    initializeRouteTracking();
+  }, [isSignedIn, userRole]);
 
   const renderMenuItems = () => {
     if (!isSignedIn) {
       return [
-        { title: 'Home', icon: 'home', onPress: () => handleNavigation('Home') },
-        { title: 'Sign In', icon: 'login', onPress: () => handleNavigation('SignIn') },
-        { title: 'Sign Up', icon: 'account-plus', onPress: () => handleNavigation('SignUp') },
-        { title: 'More', icon: 'dots-horizontal', onPress: () => handleNavigation('More') },
+        { title: 'Home', icon: 'home', route: 'Home' },
+        { title: 'Sign In', icon: 'login', route: 'SignIn' },
+        { title: 'Sign Up', icon: 'account-plus', route: 'SignUp' },
+        { title: 'More', icon: 'dots-horizontal', route: 'More' },
       ];
     } else if (userRole === 'professional') {
       return [
-        { title: 'Dashboard', icon: 'view-dashboard', onPress: () => handleNavigation('ProfessionalDashboard') },
-        { title: 'MyBookings', icon: 'account-group', onPress: () => handleNavigation('MyBookings') },
-        { title: 'Messages', icon: 'message-text', onPress: () => navigation.navigate('MessageHistory') },
-        { title: 'Availability', icon: 'clock-outline', onPress: () => handleNavigation('AvailabilitySettings') },
-        { title: 'More', icon: 'dots-horizontal', onPress: () => handleNavigation('More') },
+        { title: 'Pro Dashboard', icon: 'view-dashboard', route: 'ProfessionalDashboard' },
+        { title: 'MyBookings', icon: 'account-group', route: 'MyBookings' },
+        { title: 'Messages', icon: 'message-text', route: 'MessageHistory' },
+        { title: 'Availability', icon: 'clock-outline', route: 'AvailabilitySettings' },
+        { title: 'More', icon: 'dots-horizontal', route: 'More' },
       ];
     } else {
       return [
-        { title: 'Dashboard', icon: 'view-dashboard', onPress: () => handleNavigation('Dashboard') },
-        { title: professionalsTitle, icon: 'magnify', onPress: () => handleNavigation('SearchProfessionalsListing') },
-        { title: 'Messages', icon: 'message-text', onPress: () => navigation.navigate('MessageHistory') },
-        { title: 'My Pets', icon: 'paw', onPress: () => handleNavigation('MyPets') },
-        { title: 'More', icon: 'dots-horizontal', onPress: () => handleNavigation('More') },
+        { title: 'Dashboard', icon: 'view-dashboard', route: 'Dashboard' },
+        { title: professionalsTitle, icon: 'magnify', route: 'SearchProfessionalsListing' },
+        { title: 'Messages', icon: 'message-text', route: 'MessageHistory' },
+        { title: 'My Pets', icon: 'paw', route: 'MyPets' },
+        { title: 'More', icon: 'dots-horizontal', route: 'More' },
       ];
     }
   };
@@ -70,7 +157,7 @@ export default function Navigation({ navigation }) {
           <TouchableOpacity
             key={index}
             style={[styles.navButton, { width: itemWidth }]}
-            onPress={item.onPress}
+            onPress={() => handleNavigation(item.route)}
           >
             <MaterialCommunityIcons 
               name={item.icon} 
@@ -92,7 +179,7 @@ export default function Navigation({ navigation }) {
       <TouchableOpacity
         key={index}
         style={styles.webNavItem}
-        onPress={item.onPress}
+        onPress={() => handleNavigation(item.route)}
       >
         <Text style={styles.webNavText}>{item.title}</Text>
       </TouchableOpacity>
@@ -120,7 +207,11 @@ export default function Navigation({ navigation }) {
               }
             >
               {renderMenuItems().map((item, index) => (
-                <Menu.Item key={index} onPress={item.onPress} title={item.title} />
+                <Menu.Item 
+                  key={index} 
+                  onPress={() => handleNavigation(item.route)} 
+                  title={item.title} 
+                />
               ))}
             </Menu>
           ) : (

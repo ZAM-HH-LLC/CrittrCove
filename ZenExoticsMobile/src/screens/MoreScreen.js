@@ -4,13 +4,45 @@ import { List, Divider, Button } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
 import { AuthContext } from '../context/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const MoreScreen = ({ navigation }) => {
   const { isSignedIn, isApprovedProfessional, userRole, switchRole, signOut } = useContext(AuthContext);
 
+  const handleNavigation = async (route) => {
+    try {
+      if (Platform.OS === 'web') {
+        // Web: Use sessionStorage
+        const currentRoute = sessionStorage.getItem('currentRoute');
+        if (currentRoute) {
+          sessionStorage.setItem('previousRoute', currentRoute);
+        }
+        sessionStorage.setItem('currentRoute', route);
+      } else {
+        // Mobile: Use AsyncStorage
+        const currentRoute = await AsyncStorage.getItem('currentRoute');
+        if (currentRoute) {
+          await AsyncStorage.setItem('previousRoute', currentRoute);
+        }
+        await AsyncStorage.setItem('currentRoute', route);
+      }
+      navigation.navigate(route);
+    } catch (error) {
+      console.error('Error handling navigation:', error);
+      navigation.navigate(route);
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await signOut();
+      // Clear navigation history on logout
+      if (Platform.OS === 'web') {
+        sessionStorage.removeItem('currentRoute');
+        sessionStorage.removeItem('previousRoute');
+      } else {
+        await AsyncStorage.multiRemove(['currentRoute', 'previousRoute']);
+      }
       Alert.alert('Logged Out', 'You have been successfully logged out.');
       navigation.navigate('Home');
     } catch (error) {
@@ -27,14 +59,22 @@ const MoreScreen = ({ navigation }) => {
       
       await switchRole();
       
+      // Store new route before navigating
+      const newRoute = newRole === 'professional' ? 'ProfessionalDashboard' : 'Dashboard';
+      if (Platform.OS === 'web') {
+        sessionStorage.setItem('currentRoute', newRoute);
+      } else {
+        await AsyncStorage.setItem('currentRoute', newRoute);
+      }
+      
       // Add a small delay to ensure state is updated before navigation
       setTimeout(() => {
-        console.log('Navigating to:', newRole === 'professional' ? 'ProfessionalDashboard' : 'Dashboard');
-        navigation.navigate(newRole === 'professional' ? 'ProfessionalDashboard' : 'Dashboard');
+        console.log('Navigating to:', newRoute);
+        navigation.navigate(newRoute);
       }, 0);
     } else {
       Alert.alert('Not Approved', 'You are not approved as a professional yet.');
-      navigation.navigate('BecomeProfessional');
+      handleNavigation('BecomeProfessional');
     }
   };
 
@@ -88,7 +128,7 @@ const MoreScreen = ({ navigation }) => {
           Platform.OS === 'web' 
             ? <MaterialCommunityIcons name={item.icon} size={24} color={theme.colors.primary} />
             : <List.Icon {...props} icon={item.icon} />}
-        onPress={() => navigation.navigate(item.route)}
+        onPress={() => handleNavigation(item.route)}
         style={Platform.OS === 'web' ? styles.webListItem : null}
       />
     ));

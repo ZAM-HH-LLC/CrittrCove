@@ -4,6 +4,7 @@ import { Card, Title, Paragraph, Button } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
 import BackHeader from '../components/BackHeader';
+import { handleBack } from '../components/Navigation';
 const { width: screenWidth } = Dimensions.get('window');
 
 const MyPets = ({ navigation }) => {
@@ -227,7 +228,7 @@ const MyPets = ({ navigation }) => {
       <SafeAreaView style={styles.container}>
         <BackHeader 
           title="My Pets" 
-          onBackPress={() => navigation.navigate('More')} 
+          onBackPress={() => handleBack(navigation)}
         />
         <Content />
       </SafeAreaView>
@@ -237,7 +238,7 @@ const MyPets = ({ navigation }) => {
       <View style={[styles.container, { paddingTop: StatusBar.currentHeight }]}>
         <BackHeader 
           title="My Pets" 
-          onBackPress={() => navigation.navigate('More')} 
+          onBackPress={() => handleBack(navigation)}
         />
         <Content />
       </View>
@@ -247,7 +248,7 @@ const MyPets = ({ navigation }) => {
       <View style={styles.container}>
         <BackHeader 
           title="My Pets" 
-          onBackPress={() => navigation.navigate('More')} 
+          onBackPress={() => handleBack(navigation)}
         />
         <Content />
       </View>

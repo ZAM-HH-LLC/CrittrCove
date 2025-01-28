@@ -20,28 +20,36 @@ export const AuthProvider = ({ children }) => {
   // SET TO "true" FOR NO API CALLS
   const [is_prototype, setIsPrototype] = useState(false);
 
-  // Add resize listener for web
+  // Separate screen width handling from auth
   useEffect(() => {
-    if (Platform.OS === 'web') {
-      const handleResize = () => {
-        setScreenWidth(Dimensions.get('window').width);
-      };
-
-      window.addEventListener('resize', handleResize);
-      return () => window.removeEventListener('resize', handleResize);
-    }
-
-    // For mobile, listen to dimension changes
-    const subscription = Dimensions.addEventListener('change', ({ window }) => {
+    const handleDimensionsChange = ({ window }) => {
       setScreenWidth(window.width);
-    });
+    };
+
+    const subscription = Dimensions.addEventListener('change', handleDimensionsChange);
 
     return () => {
       if (subscription?.remove) {
         subscription.remove();
       }
     };
-  }, []);
+  }, []); // No dependencies needed for dimension changes
+
+  // Handle initial auth state separately
+  useEffect(() => {
+    const loadInitialAuth = async () => {
+      try {
+        const authStatus = await checkAuthStatus();
+        if (authStatus.isSignedIn) {
+          await fetchUserName();
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadInitialAuth();
+  }, []); // Only run on mount
 
   const fetchUserName = async () => {
     try {
@@ -63,23 +71,25 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const loadAuthState = async () => {
       try {
+
         const [token, storedRole, storedApproval] = await AsyncStorage.multiGet([
           'userToken',
           'userRole',
           'isApprovedProfessional'
         ]);
 
-        console.log('login token', token[1]);
-        console.log('storedRole', storedRole[1]);
-        console.log('storedApproval', storedApproval[1]);
-        console.log('isApprovedProfessional', isApprovedProfessional);
-
         // If we have stored values, use them
         if (token[1]) {
+
           setIsSignedIn(true);
           setUserRole(storedRole[1] || 'petOwner');
           setIsApprovedProfessional(storedApproval[1] === 'true');
+          console.log('Initial auth state set:', {
+            role: storedRole[1] || 'petOwner',
+            isApproved: storedApproval[1] === 'true'
+          });
         } else {
+          console.log('No token found, setting to signed out state');
           setIsSignedIn(false);
           setUserRole(null);
           setIsApprovedProfessional(false);
@@ -88,6 +98,7 @@ export const AuthProvider = ({ children }) => {
         console.error('Error loading auth state:', error);
       } finally {
         setLoading(false);
+        console.log('Finished loadAuthState');
       }
     };
 
@@ -102,7 +113,6 @@ export const AuthProvider = ({ children }) => {
 
   const getProfessionalStatus = async (token) => {
     try {
-      // console.log('Checking professional status with token:', token);
       const response = await axios.get(`${API_BASE_URL}/api/professional-status/v1/`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -111,23 +121,14 @@ export const AuthProvider = ({ children }) => {
       
       const { is_approved } = response.data;
       
-      // Set approval status
+      // Set approval status only
       setIsApprovedProfessional(is_approved);
       await AsyncStorage.setItem('isApprovedProfessional', String(is_approved));
       
-      // If approved and current role is petOwner, switch to professional
-      const currentRole = await AsyncStorage.getItem('userRole');
-      const suggestedRole = is_approved ? 'professional' : 'petOwner';
-      
-      // Only auto-switch to professional if they're approved and don't have a role set
-      if (is_approved && (!currentRole || currentRole === 'petOwner')) {
-        setUserRole(suggestedRole);
-        await AsyncStorage.setItem('userRole', suggestedRole);
-      }
-      
+      // Just return the status without modifying roles
       return {
         isApprovedProfessional: is_approved,
-        suggestedRole
+        suggestedRole: is_approved ? 'professional' : 'petOwner'
       };
     } catch (error) {
       console.error('Error getting professional status:', error.response?.data || error);
@@ -144,19 +145,19 @@ export const AuthProvider = ({ children }) => {
         ['userToken', token],
         ['refreshToken', refreshTokenValue],
       ]);
-      console.log('sign in token', token);
+
       setIsSignedIn(true);
       
       // Get professional status and set initial role
       const status = await getProfessionalStatus(token);
-      // console.log('professional status', status);
+
       const initialRole = status.suggestedRole;
       
       // Set and store the role
       setUserRole(initialRole);
       await AsyncStorage.setItem('userRole', initialRole);
       
-      console.log('Sign in complete with role:', initialRole);
+
       
       return {
         userRole: initialRole,
@@ -187,15 +188,21 @@ export const AuthProvider = ({ children }) => {
   const switchRole = async () => {
     if (isApprovedProfessional) {
       const newRole = userRole === 'professional' ? 'petOwner' : 'professional';
-      console.log('Switching role from', userRole, 'to', newRole);
+
       
       // Update state first
       setUserRole(newRole);
       
       // Then update AsyncStorage
       try {
+
         await AsyncStorage.setItem('userRole', newRole);
-        console.log('Successfully updated AsyncStorage with new role:', newRole);
+        
+        // Verify the role was stored correctly
+        const storedRole = await AsyncStorage.getItem('userRole');
+
+        
+
       } catch (error) {
         console.error('Error updating role in AsyncStorage:', error);
       }
@@ -204,46 +211,132 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const validateToken = async (token) => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/api/token/verify/`, {
+        token: token
+      });
+
+      return true;
+    } catch (error) {
+      console.log('Token validation error:', error.response?.status);
+      return false;
+    }
+  };
+
+  const refreshUserToken = async (refreshToken) => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/api/token/refresh/`, {
+        refresh: refreshToken
+      });
+      const newToken = response.data.access;
+      await AsyncStorage.setItem('userToken', newToken);
+
+      return newToken;
+    } catch (error) {
+      console.error('Error refreshing token:', error.response?.status);
+      return null;
+    }
+  };
+
   const checkAuthStatus = async () => {
     try {
-      const [token, storedRole, storedApproval] = await AsyncStorage.multiGet([
+
+      const [token, refreshToken, storedRole, storedApproval] = await AsyncStorage.multiGet([
         'userToken',
+        'refreshToken',
         'userRole',
         'isApprovedProfessional'
       ]);
 
-      console.log('Checking auth status with stored values:', {
-        token: token[1] ? 'exists' : 'missing',
-        storedRole: storedRole[1],
-        storedApproval: storedApproval[1]
-      });
-
-      if (!token[1]) {
+      if (!token[1] && !refreshToken[1]) {
+        console.log('No tokens found - signing out');
         setIsSignedIn(false);
         setUserRole(null);
         setIsApprovedProfessional(false);
         return { isSignedIn: false, userRole: null, isApprovedProfessional: false };
       }
 
-      // Get fresh professional status
-      const status = await getProfessionalStatus(token[1]);
-      setIsSignedIn(true);
+      // First try to validate current token
+      let currentToken = token[1];
+      let isValid = false;
+      
+      if (currentToken) {
+        isValid = await validateToken(currentToken);
+      }
 
-      // If we have a stored role, use it; otherwise use the suggested role
-      const currentRole = storedRole[1] || status.suggestedRole;
-      setUserRole(currentRole);
+      // If current token is invalid but we have refresh token, try to refresh
+      if (!isValid && refreshToken[1]) {
+        const newToken = await refreshUserToken(refreshToken[1]);
+        if (newToken) {
+          currentToken = newToken;
+          isValid = true;
+        }
+      }
+
+      if (!isValid) {
+        console.log('No valid token available - signing out');
+        await signOut();
+        return { isSignedIn: false, userRole: null, isApprovedProfessional: false };
+      }
+
+      // At this point we have a valid token
+      console.log('Token validation successful, checking professional status with token:', currentToken);
+      const status = await getProfessionalStatus(currentToken);
+      console.log('Professional status check result:', status);
+      
+      setIsSignedIn(true);
+      setIsApprovedProfessional(status.isApprovedProfessional);
+
+      // Check if we're on the SearchProfessionalsListing screen
+      let currentPath = '';
+      if (Platform.OS === 'web') {
+        currentPath = window.location.pathname.slice(1);
+      } else {
+        currentPath = await AsyncStorage.getItem('currentRoute');
+      }
+
+      // If on SearchProfessionalsListing, force petOwner role but don't store it
+      if (currentPath === 'SearchProfessionalsListing') {
+
+        setUserRole('petOwner');
+        return {
+          isSignedIn: true,
+          userRole: 'petOwner',
+          isApprovedProfessional: status.isApprovedProfessional
+        };
+      }
+
+      // For all other cases, use the stored role if it exists
+      if (storedRole[1]) {
+        const role = storedRole[1];
+
+        setUserRole(role);
+        return {
+          isSignedIn: true,
+          userRole: role,
+          isApprovedProfessional: status.isApprovedProfessional
+        };
+      }
+
+      // Only set a new role if we don't have one stored (first login)
+
+      const newRole = status.suggestedRole || 'petOwner';
+
+      setUserRole(newRole);
+      await AsyncStorage.setItem('userRole', newRole);
       
       return {
         isSignedIn: true,
-        userRole: currentRole,
+        userRole: newRole,
         isApprovedProfessional: status.isApprovedProfessional
       };
     } catch (error) {
       console.error('Error in checkAuthStatus:', error);
-      setIsSignedIn(false);
-      setUserRole(null);
-      setIsApprovedProfessional(false);
+      await signOut();
       return { isSignedIn: false, userRole: null, isApprovedProfessional: false };
+    } finally {
+      console.log('=== Ending checkAuthStatus ===');
     }
   };
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { View, Text, StyleSheet, TextInput, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TextInput, FlatList, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
@@ -10,7 +10,7 @@ import { mockProfessionalBookings, mockClientBookings } from '../data/mockData';
 import { AuthContext } from '../context/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-
+import { handleBack } from '../components/Navigation';
 import { API_BASE_URL } from '../config/config';
 
 const MyBookings = () => {
@@ -190,7 +190,7 @@ const MyBookings = () => {
     <CrossPlatformView fullWidthHeader={true}>
       <BackHeader
         title="My Bookings"
-        onBackPress={() => navigation.navigate('More')}
+        onBackPress={() => handleBack(navigation)} // Use default 'More' route
       />
       
       <View style={styles.container}>

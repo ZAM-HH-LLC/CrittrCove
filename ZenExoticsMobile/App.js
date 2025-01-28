@@ -8,6 +8,7 @@ import Navigation from './src/components/Navigation';
 import { theme } from './src/styles/theme';
 import { AuthProvider, AuthContext } from './src/context/AuthContext';
 import { API_BASE_URL } from './src/config/config';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Import all your screen components
 import HomeScreen from './src/screens/HomeScreen';
@@ -168,66 +169,87 @@ function TabNavigator() {
 
 function AppContent() {
   const { checkAuthStatus } = useContext(AuthContext);
-  const [initialRoute, setInitialRoute] = useState('Home');
+  const [initialRoute, setInitialRoute] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // Run this effect only once on mount
   useEffect(() => {
-    if (Platform.OS === 'web') {
-      // Store current route before reload
-      window.onbeforeunload = () => {
-        const currentPath = window.location.pathname.slice(1) || 'Home';
-        sessionStorage.setItem('lastRoute', currentPath);
-      };
-
-      // Handle page reload
-      const lastRoute = sessionStorage.getItem('lastRoute');
-      if (lastRoute) {
-        setInitialRoute(lastRoute);
-        // Clean URL if needed
-        if (window.location.search) {
-          window.history.replaceState({}, '', `/${lastRoute}`);
-        }
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    const checkAuth = async () => {
+    const initializeApp = async () => {
       try {
+        // First check auth status
         const authStatus = await checkAuthStatus();
+        let route = 'Home'; // Default route
+
         if (authStatus.isSignedIn) {
-          console.log('authStatus', authStatus);
-          if (authStatus.userRole === 'professional' && authStatus.isApprovedProfessional) {
-            setInitialRoute('ProfessionalDashboard');
-          } else {
-            setInitialRoute('Dashboard');
+          console.log('Auth status on init:', authStatus);
+          route = authStatus.userRole === 'professional' && authStatus.isApprovedProfessional
+            ? 'ProfessionalDashboard'
+            : 'Dashboard';
+        }
+
+        // Check stored route based on platform
+        if (Platform.OS === 'web') {
+          const storedRoute = sessionStorage.getItem('lastRoute');
+          // Only use stored route if user is authenticated and it's not the home page
+          if (authStatus.isSignedIn && storedRoute && storedRoute !== 'Home') {
+            route = storedRoute;
+          }
+
+          // Set up route storage for next reload
+          window.onbeforeunload = () => {
+            const currentPath = window.location.pathname.slice(1) || route;
+            sessionStorage.setItem('lastRoute', currentPath);
+          };
+
+          // Clean URL if needed
+          if (window.location.search) {
+            window.history.replaceState({}, '', `/${route}`);
           }
         } else {
-          setInitialRoute('Home');
+          // For mobile platforms, use AsyncStorage
+          const storedRoute = await AsyncStorage.getItem('lastRoute');
+          if (authStatus.isSignedIn && storedRoute && storedRoute !== 'Home') {
+            route = storedRoute;
+          }
+          // Store the new route
+          await AsyncStorage.setItem('lastRoute', route);
         }
+
+        setInitialRoute(route);
       } catch (error) {
-        console.error('Error checking auth status:', error);
+        console.error('Error initializing app:', error);
         setInitialRoute('Home');
+      } finally {
+        setIsLoading(false);
       }
     };
-    checkAuth();
-  }, [checkAuthStatus]);
 
+    initializeApp();
+  }, []); // Only run on mount, remove checkAuthStatus from dependencies
+
+  // Handle route changes without triggering auth checks
   useEffect(() => {
-    if (Platform.OS === 'web') {
-      // Create and append style element
-      const style = document.createElement('style');
-      style.textContent = globalStyles;
-      document.head.appendChild(style);
-
-      // Cleanup
-      return () => {
-        document.head.removeChild(style);
-      };
+    if (!isLoading && initialRoute && Platform.OS !== 'web') {
+      AsyncStorage.setItem('lastRoute', initialRoute)
+        .catch(error => console.error('Error storing route:', error));
     }
-  }, []);
+  }, [initialRoute, isLoading]);
+
+  if (isLoading || !initialRoute) {
+    return null; // Or a loading spinner component
+  }
 
   return (
-    <NavigationContainer linking={linking}>
+    <NavigationContainer 
+      linking={linking}
+      onStateChange={async (state) => {
+        if (Platform.OS !== 'web' && state?.routes?.length > 0) {
+          const currentRoute = state.routes[state.routes.length - 1].name;
+          await AsyncStorage.setItem('lastRoute', currentRoute)
+            .catch(error => console.error('Error storing route:', error));
+        }
+      }}
+    >
       {Platform.OS === 'web' ? (
         <Stack.Navigator
           initialRouteName={initialRoute}
