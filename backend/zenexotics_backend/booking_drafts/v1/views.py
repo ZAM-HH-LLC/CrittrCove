@@ -63,9 +63,7 @@ class BookingDraftUpdatePetsView(APIView):
 
         # Get service details using service_id field
         service_details = {
-            'service_type': booking.service_id.service_name if booking.service_id else None,
-            'animal_type': booking.service_id.animal_type if booking.service_id else "OTHER",
-            'num_pets': len(BookingPets.objects.filter(booking=booking))
+            'service_type': booking.service_id.service_name if booking.service_id else None
         }
 
         # Get occurrences and format dates/times as strings

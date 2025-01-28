@@ -96,9 +96,7 @@ class BookingDetailSerializer(serializers.ModelSerializer):
 
     def get_service_details(self, obj):
         return {
-            'service_type': obj.service_id.service_name if obj.service_id else None,
-            'animal_type': obj.service_id.animal_type if obj.service_id else None,
-            'num_pets': obj.booking_pets.count()
+            'service_type': obj.service_id.service_name if obj.service_id else None
         }
 
     def get_pets(self, obj):

@@ -141,7 +141,9 @@ class BookingDetailView(generics.RetrieveAPIView):
                     # Override only pets and service details from draft
                     draft_data = draft.draft_data
                     if 'service_details' in draft_data:
-                        data['service_details'] = draft_data['service_details']
+                        data['service_details'] = {
+                            'service_type': draft_data['service_details'].get('service_type')
+                        }
                     if 'pets' in draft_data:
                         data['pets'] = draft_data['pets']
                     
