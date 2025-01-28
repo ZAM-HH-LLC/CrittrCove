@@ -1292,10 +1292,14 @@ const BookingDetails = () => {
           
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Booking Parties</Text>
-            <Text style={styles.label}>Client:</Text>
-            <Text style={styles.text}>{getDisplayValue(booking?.clientName)}</Text>
-            <Text style={styles.label}>Professional:</Text>
-            <Text style={styles.text}>{getDisplayValue(booking?.professionalName)}</Text>
+            <View style={styles.serviceDetailRow}>
+              <Text style={styles.label}>Client:  </Text>
+              <Text style={styles.value}>{getDisplayValue(booking?.clientName)}</Text>
+            </View>
+            <View style={styles.serviceDetailRow}>
+              <Text style={styles.label}>Professional:  </Text>
+              <Text style={styles.value}>{getDisplayValue(booking?.professionalName)}</Text>
+            </View>
           </View>
 
           <View style={[styles.section, styles.petsSection]}>
@@ -1337,36 +1341,12 @@ const BookingDetails = () => {
                     {renderServiceTypeDropdown()}
                   </View>
                 </View>
-                <View style={[styles.serviceInputRow, { zIndex: 2 }]}>
-                  <Text style={styles.inputLabel}>Animal Type:</Text>
-                  <View style={styles.inputContainer}>
-                    {renderAnimalTypeDropdown()}
-                  </View>
-                </View>
-                <View style={[styles.serviceInputRow, { zIndex: 1 }]}>
-                  <Text style={styles.inputLabel}>Number of Pets:</Text>
-                  <TextInput
-                    style={styles.numberInput}
-                    value={selectedPets.length.toString()}
-                    editable={false}
-                    keyboardType="numeric"
-                    maxLength={2}
-                  />
-                </View>
               </View>
             ) : (
               <View style={styles.serviceDetailsContainer}>
                 <View style={styles.serviceDetailRow}>
-                  <Text style={styles.label}>Service Type:</Text>
+                  <Text style={styles.label}>Service Type: </Text>
                   <Text style={styles.value}>{booking.serviceType}</Text>
-                </View>
-                <View style={styles.serviceDetailRow}>
-                  <Text style={styles.label}>Animal Type:</Text>
-                  <Text style={styles.value}>{booking.animalType}</Text>
-                </View>
-                <View style={styles.serviceDetailRow}>
-                  <Text style={styles.label}>Number of Pets:</Text>
-                  <Text style={styles.value}>{booking.numberOfPets}</Text>
                 </View>
               </View>
             )}
@@ -1480,7 +1460,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   label: {
-    fontSize: 14,
+    fontSize: theme.fontSizes.largeLarge,
     color: theme.colors.placeholder,
     marginBottom: 4,
   },
@@ -2060,7 +2040,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   inputLabel: {
-    fontSize: 16,
+    fontSize: theme.fontSizes.largeLarge,
     color: theme.colors.text,
     flex: 1,
   },
@@ -2081,15 +2061,14 @@ const styles = StyleSheet.create({
   },
   serviceDetailRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
   },
   label: {
-    fontSize: 16,
+    fontSize: theme.fontSizes.mediumLarge,
     color: theme.colors.text,
   },
   value: {
-    fontSize: 16,
+    fontSize: theme.fontSizes.medium,
     color: theme.colors.text,
     fontWeight: '500',
   },

@@ -112,8 +112,6 @@ class BookingDetailSerializer(serializers.ModelSerializer):
         
         return {
             'service_type': service.service_name,
-            'animal_type': service.animal_type,
-            'num_pets': details.num_pets if details else len(self.get_pets(obj)),
         }
 
     def get_occurrences(self, obj):
