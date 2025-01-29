@@ -647,27 +647,54 @@ const BookingDetails = () => {
   };
 
   const calculateTotalCosts = (occurrences) => {
-    const subtotal = occurrences.reduce((sum, occ) => sum + occ.totalCost, 0);
-    const clientFee = subtotal * 0.10; // 10% client fee
-    const taxes = subtotal * 0.09; // 9% tax
+    const subtotal = occurrences.reduce((sum, occ) => 
+      sum + parseFloat(occ.calculated_cost || 0), 0);
+    const platformFee = subtotal * 0.10; // 10% platform fee
+    const taxes = (subtotal + platformFee) * 0.09; // 9% tax
+    const totalClientCost = subtotal + platformFee + taxes;
+    const totalSitterPayout = subtotal * 0.90; // 90% of subtotal goes to sitter
+    
     return {
       subtotal,
-      clientFee,
+      platform_fee: platformFee,
       taxes,
-      totalClientCost: subtotal + clientFee + taxes
+      total_client_cost: totalClientCost,
+      total_sitter_payout: totalSitterPayout
     };
   };
 
   const handleSaveOccurrence = (updatedOccurrence) => {
+    const transformedOccurrence = {
+      occurrence_id: updatedOccurrence.id,
+      start_date: updatedOccurrence.startDate,
+      end_date: updatedOccurrence.endDate,
+      start_time: updatedOccurrence.startTime,
+      end_time: updatedOccurrence.endTime,
+      rates: {
+        base_rate: parseFloat(updatedOccurrence.rates.baseRate),
+        additional_animal_rate: parseFloat(updatedOccurrence.rates.additionalAnimalRate),
+        applies_after: updatedOccurrence.rates.appliesAfterAnimals,
+        holiday_rate: parseFloat(updatedOccurrence.rates.holidayRate),
+        unit_of_time: updatedOccurrence.rates.timeUnit.toUpperCase().replace(' ', '_'),
+        additional_rates: updatedOccurrence.rates.additionalRates.map(rate => ({
+          title: rate.name,
+          description: rate.description || '',
+          amount: `$${parseFloat(rate.amount).toFixed(2)}`
+        }))
+      },
+      calculated_cost: parseFloat(updatedOccurrence.totalCost),
+      base_total: `$${parseFloat(updatedOccurrence.baseTotal).toFixed(2)}`
+    };
+    
     const updatedOccurrences = booking.occurrences.map(occ => 
-      occ.id === updatedOccurrence.id ? updatedOccurrence : occ
+      occ.occurrence_id === transformedOccurrence.occurrence_id ? transformedOccurrence : occ
     );
     
     // Update booking with new occurrences and recalculate costs
     setBooking(prev => ({
       ...prev,
       occurrences: updatedOccurrences,
-      costs: calculateTotalCosts(updatedOccurrences)
+      cost_summary: calculateTotalCosts(updatedOccurrences)
     }));
     
     handleStatusUpdateAfterEdit();
@@ -675,156 +702,108 @@ const BookingDetails = () => {
   };
 
   const handleAddOccurrence = (newOccurrence) => {
-    const updatedOccurrences = [...booking.occurrences, {
-      ...newOccurrence,
-      id: `occ${booking.occurrences.length + 1}`,
-    }];
+    const transformedOccurrence = {
+      occurrence_id: `occ${booking.occurrences.length + 1}`,
+      start_date: newOccurrence.startDate,
+      end_date: newOccurrence.endDate,
+      start_time: newOccurrence.startTime,
+      end_time: newOccurrence.endTime,
+      rates: {
+        base_rate: parseFloat(newOccurrence.rates.baseRate),
+        additional_animal_rate: parseFloat(newOccurrence.rates.additionalAnimalRate),
+        applies_after: newOccurrence.rates.appliesAfterAnimals,
+        holiday_rate: parseFloat(newOccurrence.rates.holidayRate),
+        unit_of_time: newOccurrence.rates.timeUnit.toUpperCase().replace(' ', '_'),
+        additional_rates: newOccurrence.rates.additionalRates.map(rate => ({
+          title: rate.name,
+          description: rate.description || '',
+          amount: `$${parseFloat(rate.amount).toFixed(2)}`
+        }))
+      },
+      calculated_cost: parseFloat(newOccurrence.totalCost),
+      base_total: `$${parseFloat(newOccurrence.baseTotal || newOccurrence.rates.baseRate).toFixed(2)}`
+    };
+    
+    const updatedOccurrences = [...booking.occurrences, transformedOccurrence];
     
     setBooking(prev => ({
       ...prev,
       occurrences: updatedOccurrences,
-      costs: calculateTotalCosts(updatedOccurrences)
+      cost_summary: calculateTotalCosts(updatedOccurrences)
     }));
     
     handleStatusUpdateAfterEdit();
     setShowAddOccurrenceModal(false);
   };
 
+  const handleStatusUpdateAfterEdit = async () => {
+    if (!booking) return;
+
+    // If booking is already in a pending changes state, no need to update
+    if ([
+      BOOKING_STATES.PENDING_PROFESSIONAL_CHANGES,
+      BOOKING_STATES.PENDING_INITIAL_PROFESSIONAL_CHANGES,
+      BOOKING_STATES.CONFIRMED_PENDING_PROFESSIONAL_CHANGES
+    ].includes(booking.status)) {
+      return;
+    }
+
+    // Update status based on current status
+    let newStatus;
+    if (booking.status === BOOKING_STATES.CONFIRMED) {
+      newStatus = BOOKING_STATES.CONFIRMED_PENDING_PROFESSIONAL_CHANGES;
+    } else {
+      newStatus = BOOKING_STATES.PENDING_PROFESSIONAL_CHANGES;
+    }
+
+    await handleStatusUpdate(newStatus);
+  };
+
   const handleDateTimeCardPress = (occurrence) => {
-    // Transform snake_case to camelCase
+    console.log('Original occurrence:', occurrence);
+    // Transform snake_case to camelCase and handle rates properly
     const transformedOccurrence = {
-      id: occurrence.id,
+      id: occurrence.occurrence_id,
       startDate: occurrence.start_date,
       endDate: occurrence.end_date,
       startTime: occurrence.start_time,
       endTime: occurrence.end_time,
       rates: {
-        baseRate: occurrence.rates?.baseRate || 0,
-        additionalAnimalRate: occurrence.rates?.additionalAnimalRate || 0,
-        appliesAfterAnimals: occurrence.rates?.appliesAfterAnimals || '1',
-        holidayRate: occurrence.rates?.holidayRate || 0,
-        additionalRates: occurrence.rates?.additionalRates || [],
-        timeUnit: occurrence.rates?.timeUnit || 'per visit'
-      }
+        baseRate: occurrence.rates?.base_rate?.toString() || '0',
+        additionalAnimalRate: occurrence.rates?.additional_animal_rate?.toString() || '0',
+        appliesAfterAnimals: occurrence.rates?.applies_after?.toString() || '1',
+        holidayRate: occurrence.rates?.holiday_rate?.toString() || '0',
+        timeUnit: occurrence.rates?.unit_of_time?.toLowerCase().replace(/_/g, ' ') || 'per visit',
+        additionalRates: (occurrence.rates?.additional_rates || [])
+          .filter(rate => rate.title !== 'Booking Details Cost')
+          .map(rate => ({
+            name: rate.title,
+            description: rate.description || '',
+            amount: (rate.amount?.replace(/[^0-9.]/g, '') || '0').toString()
+          }))
+      },
+      totalCost: occurrence.calculated_cost?.toString() || '0',
+      baseTotal: (occurrence.base_total?.replace(/[^0-9.]/g, '') || '0').toString(),
+      multiple: calculateMultiple(occurrence.base_total, occurrence.rates?.base_rate)
     };
+
+    console.log('Transformed occurrence for modal:', transformedOccurrence);
     setSelectedOccurrence(transformedOccurrence);
     setShowAddOccurrenceModal(true);
   };
 
-  const handleDeleteOccurrence = async (occurrenceId) => {
-    setConfirmationModal(prev => ({ ...prev, isLoading: true }));
-    
-    try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const updatedOccurrences = booking.occurrences.filter(occ => occ.id !== occurrenceId);
-      
-      setBooking(prev => ({
-        ...prev,
-        occurrences: updatedOccurrences,
-        costs: calculateTotalCosts(updatedOccurrences)
-      }));
-      
-      handleStatusUpdateAfterEdit();
-    } catch (error) {
-      console.error('Error deleting occurrence:', error);
-      Alert.alert('Error', 'Failed to delete occurrence');
-    } finally {
-      // First set loading to false but keep the modal visible and text
-      setConfirmationModal(prev => ({ 
-        ...prev, 
-        isLoading: false,
-        visible: false  // This will trigger the modal's animation to close
-      }));
-      
-      // After a short delay to allow the modal to animate out, clear the rest of the state
-      setTimeout(() => {
-        setConfirmationModal({ 
-          visible: false, 
-          actionText: '', 
-          onConfirm: null, 
-          isLoading: false 
-        });
-      }, 300); // Adjust timing to match modal animation duration
-    }
+  const getTimeUnitDisplay = (unit) => {
+    if (!unit) return 'per visit';
+    const formatted = unit.toLowerCase().replace('_', ' ');
+    return formatted;
   };
 
-  const confirmDeleteOccurrence = (occurrenceId) => {
-    setConfirmationModal({
-      visible: true,
-      actionText: 'delete this occurrence',
-      onConfirm: () => handleDeleteOccurrence(occurrenceId),
-      isLoading: false
-    });
+  const calculateMultiple = (baseTotal, baseRate) => {
+    if (!baseRate || baseRate === 0) return 0;
+    const total = parseFloat(baseTotal.replace('$', ''));
+    const rate = parseFloat(baseRate);
+    return (total / rate).toFixed(2);
   };
-
-  const renderDateTimeSection = () => (
-    <View>
-      <Text style={styles.sectionTitle}>
-        {canEdit() ? "Dates & Times (Set Rates for Dates)" : "Dates & Times"}
-      </Text>
-      {(booking?.occurrences || []).map((occurrence, index) => (
-        canEdit() ? (
-          <TouchableOpacity 
-            key={index}
-            style={styles.occurrenceCard}
-            onPress={() => handleDateTimeCardPress(occurrence)}
-          >
-            <View style={styles.occurrenceDetails}>
-              <Text style={styles.dateText}>
-                {occurrence.end_date && occurrence.start_date !== occurrence.end_date ? 
-                  `${format(formatDateWithoutTimezone(occurrence.start_date), 'MMM d, yyyy')} - ${format(formatDateWithoutTimezone(occurrence.end_date), 'MMM d, yyyy')}` :
-                  format(formatDateWithoutTimezone(occurrence.start_date), 'MMM d, yyyy')
-                }
-              </Text>
-              <Text style={styles.timeText}>
-                {`${occurrence.start_time} - ${occurrence.end_time}`}
-              </Text>
-            </View>
-            <View style={styles.occurrenceActions}>
-              <TouchableOpacity 
-                style={styles.actionButton}
-                onPress={() => confirmDeleteOccurrence(occurrence.id)}
-              >
-                <MaterialCommunityIcons name="trash-can-outline" size={20} color={theme.colors.error} />
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.actionButton}
-                onPress={() => handleDateTimeCardPress(occurrence)}
-              >
-                <MaterialCommunityIcons name="pencil" size={20} color={theme.colors.primary} />
-              </TouchableOpacity>
-            </View>
-          </TouchableOpacity>
-        ) : (
-          <View key={index} style={styles.occurrenceCard}>
-            <View style={styles.occurrenceDetails}>
-              <Text style={styles.dateText}>
-                {occurrence.end_date && occurrence.start_date !== occurrence.end_date ? 
-                  `${format(formatDateWithoutTimezone(occurrence.start_date), 'MMM d, yyyy')} - ${format(formatDateWithoutTimezone(occurrence.end_date), 'MMM d, yyyy')}` :
-                  format(formatDateWithoutTimezone(occurrence.start_date), 'MMM d, yyyy')
-                }
-              </Text>
-              <Text style={styles.timeText}>
-                {`${occurrence.start_time} - ${occurrence.end_time}`}
-              </Text>
-            </View>
-          </View>
-        )
-      ))}
-      
-      {canEdit() && (
-        <TouchableOpacity
-          style={styles.addOccurrenceButton}
-          onPress={() => setShowAddOccurrenceModal(true)}
-        >
-          <MaterialCommunityIcons name="plus" size={24} color={theme.colors.primary} />
-          <Text style={styles.addOccurrenceText}>Add Occurrence</Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
 
   const renderCostBreakdown = () => (
     <View style={styles.section}>
@@ -835,7 +814,7 @@ const BookingDetails = () => {
           key={index}
           style={styles.occurrenceCostRow}
           onPress={() => setExpandedOccurrenceId(
-            expandedOccurrenceId === occurrence.id ? null : occurrence.id
+            expandedOccurrenceId === occurrence.occurrence_id ? null : occurrence.occurrence_id
           )}
         >
           <View style={styles.occurrenceCostHeader}>
@@ -847,44 +826,45 @@ const BookingDetails = () => {
             </Text>
             <View style={styles.costAndIcon}>
               <Text style={styles.occurrenceCost}>
-                ${calculateOccurrenceCost(occurrence).toFixed(2)}
+                ${parseFloat(occurrence.calculated_cost || 0).toFixed(2)}
               </Text>
               <MaterialCommunityIcons 
-                name={expandedOccurrenceId === occurrence.id ? "chevron-up" : "chevron-down"}
+                name={expandedOccurrenceId === occurrence.occurrence_id ? "chevron-up" : "chevron-down"}
                 size={20} 
                 color={theme.colors.text} 
               />
             </View>
           </View>
           
-          {expandedOccurrenceId === occurrence.id && (
+          {expandedOccurrenceId === occurrence.occurrence_id && (
             <View style={styles.expandedCostDetails}>
               <View style={styles.costDetailRow}>
-                <Text>Base Rate ({occurrence.rates?.timeUnit || 'per visit'}):</Text>
+                <Text>Base Rate ({getTimeUnitDisplay(occurrence.rates?.unit_of_time)}):</Text>
                 <Text>
-                  ${parseFloat(occurrence.rates?.baseRate).toFixed(2)} × {
-                    calculateTimeUnits(
-                      occurrence.start_date,
-                      occurrence.end_date,
-                      occurrence.start_time,
-                      occurrence.end_time,
-                      occurrence.rates?.timeUnit
-                    )
-                  } = ${(parseFloat(occurrence.rates?.baseRate) * 
-                        calculateTimeUnits(
-                          occurrence.start_date,
-                          occurrence.end_date,
-                          occurrence.start_time,
-                          occurrence.end_time,
-                          occurrence.rates.timeUnit
-                        )).toFixed(2)}
+                  ${parseFloat(occurrence.rates?.base_rate || 0).toFixed(2)} × {
+                    calculateMultiple(occurrence.base_total, occurrence.rates?.base_rate)
+                  } = ${parseFloat(occurrence.base_total.replace('$', '')).toFixed(2)}
                 </Text>
               </View>
-              {occurrence.rates?.additionalRates?.map((rate, idx) => (
-                <View key={idx} style={styles.costDetailRow}>
-                  <Text>{rate.name}:</Text>
-                  <Text>${rate.amount.toFixed(2)}</Text>
+              {occurrence.rates?.additional_animal_rate > 0 && (
+                <View style={styles.costDetailRow}>
+                  <Text>Additional Animal Rate (after {occurrence.rates.applies_after} animals):</Text>
+                  <Text>${parseFloat(occurrence.rates.additional_animal_rate).toFixed(2)}</Text>
                 </View>
+              )}
+              {occurrence.rates?.holiday_rate > 0 && (
+                <View style={styles.costDetailRow}>
+                  <Text>Holiday Rate:</Text>
+                  <Text>${parseFloat(occurrence.rates.holiday_rate).toFixed(2)}</Text>
+                </View>
+              )}
+              {(occurrence.rates?.additional_rates || [])
+                .filter(rate => rate.title !== 'Booking Details Cost')
+                .map((rate, idx) => (
+                  <View key={idx} style={styles.costDetailRow}>
+                    <Text>{rate.title}:</Text>
+                    <Text>${parseFloat(rate.amount.replace('$', '')).toFixed(2)}</Text>
+                  </View>
               ))}
             </View>
           )}
@@ -894,20 +874,26 @@ const BookingDetails = () => {
       <View style={styles.costSummary}>
         <View style={styles.summaryRow}>
           <Text>Subtotal:</Text>
-          <Text>${(booking?.costs?.subtotal || 0).toFixed(2)}</Text>
+          <Text>${(booking?.cost_summary?.subtotal || 0).toFixed(2)}</Text>
         </View>
         <View style={styles.summaryRow}>
-          <Text>Client Fee (10%):</Text>
-          <Text>${(booking?.costs?.clientFee || 0).toFixed(2)}</Text>
+          <Text>Platform Fee (10%):</Text>
+          <Text>${(booking?.cost_summary?.platform_fee || 0).toFixed(2)}</Text>
         </View>
         <View style={styles.summaryRow}>
           <Text>Taxes (9%):</Text>
-          <Text>${(booking?.costs?.taxes || 0).toFixed(2)}</Text>
+          <Text>${(booking?.cost_summary?.taxes || 0).toFixed(2)}</Text>
         </View>
         <View style={[styles.summaryRow, styles.totalRow]}>
-          <Text style={styles.totalLabel}>Total:</Text>
+          <Text style={styles.totalLabel}>Total Cost to Client:</Text>
           <Text style={styles.totalAmount}>
-            ${(booking?.costs?.totalClientCost || 0).toFixed(2)}
+            ${(booking?.cost_summary?.total_client_cost || 0).toFixed(2)}
+          </Text>
+        </View>
+        <View style={[styles.summaryRow, styles.payoutRow]}>
+          <Text style={styles.payoutLabel}>Sitter Payout:</Text>
+          <Text style={styles.payoutAmount}>
+            ${(booking?.cost_summary?.total_sitter_payout || 0).toFixed(2)}
           </Text>
         </View>
       </View>
@@ -1272,6 +1258,122 @@ const BookingDetails = () => {
     </View>
   );
 
+  const renderDateTimeSection = () => (
+    <View>
+      <Text style={styles.sectionTitle}>
+        {canEdit() ? "Dates & Times (Set Rates for Dates)" : "Dates & Times"}
+      </Text>
+      {(booking?.occurrences || []).map((occurrence, index) => (
+        canEdit() ? (
+          <TouchableOpacity 
+            key={index}
+            style={styles.occurrenceCard}
+            onPress={() => handleDateTimeCardPress(occurrence)}
+          >
+            <View style={styles.occurrenceDetails}>
+              <Text style={styles.dateText}>
+                {occurrence.end_date && occurrence.start_date !== occurrence.end_date ? 
+                  `${format(formatDateWithoutTimezone(occurrence.start_date), 'MMM d, yyyy')} - ${format(formatDateWithoutTimezone(occurrence.end_date), 'MMM d, yyyy')}` :
+                  format(formatDateWithoutTimezone(occurrence.start_date), 'MMM d, yyyy')
+                }
+              </Text>
+              <Text style={styles.timeText}>
+                {`${occurrence.start_time} - ${occurrence.end_time}`}
+              </Text>
+            </View>
+            <View style={styles.occurrenceActions}>
+              <TouchableOpacity 
+                style={styles.actionButton}
+                onPress={() => confirmDeleteOccurrence(occurrence.occurrence_id)}
+              >
+                <MaterialCommunityIcons name="trash-can-outline" size={20} color={theme.colors.error} />
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.actionButton}
+                onPress={() => handleDateTimeCardPress(occurrence)}
+              >
+                <MaterialCommunityIcons name="pencil" size={20} color={theme.colors.primary} />
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        ) : (
+          <View key={index} style={styles.occurrenceCard}>
+            <View style={styles.occurrenceDetails}>
+              <Text style={styles.dateText}>
+                {occurrence.end_date && occurrence.start_date !== occurrence.end_date ? 
+                  `${format(formatDateWithoutTimezone(occurrence.start_date), 'MMM d, yyyy')} - ${format(formatDateWithoutTimezone(occurrence.end_date), 'MMM d, yyyy')}` :
+                  format(formatDateWithoutTimezone(occurrence.start_date), 'MMM d, yyyy')
+                }
+              </Text>
+              <Text style={styles.timeText}>
+                {`${occurrence.start_time} - ${occurrence.end_time}`}
+              </Text>
+            </View>
+          </View>
+        )
+      ))}
+      
+      {canEdit() && (
+        <TouchableOpacity
+          style={styles.addOccurrenceButton}
+          onPress={() => {
+            setSelectedOccurrence(null);
+            setShowAddOccurrenceModal(true);
+          }}
+        >
+          <MaterialCommunityIcons name="plus" size={24} color={theme.colors.primary} />
+          <Text style={styles.addOccurrenceText}>Add Occurrence</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+
+  const handleDeleteOccurrence = async (occurrenceId) => {
+    setConfirmationModal(prev => ({ ...prev, isLoading: true }));
+    
+    try {
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const updatedOccurrences = booking.occurrences.filter(occ => occ.occurrence_id !== occurrenceId);
+      
+      setBooking(prev => ({
+        ...prev,
+        occurrences: updatedOccurrences,
+        costs: calculateTotalCosts(updatedOccurrences)
+      }));
+      
+      handleStatusUpdateAfterEdit();
+    } catch (error) {
+      console.error('Error deleting occurrence:', error);
+      Alert.alert('Error', 'Failed to delete occurrence');
+    } finally {
+      setConfirmationModal(prev => ({ 
+        ...prev, 
+        isLoading: false,
+        visible: false
+      }));
+      
+      setTimeout(() => {
+        setConfirmationModal({ 
+          visible: false, 
+          actionText: '', 
+          onConfirm: null, 
+          isLoading: false 
+        });
+      }, 300);
+    }
+  };
+
+  const confirmDeleteOccurrence = (occurrenceId) => {
+    setConfirmationModal({
+      visible: true,
+      actionText: 'delete this occurrence',
+      onConfirm: () => handleDeleteOccurrence(occurrenceId),
+      isLoading: false
+    });
+  };
+
   return (
     <CrossPlatformView fullWidthHeader={true}>
       <BackHeader
@@ -1396,7 +1498,9 @@ const BookingDetails = () => {
         visible={showAddOccurrenceModal}
         onClose={() => {
           setShowAddOccurrenceModal(false);
-          setSelectedOccurrence(null);
+          setTimeout(() => {
+            setSelectedOccurrence(null);
+          }, 300);
         }}
         onAdd={selectedOccurrence ? handleSaveOccurrence : handleAddOccurrence}
         defaultRates={booking?.rates}
@@ -1489,15 +1593,19 @@ const styles = StyleSheet.create({
     color: theme.colors.primary,
   },
   payoutRow: {
-    marginTop: 8,
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
   },
   payoutLabel: {
-    fontSize: 14,
+    fontSize: 16,
+    fontWeight: '500',
     color: theme.colors.success,
   },
   payoutAmount: {
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: 16,
+    fontWeight: '600',
     color: theme.colors.success,
   },
   policyText: {
@@ -1505,8 +1613,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   actionButtons: {
-    gap: 12,
-    marginBottom: 24,
+    width: 72, // Approximate width of both buttons + gap
   },
   button: {
     padding: 16,
@@ -1758,6 +1865,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     marginBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    paddingBottom: 8,
   },
   removeButton: {
     padding: 4,
@@ -1795,6 +1905,121 @@ const styles = StyleSheet.create({
   },
   infoButton: {
     padding: 4,
+  },
+  actionButtonsContainer: {
+    padding: 16,
+    backgroundColor: theme.colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+    gap: 12,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    padding: 16,
+  },
+  modalContent: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: 8,
+    padding: 16,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  reasonInput: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    minHeight: 100,
+    textAlignVertical: 'top',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+  },
+  modalButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+  },
+  submitButton: {
+    backgroundColor: theme.colors.primary,
+  },
+  submitButtonText: {
+    color: theme.colors.surface,
+    fontWeight: '500',
+  },
+  primaryButton: {
+    backgroundColor: theme.colors.primary,
+  },
+  denyButton: {
+    backgroundColor: theme.colors.error,
+  },
+  serviceEditContainer: {
+    gap: 16,
+  },
+  serviceInputRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  inputLabel: {
+    fontSize: theme.fontSizes.largeLarge,
+    color: theme.colors.text,
+    flex: 1,
+  },
+  inputContainer: {
+    width: 150, // Fixed width for dropdowns and number input
+  },
+  numberInput: {
+    height: 40,
+    width: 150, // Match the width of dropdowns
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    fontSize: 16,
+  },
+  serviceDetailsContainer: {
+    gap: 12,
+  },
+  serviceDetailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  label: {
+    fontSize: theme.fontSizes.mediumLarge,
+    color: theme.colors.text,
+  },
+  value: {
+    fontSize: theme.fontSizes.medium,
+    color: theme.colors.text,
+    fontWeight: '500',
+  },
+  occurrenceActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  actionButton: {
+    padding: 8,
+  },
+  saveButton: {
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  saveButtonText: {
+    color: 'white',
+    fontWeight: '600',
   },
   actionButtons: {
     width: 72, // Approximate width of both buttons + gap
@@ -1975,120 +2200,21 @@ const styles = StyleSheet.create({
     zIndex: 1,
     elevation: 1,
   },
-  actionButtonsContainer: {
-    padding: 16,
-    backgroundColor: theme.colors.surface,
+  payoutRow: {
+    marginTop: 12,
+    paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: theme.colors.border,
-    gap: 12,
   },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    padding: 16,
-  },
-  modalContent: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: 8,
-    padding: 16,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 16,
-  },
-  reasonInput: {
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-    minHeight: 100,
-    textAlignVertical: 'top',
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 12,
-  },
-  modalButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-  },
-  submitButton: {
-    backgroundColor: theme.colors.primary,
-  },
-  submitButtonText: {
-    color: theme.colors.surface,
-    fontWeight: '500',
-  },
-  primaryButton: {
-    backgroundColor: theme.colors.primary,
-  },
-  denyButton: {
-    backgroundColor: theme.colors.error,
-  },
-  serviceEditContainer: {
-    gap: 16,
-  },
-  serviceInputRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  inputLabel: {
-    fontSize: theme.fontSizes.largeLarge,
-    color: theme.colors.text,
-    flex: 1,
-  },
-  inputContainer: {
-    width: 150, // Fixed width for dropdowns and number input
-  },
-  numberInput: {
-    height: 40,
-    width: 150, // Match the width of dropdowns
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: 8,
-    paddingHorizontal: 12,
+  payoutLabel: {
     fontSize: 16,
-  },
-  serviceDetailsContainer: {
-    gap: 12,
-  },
-  serviceDetailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  label: {
-    fontSize: theme.fontSizes.mediumLarge,
-    color: theme.colors.text,
-  },
-  value: {
-    fontSize: theme.fontSizes.medium,
-    color: theme.colors.text,
     fontWeight: '500',
+    color: theme.colors.success,
   },
-  occurrenceActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  actionButton: {
-    padding: 8,
-  },
-  saveButton: {
-    backgroundColor: theme.colors.primary,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  saveButtonText: {
-    color: 'white',
+  payoutAmount: {
+    fontSize: 16,
     fontWeight: '600',
+    color: theme.colors.success,
   },
 });
 

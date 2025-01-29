@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, Modal, TextInput, TouchableOpacity, StyleSheet, ScrollView, Picker, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Modal, TextInput, TouchableOpacity, StyleSheet, ScrollView, Picker, ActivityIndicator, Platform } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
 import DatePicker from './DatePicker';
@@ -8,6 +8,59 @@ import { format } from 'date-fns';
 import { TIME_OPTIONS } from '../data/mockData';
 
 const ANIMAL_COUNT_OPTIONS = ['1', '2', '3', '4', '5'];
+
+const WebScrollStyles = `
+  .modal-scroll-container {
+    max-height: 60vh;
+    overflow-y: scroll !important;
+    padding-right: 16px;
+    display: block;
+    position: relative;
+    scrollbar-width: auto;
+    scrollbar-color: rgba(0, 0, 0, 0.5) rgba(0, 0, 0, 0.1);
+  }
+
+  .modal-scroll-container::-webkit-scrollbar {
+    width: 10px;
+    background-color: #F5F5F5;
+    display: block;
+  }
+
+  .modal-scroll-container::-webkit-scrollbar-track {
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.1);
+    border: 1px solid #ccc;
+  }
+
+  .modal-scroll-container::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid #aaa;
+  }
+
+  .modal-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.7);
+  }
+`;
+
+const ScrollableContent = ({ children }) => {
+  if (Platform.OS === 'web') {
+    return (
+      <>
+        <style>{WebScrollStyles}</style>
+        <div className="modal-scroll-container">
+          {children}
+        </div>
+      </>
+    );
+  }
+  
+  return (
+    <ScrollView showsVerticalScrollIndicator={true} persistentScrollbar={true}>
+      {children}
+    </ScrollView>
+  );
+};
 
 const AddOccurrenceModal = ({ 
   visible, 
@@ -18,34 +71,141 @@ const AddOccurrenceModal = ({
   initialOccurrence = null,
   isEditing = false
 }) => {
-  const [occurrence, setOccurrence] = useState(initialOccurrence || {
-    startDate: new Date().toISOString().split('T')[0],
-    endDate: new Date().toISOString().split('T')[0],
-    startTime: new Date(),
-    endTime: new Date(new Date().setHours(new Date().getHours() + 1)),
-    rates: {
-      baseRate: defaultRates?.baseRate || 0,
-      additionalAnimalRate: defaultRates?.additionalAnimalRate || 0,
-      appliesAfterAnimals: defaultRates?.appliesAfterAnimals || '1',
-      holidayRate: defaultRates?.holidayRate || 0,
-      additionalRates: defaultRates?.additionalRates || [],
-      timeUnit: defaultRates?.timeUnit || 'per visit'
-    }
+  console.log('AddOccurrenceModal props:', {
+    visible,
+    defaultRates,
+    hideRates,
+    initialOccurrence,
+    isEditing
   });
+
+  // Helper function to create a Date object from a time string
+  const createTimeDate = (timeStr) => {
+    if (timeStr instanceof Date) return timeStr;
+    const [hours, minutes] = timeStr.split(':');
+    const date = new Date();
+    date.setHours(parseInt(hours, 10));
+    date.setMinutes(parseInt(minutes, 10));
+    return date;
+  };
+
+  const [occurrence, setOccurrence] = useState(() => {
+    console.log('Initializing occurrence state with:', initialOccurrence);
+    
+    if (initialOccurrence) {
+      const initialState = {
+        startDate: initialOccurrence.startDate,
+        endDate: initialOccurrence.endDate,
+        startTime: createTimeDate(initialOccurrence.startTime),
+        endTime: createTimeDate(initialOccurrence.endTime),
+        rates: {
+          baseRate: initialOccurrence.rates.baseRate || '0',
+          additionalAnimalRate: initialOccurrence.rates.additionalAnimalRate || '0',
+          appliesAfterAnimals: initialOccurrence.rates.appliesAfterAnimals || '1',
+          holidayRate: initialOccurrence.rates.holidayRate || '0',
+          timeUnit: initialOccurrence.rates.timeUnit || 'per visit',
+          additionalRates: (initialOccurrence.rates.additionalRates || []).map(rate => ({
+            name: rate.name,
+            description: rate.description || '',
+            amount: rate.amount.toString()
+          }))
+        },
+        totalCost: initialOccurrence.totalCost || '0',
+        baseTotal: initialOccurrence.baseTotal || '0'
+      };
+      console.log('Created initial state:', initialState);
+      return initialState;
+    }
+
+    const defaultState = {
+      startDate: new Date().toISOString().split('T')[0],
+      endDate: new Date().toISOString().split('T')[0],
+      startTime: new Date(),
+      endTime: new Date(new Date().setHours(new Date().getHours() + 1)),
+      rates: {
+        baseRate: defaultRates?.baseRate || '0',
+        additionalAnimalRate: defaultRates?.additionalAnimalRate || '0',
+        appliesAfterAnimals: defaultRates?.appliesAfterAnimals || '1',
+        holidayRate: defaultRates?.holidayRate || '0',
+        timeUnit: defaultRates?.timeUnit || 'per visit',
+        additionalRates: defaultRates?.additionalRates || []
+      }
+    };
+    console.log('Created default state:', defaultState);
+    return defaultState;
+  });
+
+  // Reset occurrence when initialOccurrence changes or when modal visibility changes
+  useEffect(() => {
+    if (!visible) {
+      // Reset to default state when modal closes
+      if (!initialOccurrence) {
+        setOccurrence({
+          startDate: new Date().toISOString().split('T')[0],
+          endDate: new Date().toISOString().split('T')[0],
+          startTime: new Date(),
+          endTime: new Date(new Date().setHours(new Date().getHours() + 1)),
+          rates: {
+            baseRate: defaultRates?.baseRate || '0',
+            additionalAnimalRate: defaultRates?.additionalAnimalRate || '0',
+            appliesAfterAnimals: defaultRates?.appliesAfterAnimals || '1',
+            holidayRate: defaultRates?.holidayRate || '0',
+            timeUnit: defaultRates?.timeUnit || 'per visit',
+            additionalRates: []
+          }
+        });
+        setTimeUnit(defaultRates?.timeUnit || 'per visit');
+      }
+    } else if (initialOccurrence) {
+      // Only set occurrence data if we're editing
+      setOccurrence({
+        startDate: initialOccurrence.startDate,
+        endDate: initialOccurrence.endDate,
+        startTime: createTimeDate(initialOccurrence.startTime),
+        endTime: createTimeDate(initialOccurrence.endTime),
+        rates: {
+          baseRate: initialOccurrence.rates.baseRate || '0',
+          additionalAnimalRate: initialOccurrence.rates.additionalAnimalRate || '0',
+          appliesAfterAnimals: initialOccurrence.rates.appliesAfterAnimals || '1',
+          holidayRate: initialOccurrence.rates.holidayRate || '0',
+          timeUnit: initialOccurrence.rates.timeUnit || 'per visit',
+          additionalRates: (initialOccurrence.rates.additionalRates || []).map(rate => ({
+            name: rate.name,
+            description: rate.description || '',
+            amount: rate.amount.toString()
+          }))
+        },
+        totalCost: initialOccurrence.totalCost || '0',
+        baseTotal: initialOccurrence.baseTotal || '0'
+      });
+      setTimeUnit(initialOccurrence.rates.timeUnit || 'per visit');
+    }
+  }, [visible, initialOccurrence, defaultRates]);
 
   const [showAddRate, setShowAddRate] = useState(false);
   const [newRate, setNewRate] = useState({ name: '', amount: '' });
-  const [timeUnit, setTimeUnit] = useState(initialOccurrence?.rates?.timeUnit || 'per visit');
+  const [timeUnit, setTimeUnit] = useState(initialOccurrence?.rates?.timeUnit || occurrence.rates.timeUnit);
   const [isLoading, setIsLoading] = useState(false);
 
   const calculateTotal = () => {
+    // If we have a totalCost from the initialOccurrence, use that
+    if (initialOccurrence?.totalCost) {
+      return parseFloat(initialOccurrence.totalCost).toFixed(2);
+    }
+
+    // Otherwise calculate it
     const baseAmount = parseFloat(occurrence.rates.baseRate) || 0;
     const additionalAnimalAmount = parseFloat(occurrence.rates.additionalAnimalRate) || 0;
     const holidayAmount = parseFloat(occurrence.rates.holidayRate) || 0;
     const customRatesAmount = occurrence.rates.additionalRates?.reduce((sum, rate) => 
       sum + (parseFloat(rate.amount) || 0), 0) || 0;
 
-    return (baseAmount + additionalAnimalAmount + holidayAmount + customRatesAmount).toFixed(2);
+    const subtotal = baseAmount + additionalAnimalAmount + holidayAmount + customRatesAmount;
+    const platformFee = subtotal * 0.10; // 10% platform fee
+    const taxes = (subtotal + platformFee) * 0.09; // 9% tax
+    const totalClientCost = subtotal + platformFee + taxes;
+
+    return totalClientCost.toFixed(2);
   };
 
   const handleAdd = async () => {
@@ -145,7 +305,7 @@ const AddOccurrenceModal = ({
             </TouchableOpacity>
           </View>
 
-          <ScrollView>
+          <ScrollableContent>
             <View style={styles.dateTimeSection}>
               <Text style={styles.sectionTitle}>Date & Time</Text>
               
@@ -366,7 +526,7 @@ const AddOccurrenceModal = ({
                 )}
               </TouchableOpacity>
             </View>
-          </ScrollView>
+          </ScrollableContent>
         </View>
       </View>
     </Modal>
