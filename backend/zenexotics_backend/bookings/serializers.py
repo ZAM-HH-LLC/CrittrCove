@@ -4,6 +4,7 @@ from pets.models import Pet
 from decimal import Decimal
 from .constants import BookingStates
 from booking_details.models import BookingDetails
+from .utils import is_holiday, count_holidays
 import logging
 
 logger = logging.getLogger(__name__)
@@ -164,12 +165,23 @@ class BookingDetailSerializer(serializers.ModelSerializer):
         if not booking_details:
             return {}
 
+        # Count number of pets for this booking
+        num_pets = occurrence.booking.booking_pets.count()
+        
+        # Check if additional animal rate applies
+        additional_animal_rate_applies = num_pets > booking_details.applies_after if booking_details.applies_after else False
+        
+        # Count holiday days in the occurrence range
+        holiday_days = count_holidays(occurrence.start_date, occurrence.end_date)
+        
         return {
             'base_rate': str(booking_details.base_rate),
             'additional_animal_rate': str(booking_details.additional_pet_rate),
+            'additional_animal_rate_applies': additional_animal_rate_applies,
             'applies_after': booking_details.applies_after,
             'unit_of_time': occurrence.booking.service_id.unit_of_time,
             'holiday_rate': str(booking_details.holiday_rate),
+            'holiday_days': holiday_days,
             'additional_rates': additional_rates
         }
 

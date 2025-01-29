@@ -846,16 +846,16 @@ const BookingDetails = () => {
                   } = ${parseFloat(occurrence.base_total.replace('$', '')).toFixed(2)}
                 </Text>
               </View>
-              {occurrence.rates?.additional_animal_rate > 0 && (
+              {occurrence.rates?.additional_animal_rate_applies && occurrence.rates?.additional_animal_rate > 0 && (
                 <View style={styles.costDetailRow}>
                   <Text>Additional Animal Rate (after {occurrence.rates.applies_after} animals):</Text>
                   <Text>${parseFloat(occurrence.rates.additional_animal_rate).toFixed(2)}</Text>
                 </View>
               )}
-              {occurrence.rates?.holiday_rate > 0 && (
+              {occurrence.rates?.holiday_days > 0 && occurrence.rates?.holiday_rate > 0 && (
                 <View style={styles.costDetailRow}>
-                  <Text>Holiday Rate:</Text>
-                  <Text>${parseFloat(occurrence.rates.holiday_rate).toFixed(2)}</Text>
+                  <Text>Holiday Rate ({occurrence.rates.holiday_days} day{occurrence.rates.holiday_days > 1 ? 's' : ''}):</Text>
+                  <Text>${(parseFloat(occurrence.rates.holiday_rate) * occurrence.rates.holiday_days).toFixed(2)}</Text>
                 </View>
               )}
               {(occurrence.rates?.additional_rates || [])
