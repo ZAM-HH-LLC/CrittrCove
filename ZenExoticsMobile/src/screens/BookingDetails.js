@@ -346,7 +346,7 @@ const BookingDetails = () => {
             throw new Error('No authentication token found');
           }
           const response = await axios.patch(
-            `${API_BASE_URL}/api/booking-drafts/v1/${booking.booking_id}/update_pets/`,
+            `${API_BASE_URL}/api/booking-drafts/v1/${booking.booking_id}/update/`,
             { pets: selectedPets.map(pet => ({
                 pet_id: pet.pet_id,
                 name: pet.name,

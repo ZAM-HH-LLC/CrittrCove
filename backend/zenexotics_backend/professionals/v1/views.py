@@ -11,6 +11,8 @@ from booking_occurrences.models import BookingOccurrence
 import logging
 from pets.models import Pet
 from bookings.constants import BookingStates
+from services.models import Service
+from django.shortcuts import get_object_or_404
 
 # Configure logging to print to console
 logger = logging.getLogger(__name__)
@@ -126,5 +128,23 @@ def get_professional_client_view(request, professional_id):
         logger.exception("Full traceback:")
         return Response(
             {'error': 'An error occurred while fetching professional data'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_professional_services(request, professional_id):
+    try:
+        professional = get_object_or_404(Professional, professional_id=professional_id)
+        services = Service.objects.filter(
+            professional=professional,
+            moderation_status='APPROVED'
+        ).values('service_id', 'service_name')
+        
+        return Response(list(services))
+    except Exception as e:
+        logger.error(f"Error in get_professional_services: {str(e)}")
+        return Response(
+            {'error': 'An error occurred while fetching professional services'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )

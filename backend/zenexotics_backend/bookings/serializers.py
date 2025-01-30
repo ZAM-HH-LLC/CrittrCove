@@ -79,21 +79,28 @@ class BookingDetailSerializer(serializers.ModelSerializer):
     pets = serializers.SerializerMethodField()
     occurrences = serializers.SerializerMethodField()
     cost_summary = serializers.SerializerMethodField()
-    original_status = serializers.CharField(required=False)
+    original_status = serializers.CharField(required=False, read_only=True)
 
     class Meta:
         model = Booking
         fields = [
             'booking_id',
             'status',
-            'original_status',
             'client_name',
             'professional_name',
             'service_details',
             'pets',
             'occurrences',
             'cost_summary',
+            'original_status',
         ]
+
+    def to_representation(self, instance):
+        """Override to conditionally include original_status"""
+        data = super().to_representation(instance)
+        if hasattr(instance, 'original_status'):
+            data['original_status'] = instance.original_status
+        return data
 
     def get_service_details(self, obj):
         return {

@@ -58,9 +58,18 @@ class BookingListView(APIView):
                 'professional__user',
                 'bookingsummary'
             ).prefetch_related(
-                'occurrences'
+                'occurrences',
+                'drafts'  # Add prefetch for drafts
             ).order_by('-created_at')
-            professional_bookings = BookingListSerializer(prof_bookings, many=True).data
+            
+            # Serialize bookings and check for drafts
+            for booking in prof_bookings:
+                booking_data = BookingListSerializer(booking).data
+                # Check if there's a draft for this booking
+                draft = booking.drafts.first()  # Using related_name from BookingDraft model
+                if draft and draft.draft_data and 'status' in draft.draft_data:
+                    booking_data['status'] = draft.draft_data['status']
+                professional_bookings.append(booking_data)
 
         # Get client bookings
         client_bookings = []
@@ -135,21 +144,27 @@ class BookingDetailView(generics.RetrieveAPIView):
                 draft = BookingDraft.objects.get(booking=instance)
                 if draft.draft_data:
                     # Use draft data for response
+                    draft_data = draft.draft_data
+                    
+                    # Set original status on instance for serializer
+                    if draft.original_status:
+                        instance.original_status = draft.original_status
+                    
+                    # Create serializer with instance
                     serializer = self.get_serializer(instance, context=context)
                     data = serializer.data
                     
-                    # Override only pets and service details from draft
-                    draft_data = draft.draft_data
+                    # Override fields from draft data
+                    if 'status' in draft_data:
+                        data['status'] = draft_data['status']
                     if 'service_details' in draft_data:
-                        data['service_details'] = {
-                            'service_type': draft_data['service_details'].get('service_type')
-                        }
+                        data['service_details'] = draft_data['service_details']
                     if 'pets' in draft_data:
                         data['pets'] = draft_data['pets']
-                    
-                    # Use original status if available
-                    if draft.original_status:
-                        data['original_status'] = draft.original_status
+                    if 'occurrences' in draft_data:
+                        data['occurrences'] = draft_data['occurrences']
+                    if 'cost_summary' in draft_data:
+                        data['cost_summary'] = draft_data['cost_summary']
                     
                     return Response(data)
             except BookingDraft.DoesNotExist:
