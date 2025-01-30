@@ -457,7 +457,7 @@ const BookingDetails = () => {
                     </TouchableOpacity>
                   ))
               )}
-              {!isLoadingPets && availablePets.length === 0 && (
+              {!isLoadingPets && !is_prototype && availablePets.length === 0 && (
                 <Text style={styles.noContentText}>No pets available</Text>
               )}
             </ScrollView>
@@ -761,7 +761,41 @@ const BookingDetails = () => {
 
   const handleDateTimeCardPress = (occurrence) => {
     console.log('Original occurrence:', occurrence);
-    // Transform snake_case to camelCase and handle rates properly
+    
+    if (is_prototype) {
+      // In prototype mode, use mock data structure
+      const transformedOccurrence = {
+        id: occurrence.occurrence_id || 'mock_occ_1',
+        startDate: occurrence.start_date || '2024-03-01',
+        endDate: occurrence.end_date || '2024-03-01',
+        startTime: occurrence.start_time || '09:00',
+        endTime: occurrence.end_time || '10:00',
+        rates: {
+          baseRate: (occurrence.rates?.base_rate || 20).toString(),
+          additionalAnimalRate: (occurrence.rates?.additional_animal_rate || 10).toString(),
+          appliesAfterAnimals: (occurrence.rates?.applies_after || 1).toString(),
+          holidayRate: (occurrence.rates?.holiday_rate || 0).toString(),
+          timeUnit: occurrence.rates?.unit_of_time?.toLowerCase().replace(/_/g, ' ') || 'per visit',
+          additionalRates: (occurrence.rates?.additional_rates || [])
+            .filter(rate => rate.title !== 'Booking Details Cost')
+            .map(rate => ({
+              name: rate.title || '',
+              description: rate.description || '',
+              amount: (rate.amount?.replace(/[^0-9.]/g, '') || '0').toString()
+            }))
+        },
+        totalCost: (occurrence.calculated_cost || 0).toString(),
+        baseTotal: (occurrence.base_total?.replace(/[^0-9.]/g, '') || '0').toString(),
+        multiple: calculateMultiple(occurrence.base_total || '0', occurrence.rates?.base_rate || 20)
+      };
+
+      console.log('Transformed occurrence for modal (prototype):', transformedOccurrence);
+      setSelectedOccurrence(transformedOccurrence);
+      setShowAddOccurrenceModal(true);
+      return;
+    }
+
+    // Non-prototype mode - original transformation logic
     const transformedOccurrence = {
       id: occurrence.occurrence_id,
       startDate: occurrence.start_date,

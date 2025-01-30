@@ -39,6 +39,18 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const loadInitialAuth = async () => {
       try {
+        if (is_prototype) {
+          // In prototype mode, set default professional state
+          setIsSignedIn(true);
+          setUserRole('professional');
+          setIsApprovedProfessional(true);
+          await AsyncStorage.multiSet([
+            ['userRole', 'professional'],
+            ['isApprovedProfessional', 'true']
+          ]);
+          return;
+        }
+
         const authStatus = await checkAuthStatus();
         if (authStatus.isSignedIn) {
           await fetchUserName();
@@ -52,6 +64,11 @@ export const AuthProvider = ({ children }) => {
   }, []); // Only run on mount
 
   const fetchUserName = async () => {
+    if (is_prototype) {
+      // In prototype mode, set a default name
+      setFirstName('John');
+      return;
+    }
     try {
       let token = await AsyncStorage.getItem('userToken');
       if (!token) {
@@ -149,6 +166,18 @@ export const AuthProvider = ({ children }) => {
       console.log('MBA sign in token', token, 'refreshToken', refreshTokenValue);
       setIsSignedIn(true);
       
+      if (is_prototype) {
+        // In prototype mode, set default values without API calls
+        const initialRole = 'professional';
+        setUserRole(initialRole);
+        await AsyncStorage.setItem('userRole', initialRole);
+        setIsApprovedProfessional(true);
+        return {
+          userRole: initialRole,
+          isApprovedProfessional: true
+        };
+      }
+      
       // Get professional status and set initial role
       const status = await getProfessionalStatus(token);
 
@@ -214,6 +243,12 @@ export const AuthProvider = ({ children }) => {
 
   const validateToken = async (token) => {
     try {
+      if (is_prototype) {
+        // In prototype mode, always return true for token validation
+        console.log('Prototype mode: Mock token validation successful');
+        return true;
+      }
+
       const response = await axios.post(`${API_BASE_URL}/api/token/verify/`, {
         token: token
       });
@@ -227,6 +262,14 @@ export const AuthProvider = ({ children }) => {
 
   const refreshUserToken = async (refreshToken) => {
     try {
+      if (is_prototype) {
+        // In prototype mode, return a mock token
+        console.log('Prototype mode: Returning mock refreshed token');
+        const mockNewToken = 'mock_refreshed_token';
+        await AsyncStorage.setItem('userToken', mockNewToken);
+        return mockNewToken;
+      }
+
       const response = await axios.post(`${API_BASE_URL}/api/token/refresh/`, {
         refresh: refreshToken
       });
@@ -242,6 +285,29 @@ export const AuthProvider = ({ children }) => {
 
   const checkAuthStatus = async () => {
     try {
+      if (is_prototype) {
+        // In prototype mode, check if we have any token (mock or real)
+        const token = await AsyncStorage.getItem('userToken');
+        if (!token) {
+          console.log('Prototype mode: No token found - signing out');
+          setIsSignedIn(false);
+          setUserRole(null);
+          setIsApprovedProfessional(false);
+          return { isSignedIn: false, userRole: null, isApprovedProfessional: false };
+        }
+
+        // In prototype mode, always consider the token valid
+        console.log('Prototype mode: Token found - staying signed in');
+        setIsSignedIn(true);
+        const storedRole = await AsyncStorage.getItem('userRole') || 'petOwner';
+        setUserRole(storedRole);
+        setIsApprovedProfessional(true);
+        return {
+          isSignedIn: true,
+          userRole: storedRole,
+          isApprovedProfessional: true
+        };
+      }
 
       const [token, refreshToken, storedRole, storedApproval] = await AsyncStorage.multiGet([
         'userToken',
@@ -340,6 +406,14 @@ export const AuthProvider = ({ children }) => {
       console.log('=== Ending checkAuthStatus ===');
     }
   };
+
+  // Add useEffect to persist role changes
+  useEffect(() => {
+    if (is_prototype && isSignedIn) {
+      AsyncStorage.setItem('userRole', userRole || 'professional');
+      AsyncStorage.setItem('isApprovedProfessional', String(isApprovedProfessional));
+    }
+  }, [is_prototype, isSignedIn, userRole, isApprovedProfessional]);
 
   return (
     <AuthContext.Provider value={{ 

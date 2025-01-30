@@ -608,6 +608,10 @@ export const mockProfessionalBookings = Object.values(mockBookingDetails)
     status: booking.status,
     date: booking.startDate,
     time: booking.startTime,
+    serviceType: booking.serviceType,
+    numberOfPets: booking.numberOfPets || 1,
+    totalCost: booking.costs?.totalClientCost || 0,
+    professionalPayout: booking.costs?.professionalPayout || 0
   }));
 
 // Add the createBooking function
@@ -732,6 +736,9 @@ export const mockClientBookings = [
     status: BOOKING_STATES.CONFIRMED,
     date: '2024-02-22',
     time: '10:00',
+    serviceType: 'Dog Walking',
+    numberOfPets: 2,
+    totalCost: 75.00,
   },
   {
     id: '91012',
@@ -739,6 +746,9 @@ export const mockClientBookings = [
     status: BOOKING_STATES.PENDING_CLIENT_APPROVAL,
     date: '2024-02-23',
     time: '11:00',
+    serviceType: 'Pet Sitting',
+    numberOfPets: 1,
+    totalCost: 50.00,
   },
 ];
 
