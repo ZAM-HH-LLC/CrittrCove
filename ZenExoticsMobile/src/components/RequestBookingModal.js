@@ -9,6 +9,7 @@ import { format } from 'date-fns';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SERVICE_TYPE_SUGGESTIONS, mockPets } from '../data/mockData';
 import ConfirmationModal from './ConfirmationModal';
+import { validateDateTimeRange } from '../utils/dateTimeValidation';
 
 const RequestBookingModal = ({ visible, onClose, onSubmit, services = SERVICE_TYPE_SUGGESTIONS, pets = mockPets }) => {
   const [selectedService, setSelectedService] = useState('');
@@ -24,6 +25,7 @@ const RequestBookingModal = ({ visible, onClose, onSubmit, services = SERVICE_TY
     onConfirm: null,
     isLoading: false
   });
+  const [occurrenceErrors, setOccurrenceErrors] = useState({});
 
   const resetForm = () => {
     setSelectedService('');
@@ -32,8 +34,35 @@ const RequestBookingModal = ({ visible, onClose, onSubmit, services = SERVICE_TY
     setSelectedOccurrence(null);
   };
 
+  const validateOccurrences = (occs) => {
+    const errors = {};
+    let isValid = true;
+
+    occs.forEach((occ, index) => {
+      const validation = validateDateTimeRange(
+        occ.startDate,
+        occ.endDate,
+        occ.startTime,
+        occ.endTime
+      );
+
+      if (!validation.isValid) {
+        errors[index] = validation.error;
+        isValid = false;
+      }
+    });
+
+    setOccurrenceErrors(errors);
+    return isValid;
+  };
+
   const handleSubmit = () => {
     if (occurrences.length === 0) return;
+
+    // Validate all occurrences before submitting
+    if (!validateOccurrences(occurrences)) {
+      return;
+    }
 
     const bookingData = {
       serviceType: selectedService,
@@ -89,6 +118,32 @@ const RequestBookingModal = ({ visible, onClose, onSubmit, services = SERVICE_TY
     setShowServiceDropdown(false);
     setShowPetDropdown(false);
     setShowAddOccurrenceModal(true);
+  };
+
+  const handleOccurrenceUpdate = (newOccurrence) => {
+    const { startDate, endDate, startTime, endTime } = newOccurrence;
+    
+    // Validate the new occurrence
+    const validation = validateDateTimeRange(startDate, endDate, startTime, endTime);
+    
+    if (!validation.isValid) {
+      // Show error in the AddOccurrenceModal
+      // You'll need to add error handling in the AddOccurrenceModal component
+      return false;
+    }
+
+    if (selectedOccurrence) {
+      setOccurrences(prev => prev.map(occ => 
+        occ === selectedOccurrence ? 
+        { startDate, endDate, startTime, endTime } : 
+        occ
+      ));
+    } else {
+      setOccurrences(prev => [...prev, { startDate, endDate, startTime, endTime }]);
+    }
+    setSelectedOccurrence(null);
+    setShowAddOccurrenceModal(false);
+    return true;
   };
 
   const renderServiceDropdown = () => (
@@ -196,6 +251,49 @@ const RequestBookingModal = ({ visible, onClose, onSubmit, services = SERVICE_TY
     </View>
   );
 
+  const renderOccurrenceCard = (occ, index) => (
+    <View key={index}>
+      <TouchableOpacity 
+        style={[
+          styles.occurrenceCard,
+          occurrenceErrors[index] && styles.occurrenceCardError
+        ]}
+      >
+        <View style={styles.occurrenceDetails}>
+          <Text style={styles.dateText}>
+            {occ.endDate && occ.startDate !== occ.endDate ? 
+              `${format(new Date(occ.startDate), 'MMM d, yyyy')} - ${format(new Date(occ.endDate), 'MMM d, yyyy')}` :
+              format(new Date(occ.startDate), 'MMM d, yyyy')
+            }
+          </Text>
+          <Text style={styles.timeText}>
+            {`${occ.startTime} - ${occ.endTime}`}
+          </Text>
+          {occurrenceErrors[index] && (
+            <Text style={styles.errorText}>{occurrenceErrors[index]}</Text>
+          )}
+        </View>
+        <View style={styles.occurrenceActions}>
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => confirmDeleteOccurrence(occ)}
+          >
+            <MaterialCommunityIcons name="trash-can-outline" size={20} color={theme.colors.error} />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => {
+              setSelectedOccurrence(occ);
+              handleOpenOccurrenceModal();
+            }}
+          >
+            <MaterialCommunityIcons name="pencil" size={20} color={theme.colors.primary} />
+          </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
+    </View>
+  );
+
   return (
     <Modal
       visible={visible}
@@ -218,41 +316,7 @@ const RequestBookingModal = ({ visible, onClose, onSubmit, services = SERVICE_TY
 
             {/* Date & Time Selection */}
             <Text style={styles.label}>Select Date & Time</Text>
-            {occurrences.map((occ, index) => (
-              <TouchableOpacity 
-                key={index}
-                style={styles.occurrenceCard}
-              >
-                <View style={styles.occurrenceDetails}>
-                  <Text style={styles.dateText}>
-                    {occ.endDate && occ.startDate !== occ.endDate ? 
-                      `${format(new Date(occ.startDate), 'MMM d, yyyy')} - ${format(new Date(occ.endDate), 'MMM d, yyyy')}` :
-                      format(new Date(occ.startDate), 'MMM d, yyyy')
-                    }
-                  </Text>
-                  <Text style={styles.timeText}>
-                    {`${occ.startTime} - ${occ.endTime}`}
-                  </Text>
-                </View>
-                <View style={styles.occurrenceActions}>
-                  <TouchableOpacity 
-                    style={styles.actionButton}
-                    onPress={() => confirmDeleteOccurrence(occ)}
-                  >
-                    <MaterialCommunityIcons name="trash-can-outline" size={20} color={theme.colors.error} />
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={styles.actionButton}
-                    onPress={() => {
-                      setSelectedOccurrence(occ);
-                      handleOpenOccurrenceModal();
-                    }}
-                  >
-                    <MaterialCommunityIcons name="pencil" size={20} color={theme.colors.primary} />
-                  </TouchableOpacity>
-                </View>
-              </TouchableOpacity>
-            ))}
+            {occurrences.map((occ, index) => renderOccurrenceCard(occ, index))}
 
             <TouchableOpacity
               style={styles.addOccurrenceButton}
@@ -285,20 +349,7 @@ const RequestBookingModal = ({ visible, onClose, onSubmit, services = SERVICE_TY
       <AddOccurrenceModal
         visible={showAddOccurrenceModal}
         onClose={() => setShowAddOccurrenceModal(false)}
-        onAdd={(newOccurrence) => {
-          const { startDate, endDate, startTime, endTime } = newOccurrence;
-          if (selectedOccurrence) {
-            setOccurrences(prev => prev.map(occ => 
-              occ === selectedOccurrence ? 
-              { startDate, endDate, startTime, endTime } : 
-              occ
-            ));
-          } else {
-            setOccurrences(prev => [...prev, { startDate, endDate, startTime, endTime }]);
-          }
-          setSelectedOccurrence(null);
-          setShowAddOccurrenceModal(false);
-        }}
+        onAdd={handleOccurrenceUpdate}
         hideRates={true}
         initialOccurrence={selectedOccurrence}
         modalTitle={selectedOccurrence ? 'Edit Occurrence' : 'Add New Occurrence'}
@@ -556,6 +607,14 @@ const styles = StyleSheet.create({
     color: theme.colors.surface,
     fontSize: theme.fontSizes.medium,
     fontWeight: '500',
+  },
+  occurrenceCardError: {
+    borderColor: theme.colors.error,
+  },
+  errorText: {
+    color: theme.colors.error,
+    fontSize: theme.fontSizes.small,
+    marginTop: 4,
   },
 });
 

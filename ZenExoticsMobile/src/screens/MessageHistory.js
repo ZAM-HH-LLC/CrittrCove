@@ -498,7 +498,7 @@ const MessageHistory = ({ navigation, route }) => {
   const [screenWidth, setScreenWidth] = useState(Dimensions.get('window').width);
   const styles = createStyles(screenWidth); // Initialize styles here
   
-  const [selectedConversation, setSelectedConversation] = useState('1');
+  const [selectedConversation, setSelectedConversation] = useState(null);
   const [selectedConversationData, setSelectedConversationData] = useState(null);
   const [messages, setMessages] = useState([]);
   const [isSending, setIsSending] = useState(false);
@@ -508,6 +508,13 @@ const MessageHistory = ({ navigation, route }) => {
 
   // Use mockConversations instead of local state
   const [conversations, setConversations] = useState(mockConversations);
+
+  // Add useEffect to set initial selected conversation
+  useEffect(() => {
+    if (conversations.length > 0 && !selectedConversation) {
+      setSelectedConversation(conversations[0].id);
+    }
+  }, [conversations]);
 
   useEffect(() => {
     if (selectedConversation) {
@@ -964,82 +971,73 @@ const MessageHistory = ({ navigation, route }) => {
     </View>
   );
 
-  // Update the message section to have a fixed input bar
-  const renderMessageSection = () => (
-    <View style={styles.messageSection}>
-      {screenWidth > 1000 && selectedConversationData && (
-        <View style={styles.messageHeader}>
-          <Text style={styles.messageHeaderName}>
-            {selectedConversationData.name}
-          </Text>
-        </View>
-      )}
-      <View style={styles.messagesContainer}>
-        {messages.length === 0 ? (
-          <Text style={{ padding: 16, color: theme.colors.placeholder }}>
-            No messages yet
-          </Text>
-        ) : (
-          <FlatList
-            data={messages}
-            renderItem={renderMessage}
-            keyExtractor={item => (item.message_id || Date.now().toString())}
-            style={styles.messageList}
-          />
+  // Update the message section to handle empty states
+  const renderMessageSection = () => {
+    if (!selectedConversation) {
+      return null;
+    }
+
+    return (
+      <View style={styles.messageSection}>
+        {screenWidth > 1000 && selectedConversationData && (
+          <View style={styles.messageHeader}>
+            <Text style={styles.messageHeaderName}>
+              {selectedConversationData.name}
+            </Text>
+          </View>
         )}
-      </View>
-      <View style={styles.inputWrapper}>
-        <View style={styles.attachButtonContainer}>
-          <TouchableOpacity 
-            style={styles.attachButton}
-            onPress={() => setShowDropdown(!showDropdown)}
-          >
-            <MaterialCommunityIcons 
-              name={showDropdown ? "close" : "plus"} 
-              size={24} 
-              color={theme.colors.primary} 
+        <View style={styles.messagesContainer}>
+          {messages.length === 0 ? (
+            <Text style={{ padding: 16, color: theme.colors.placeholder }}>
+              No messages yet. Start the conversation!
+            </Text>
+          ) : (
+            <FlatList
+              data={messages}
+              renderItem={renderMessage}
+              keyExtractor={item => (item.message_id || Date.now().toString())}
+              style={styles.messageList}
             />
-          </TouchableOpacity>
-          {showDropdown && (
-            <View style={styles.dropdownMenu}>
-              <TouchableOpacity 
-                style={styles.dropdownItem}
-                onPress={() => {
-                  handleRequestBooking();
-                  setShowDropdown(false);
-                }}
-              >
-                <MaterialCommunityIcons 
-                  name="calendar-plus" 
-                  size={20} 
-                  color={theme.colors.primary} 
-                />
-                <Text style={styles.dropdownText}>Request Booking</Text>
-              </TouchableOpacity>
-              {/* TODO: Add attachment after MVP Release */}
-              {/* <TouchableOpacity 
-                style={styles.dropdownItem}
-                onPress={() => {
-                  // Handle attachment
-                  setShowDropdown(false);
-                }}
-              >
-                <MaterialCommunityIcons 
-                  name="attachment" 
-                  size={20} 
-                  color={theme.colors.primary} 
-                />
-                <Text style={styles.dropdownText}>Add Attachment</Text>
-              </TouchableOpacity> */}
-            </View>
           )}
         </View>
-        <View style={styles.inputContainer}>
-          {Platform.OS === 'web' ? <WebInput /> : <MobileInput />}
+        <View style={styles.inputWrapper}>
+          <View style={styles.attachButtonContainer}>
+            <TouchableOpacity 
+              style={styles.attachButton}
+              onPress={() => setShowDropdown(!showDropdown)}
+            >
+              <MaterialCommunityIcons 
+                name={showDropdown ? "close" : "plus"} 
+                size={24} 
+                color={theme.colors.primary} 
+              />
+            </TouchableOpacity>
+            {showDropdown && (
+              <View style={styles.dropdownMenu}>
+                <TouchableOpacity 
+                  style={styles.dropdownItem}
+                  onPress={() => {
+                    handleRequestBooking();
+                    setShowDropdown(false);
+                  }}
+                >
+                  <MaterialCommunityIcons 
+                    name="calendar-plus" 
+                    size={20} 
+                    color={theme.colors.primary} 
+                  />
+                  <Text style={styles.dropdownText}>Request Booking</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+          <View style={styles.inputContainer}>
+            {Platform.OS === 'web' ? <WebInput /> : <MobileInput />}
+          </View>
         </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   // Update the useEffect for window resize
   useEffect(() => {
@@ -1171,36 +1169,82 @@ const MessageHistory = ({ navigation, route }) => {
     );
   };
 
+  // Add new component for empty state
+  const renderEmptyState = () => (
+    <View style={{
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 20,
+    }}>
+      <MaterialCommunityIcons 
+        name="message-text-outline" 
+        size={64} 
+        color={theme.colors.placeholder}
+        style={{ marginBottom: 16 }}
+      />
+      <Text style={{
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: theme.colors.text,
+        marginBottom: 8,
+        textAlign: 'center'
+      }}>
+        No Messages Yet
+      </Text>
+      <Text style={{
+        fontSize: 16,
+        color: theme.colors.placeholder,
+        marginBottom: 24,
+        textAlign: 'center'
+      }}>
+        Create services to start getting bookings and messages from clients
+      </Text>
+      <Button
+        mode="contained"
+        onPress={() => navigation.navigate('Services')}
+        style={{ borderRadius: 8 }}
+      >
+        Create Services
+      </Button>
+    </View>
+  );
+
   return (
     <SafeAreaView style={[
       styles.container,
       screenWidth <= 1000 && selectedConversation && styles.mobileContainer
     ]}>
-      {renderHeader()}
-      <View style={[
-        styles.contentContainer,
-        screenWidth <= 1000 && selectedConversation && styles.mobileContent
-      ]}>
-        {screenWidth <= 1000 ? (
-          selectedConversation ? (
-            <View style={styles.mobileMessageView}>
-              {renderMobileHeader()}
-              <View style={styles.mobileContent}>
+      {conversations.length > 0 ? (
+        <>
+          {renderHeader()}
+          <View style={[
+            styles.contentContainer,
+            screenWidth <= 1000 && selectedConversation && styles.mobileContent
+          ]}>
+            {screenWidth <= 1000 ? (
+              selectedConversation ? (
+                <View style={styles.mobileMessageView}>
+                  {renderMobileHeader()}
+                  <View style={styles.mobileContent}>
+                    {renderMessageSection()}
+                  </View>
+                </View>
+              ) : (
+                renderConversationList()
+              )
+            ) : (
+              <>
+                {renderConversationList()}
                 {renderMessageSection()}
-              </View>
-            </View>
-          ) : (
-            renderConversationList()
-          )
-        ) : (
-          <>
-            {renderConversationList()}
-            {renderMessageSection()}
-          </>
-        )}
-      </View>
+              </>
+            )}
+          </View>
+        </>
+      ) : (
+        renderEmptyState()
+      )}
       
-      {/* Add RequestBookingModal if it's not already present */}
       <RequestBookingModal
         visible={showRequestModal}
         onClose={() => setShowRequestModal(false)}

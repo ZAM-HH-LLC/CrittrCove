@@ -6,6 +6,7 @@ import DatePicker from './DatePicker';
 import TimePicker from './TimePicker';
 import { format } from 'date-fns';
 import { TIME_OPTIONS } from '../data/mockData';
+import { validateDateTimeRange } from '../utils/dateTimeValidation';
 
 const ANIMAL_COUNT_OPTIONS = ['1', '2', '3', '4', '5'];
 
@@ -69,7 +70,8 @@ const AddOccurrenceModal = ({
   defaultRates, 
   hideRates = false,
   initialOccurrence = null,
-  isEditing = false
+  isEditing = false,
+  modalTitle = 'Add New Occurrence'
 }) => {
   console.log('AddOccurrenceModal props:', {
     visible,
@@ -186,6 +188,7 @@ const AddOccurrenceModal = ({
   const [newRate, setNewRate] = useState({ name: '', amount: '' });
   const [timeUnit, setTimeUnit] = useState(initialOccurrence?.rates?.timeUnit || occurrence.rates.timeUnit);
   const [isLoading, setIsLoading] = useState(false);
+  const [validationError, setValidationError] = useState(null);
 
   const calculateTotal = () => {
     // If we have a totalCost from the initialOccurrence, use that
@@ -287,20 +290,63 @@ const AddOccurrenceModal = ({
     }));
   };
 
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
+
+  const handleSubmit = () => {
+    // Validate the date/time range
+    const validation = validateDateTimeRange(
+      occurrence.startDate,
+      occurrence.endDate,
+      format(occurrence.startTime, 'HH:mm'),
+      format(occurrence.endTime, 'HH:mm')
+    );
+
+    if (!validation.isValid) {
+      setValidationError(validation.error);
+      return;
+    }
+
+    handleAdd();
+  };
+
+  const resetForm = () => {
+    setOccurrence({
+      startDate: new Date().toISOString().split('T')[0],
+      endDate: new Date().toISOString().split('T')[0],
+      startTime: new Date(),
+      endTime: new Date(new Date().setHours(new Date().getHours() + 1)),
+      rates: {
+        baseRate: defaultRates?.baseRate || '0',
+        additionalAnimalRate: defaultRates?.additionalAnimalRate || '0',
+        appliesAfterAnimals: defaultRates?.appliesAfterAnimals || '1',
+        holidayRate: defaultRates?.holidayRate || '0',
+        timeUnit: defaultRates?.timeUnit || 'per visit',
+        additionalRates: []
+      }
+    });
+    setTimeUnit(defaultRates?.timeUnit || 'per visit');
+    setShowAddRate(false);
+    setNewRate({ name: '', amount: '' });
+    setValidationError(null);
+  };
+
   return (
     <Modal
       visible={visible}
       transparent={true}
       animationType="fade"
-      onRequestClose={onClose}
+      onRequestClose={handleClose}
     >
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>
-              {isEditing ? 'Edit Occurrence' : 'Add New Occurrence'}
+              {modalTitle}
             </Text>
-            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+            <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
               <MaterialCommunityIcons name="close" size={24} color={theme.colors.text} />
             </TouchableOpacity>
           </View>
@@ -346,6 +392,10 @@ const AddOccurrenceModal = ({
                 </View>
               </View>
             </View>
+
+            {validationError && (
+              <Text style={styles.errorText}>{validationError}</Text>
+            )}
 
             {!hideRates && (
               <>
@@ -499,24 +549,26 @@ const AddOccurrenceModal = ({
                     </TouchableOpacity>
                   )}
                 </View>
+              
+
+                <View style={styles.totalSection}>
+                  <Text style={styles.totalLabel}>Total:</Text>
+                  <Text style={styles.totalAmount}>${calculateTotal()}</Text>
+                </View>
+
               </>
             )}
-
-            <View style={styles.totalSection}>
-              <Text style={styles.totalLabel}>Total:</Text>
-              <Text style={styles.totalAmount}>${calculateTotal()}</Text>
-            </View>
 
             <View style={styles.buttonContainer}>
               <TouchableOpacity
                 style={[styles.button, styles.cancelButton]}
-                onPress={onClose}
+                onPress={handleClose}
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.button, styles.addButton]}
-                onPress={handleAdd}
+                onPress={handleSubmit}
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -719,6 +771,12 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSizes.mediumLarge,
     fontWeight: 'bold',
     color: theme.colors.primary,
+  },
+  errorText: {
+    color: theme.colors.error,
+    fontSize: theme.fontSizes.small,
+    marginTop: 8,
+    marginBottom: 8,
   },
 });
 
