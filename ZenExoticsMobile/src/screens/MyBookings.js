@@ -15,67 +15,79 @@ import { API_BASE_URL } from '../config/config';
 
 const MyBookings = () => {
   const navigation = useNavigation();
-  const { is_prototype, isApprovedProfessional } = useContext(AuthContext);
-  const [activeTab, setActiveTab] = useState(isApprovedProfessional ? 'professional' : 'client');
+  const { is_prototype, isApprovedProfessional, userRole } = useContext(AuthContext);
+  const [activeTab, setActiveTab] = useState(userRole === 'professional' ? 'professional' : 'client');
   const [searchQuery, setSearchQuery] = useState('');
   const [bookings, setBookings] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Handle role changes
+  useEffect(() => {
+    if (userRole === 'professional' && isApprovedProfessional) {
+      setActiveTab('professional');
+    }
+  }, [userRole, isApprovedProfessional]);
 
   const fetchBookings = async () => {
     setLoading(true);
     setError(null);
-    
-    if (is_prototype) {
-      // Use mock data for prototype
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      const data = activeTab === 'professional' ? mockProfessionalBookings : mockClientBookings;
-      setBookings(data);
-      setLoading(false);
-      return;
-    }
-
     try {
-      let token = await AsyncStorage.getItem('userToken');
-      const response = await axios.get(`${API_BASE_URL}/api/bookings/v1/`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      if (is_prototype) {
+        console.log('Fetching mock bookings:', {
+          isApprovedProfessional,
+          userRole,
+          activeTab
+        });
+        
+        // In prototype mode, use mock data
+        if (activeTab === 'professional' && isApprovedProfessional) {
+          setBookings(mockProfessionalBookings);
+        } else {
+          setBookings(mockClientBookings);
+        }
+      } else {
+        // Real API call logic
+        let token = await AsyncStorage.getItem('userToken');
+        if (!token) {
+          throw new Error('No authentication token found');
+        }
 
-      const bookingsData = activeTab === 'professional' 
-        ? response.data.bookings?.professional_bookings 
-        : response.data.bookings?.client_bookings;
+        console.log('Fetching real bookings:', {
+          isApprovedProfessional,
+          userRole,
+          activeTab
+        });
 
-      if (!bookingsData || bookingsData.length === 0) {
-        setBookings([]);
-        return;
+        const response = await axios.get(
+          `${API_BASE_URL}/api/bookings/v1/`,
+          { headers: { Authorization: `Bearer ${token}` }}
+        );
+
+        if (activeTab === 'professional') {
+          setBookings(response.data.bookings.professional_bookings || []);
+        } else {
+          setBookings(response.data.bookings.client_bookings || []);
+        }
       }
-
-      // Transform API data to match the expected format
-      const transformedBookings = bookingsData.map(booking => ({
-        id: booking.booking_id.toString(),
-        clientName: booking.client_name,
-        professionalName: booking.professional_name,
-        serviceName: booking.service_name,
-        date: booking.start_date,
-        time: booking.start_time,
-        status: booking.status,
-        totalCost: booking.total_client_cost,
-        totalPayout: booking.total_sitter_payout
-      }));
-
-      setBookings(transformedBookings);
     } catch (error) {
       console.error('Error fetching bookings:', error);
-      setError(error);
+      setError('Failed to fetch bookings');
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch bookings when tab changes
+  // Fetch bookings when component mounts or when dependencies change
   useEffect(() => {
+    console.log('Fetching bookings due to dependency change:', {
+      activeTab,
+      userRole,
+      isApprovedProfessional,
+      is_prototype
+    });
     fetchBookings();
-  }, [activeTab]);
+  }, [activeTab, userRole, isApprovedProfessional, is_prototype]);
 
   // Handle search
   const handleSearch = (query) => {
@@ -104,15 +116,19 @@ const MyBookings = () => {
     setBookings(filtered);
   };
 
-  const handleViewDetails = (bookingId) => {
-    // Navigate to booking details screen with isProfessional flag based on active tab
-    navigation.navigate('BookingDetails', { 
-      bookingId,
+  const handleViewDetails = (booking) => {
+    console.log('Navigating to booking details:', {
+      bookingId: booking.booking_id || booking.id,
+      isProfessional: activeTab === 'professional'
+    });
+    
+    navigation.navigate('BookingDetails', {
+      bookingId: booking.booking_id || booking.id,
       isProfessional: activeTab === 'professional'
     });
   };
 
-  const handleCancelBooking = (bookingId) => {
+  const handleCancelBooking = async (bookingId) => {
     // Implement booking cancellation logic
     console.log('Cancel booking:', bookingId);
   };
@@ -120,17 +136,17 @@ const MyBookings = () => {
   const renderBookingCard = ({ item }) => (
     <BookingCard
       booking={{
-        ...item,
-        // Ensure consistent property names between prototype and API data
-        clientName: item.clientName || item.client_name,
-        professionalName: item.professionalName || item.professional_name,
-        serviceName: item.serviceName || item.service_name,
-        date: item.date || item.start_date,
-        time: item.time || item.start_time,
+        id: item.booking_id || item.id,
+        clientName: item.client_name || item.clientName,
+        professionalName: item.professional_name || item.professionalName,
+        serviceName: item.service_type || item.serviceName,
+        date: item.start_date || item.date,
+        time: item.start_time || item.time,
+        status: item.status
       }}
       type={activeTab}
-      onViewDetails={() => handleViewDetails(item.id)}
-      onCancel={() => handleCancelBooking(item.id)}
+      onViewDetails={() => handleViewDetails(item)}
+      onCancel={() => handleCancelBooking(item.booking_id || item.id)}
     />
   );
 
@@ -194,51 +210,51 @@ const MyBookings = () => {
       />
       
       <View style={styles.container}>
-        {isApprovedProfessional && (
-          <View style={styles.tabContainer}>
-            <TouchableOpacity
+      {isApprovedProfessional && (
+        <View style={styles.tabContainer}>
+          <TouchableOpacity
               style={[styles.tab, activeTab === 'professional' && styles.activeTab]}
-              onPress={() => setActiveTab('professional')}
-            >
+            onPress={() => setActiveTab('professional')}
+          >
               <Text style={[styles.tabText, activeTab === 'professional' && styles.activeTabText]}>
                 Professional Bookings
               </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
+          </TouchableOpacity>
+          <TouchableOpacity
               style={[styles.tab, activeTab === 'client' && styles.activeTab]}
-              onPress={() => setActiveTab('client')}
-            >
+            onPress={() => setActiveTab('client')}
+          >
               <Text style={[styles.tabText, activeTab === 'client' && styles.activeTabText]}>
                 Client Bookings
               </Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        <View style={styles.searchContainer}>
-          <MaterialCommunityIcons name="magnify" size={24} color={theme.colors.placeholder} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search by Booking ID or Name"
-            value={searchQuery}
-            onChangeText={handleSearch}
-          />
+          </TouchableOpacity>
         </View>
+      )}
 
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={theme.colors.primary} />
-          </View>
+      <View style={styles.searchContainer}>
+          <MaterialCommunityIcons name="magnify" size={24} color={theme.colors.placeholder} />
+        <TextInput
+          style={styles.searchInput}
+            placeholder="Search by Booking ID or Name"
+          value={searchQuery}
+          onChangeText={handleSearch}
+        />
+      </View>
+
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+        </View>
         ) : bookings.length > 0 ? (
-          <FlatList
-            data={bookings}
-            renderItem={renderBookingCard}
-            keyExtractor={item => item.id}
-            contentContainerStyle={styles.listContainer}
-          />
+        <FlatList
+          data={bookings}
+          renderItem={renderBookingCard}
+          keyExtractor={item => item.booking_id?.toString()}
+          contentContainerStyle={styles.listContainer}
+        />
         ) : (
           <EmptyStateMessage />
-        )}
+      )}
       </View>
     </CrossPlatformView>
   );

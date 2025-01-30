@@ -463,66 +463,101 @@ export const updateBooking = (bookingData) => {
 };
 
 const sharedBookingDetails = {
-  id: 'bk1',
-  status: 'Pending Professional Changes',
-  startDate: '2024-12-06',
-  startTime: '14:00',
-  endDate: '2024-12-06',
-  endTime: '16:00',
-  clientName: 'Charlie Bootylicker',
-  professionalName: 'Sarah Wilson',
-  serviceType: 'Dog Walking',
-  animalType: 'Dog',
-  numberOfPets: 2,
-  duration: 2,
-  occurrences: [
+  booking_id: 'bk1',
+  status: 'Confirmed',
+  client_name: 'matt aertker',
+  professional_name: 'matt2 aertker2',
+  service_details: {
+    service_type: 'Ferrier'
+  },
+  pets: [
     {
-      id: 'occ1',
-      startDate: '2024-12-06',
-      endDate: '2024-12-06',
-      startTime: '14:00',
-      endTime: '16:00',
-      rates: {
-        baseRate: 20.00,
-        additionalRates: [
-          { name: 'Weekend Fee', amount: 5.00 },
-          { name: 'Premium Package', amount: 10.00 }
-        ]
-      },
-      totalCost: 35.00
-    },
-    {
-      id: 'occ2',
-      startDate: '2024-12-07',
-      endDate: '2024-12-07',
-      startTime: '14:00',
-      endTime: '16:00',
-      rates: {
-        baseRate: 20.00,
-        additionalRates: [
-          { name: 'Weekend Fee', amount: 5.00 }
-        ]
-      },
-      totalCost: 25.00
+      pet_id: 3,
+      name: 'Jack',
+      species: 'DOG',
+      breed: 'Golden'
     }
   ],
-  rates: {
-    baseRate: 20.00,
-    additionalPetRate: 5.00,
-    extraServices: [
-      { name: 'Premium Package', amount: 10.00 },
-      { name: 'Weekend Fee', amount: 5.00 }
-    ]
-  },
-  costs: {
-    baseTotal: 35.00,
-    additionalPetTotal: 25.00,
-    subtotal: 60.00,
-    clientFee: 6.00,
-    taxes: 5.00,
-    totalClientCost: 71.00,
-    professionalPayout: 63.90,
-  },
+  occurrences: [
+    {
+      occurrence_id: 10,
+      start_date: '2025-02-01',
+      end_date: '2025-02-02',
+      start_time: '15:06',
+      end_time: '16:06',
+      calculated_cost: '61.04',
+      base_total: '$26.04',
+      rates: {
+        base_rate: '25.00',
+        additional_animal_rate: '5.00',
+        additional_animal_rate_applies: false,
+        applies_after: 2,
+        unit_of_time: 'PER_DAY',
+        holiday_rate: '35.00',
+        holiday_days: 0,
+        additional_rates: [
+          {
+            title: 'Extra Travel Time Rate',
+            description: 'Far Drive rate for service',
+            amount: '$25.00'
+          },
+          {
+            title: 'Dog Poops Inside Rate',
+            description: 'Dog Poops Inside rate for service',
+            amount: '$5.00'
+          },
+          {
+            title: 'Dog Separation rate',
+            description: 'When we need to separate the dog from other animals in the house',
+            amount: '$5.00'
+          }
+        ]
+      }
+    },
+    {
+      occurrence_id: 9,
+      start_date: '2025-03-13',
+      end_date: '2025-03-14',
+      start_time: '09:00',
+      end_time: '14:00',
+      calculated_cost: '120.08',
+      base_total: '$35.04',
+      rates: {
+        base_rate: '29.00',
+        additional_animal_rate: '8.00',
+        additional_animal_rate_applies: false,
+        applies_after: 1,
+        unit_of_time: 'PER_DAY',
+        holiday_rate: '40.00',
+        holiday_days: 0,
+        additional_rates: [
+          {
+            title: 'Extra Travel Time Rate',
+            description: 'Far Drive rate for service',
+            amount: '$25.00'
+          },
+          {
+            title: 'Dog Poops Inside Rate',
+            description: 'Dog Poops Inside rate for service',
+            amount: '$25.00'
+          },
+          {
+            title: 'Dog Separation rate',
+            description: 'When we need to separate the dog from other animals in the house',
+            amount: '$35.04'
+          }
+        ]
+      }
+    }
+  ],
+  cost_summary: {
+    subtotal: 181.12,
+    platform_fee: 18.11,
+    taxes: 15.94,
+    total_client_cost: 215.17,
+    total_sitter_payout: 163.01,
+    is_prorated: true
+  }
 };
 
 // Initialize mockBookingDetails with existing mock data

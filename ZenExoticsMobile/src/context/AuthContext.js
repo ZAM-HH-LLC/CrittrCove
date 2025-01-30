@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { API_BASE_URL } from '../config/config';
 import { Dimensions, Platform } from 'react-native';
+import { navigate } from '../../App';
 
 export const SCREEN_WIDTH = Dimensions.get('window').width;
 export const SCREEN_HEIGHT = Dimensions.get('window').height;
@@ -18,7 +19,7 @@ export const AuthProvider = ({ children }) => {
   const [firstName, setFirstName] = useState('');
 
   // SET TO "true" FOR NO API CALLS
-  const [is_prototype, setIsPrototype] = useState(false);
+  const [is_prototype, setIsPrototype] = useState(true);
 
   // Separate screen width handling from auth
   useEffect(() => {
@@ -213,6 +214,10 @@ export const AuthProvider = ({ children }) => {
     setIsSignedIn(false);
     setIsApprovedProfessional(false);
     setUserRole(null);
+    // Ensure state updates are processed before navigation
+    setTimeout(() => {
+      navigate('SignIn');
+    }, 0);
   };
 
   const switchRole = async () => {
@@ -290,9 +295,7 @@ export const AuthProvider = ({ children }) => {
         const token = await AsyncStorage.getItem('userToken');
         if (!token) {
           console.log('Prototype mode: No token found - signing out');
-          setIsSignedIn(false);
-          setUserRole(null);
-          setIsApprovedProfessional(false);
+          await signOut();
           return { isSignedIn: false, userRole: null, isApprovedProfessional: false };
         }
 
@@ -318,9 +321,7 @@ export const AuthProvider = ({ children }) => {
 
       if (!token[1] && !refreshToken[1]) {
         console.log('No tokens found - signing out');
-        setIsSignedIn(false);
-        setUserRole(null);
-        setIsApprovedProfessional(false);
+        await signOut(); // This will handle both clearing state and navigation
         return { isSignedIn: false, userRole: null, isApprovedProfessional: false };
       }
 

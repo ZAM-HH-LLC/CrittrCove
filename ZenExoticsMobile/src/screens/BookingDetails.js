@@ -150,7 +150,7 @@ const RequestChangesModal = ({ visible, onClose, onSubmit, loading }) => {
 const BookingDetails = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { is_prototype } = useContext(AuthContext);
+  const { is_prototype, currentUser } = useContext(AuthContext);
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -545,8 +545,17 @@ const BookingDetails = () => {
   const canEdit = () => {
     if (!booking) return false;
 
+    // In prototype mode, always allow editing
+    if (is_prototype) {
+      return true;
+    }
+
     // If not a professional view, can't edit
     if (!isProfessionalView) return false;
+
+    // Check if the current user is the professional for this booking
+    const isBookingProfessional = booking.professional?.user?.id === currentUser?.id;
+    if (!isBookingProfessional) return false;
 
     // Check if status allows professional edits
     return BOOKING_STATES.PROFESSIONAL_EDITABLE_STATES.includes(booking.status);
@@ -763,30 +772,30 @@ const BookingDetails = () => {
     console.log('Original occurrence:', occurrence);
     
     if (is_prototype) {
-      // In prototype mode, use mock data structure
+      // In prototype mode, use the same data structure as API
       const transformedOccurrence = {
-        id: occurrence.occurrence_id || 'mock_occ_1',
-        startDate: occurrence.start_date || '2024-03-01',
-        endDate: occurrence.end_date || '2024-03-01',
-        startTime: occurrence.start_time || '09:00',
-        endTime: occurrence.end_time || '10:00',
+        id: occurrence.occurrence_id,
+        startDate: occurrence.start_date,
+        endDate: occurrence.end_date,
+        startTime: occurrence.start_time,
+        endTime: occurrence.end_time,
         rates: {
-          baseRate: (occurrence.rates?.base_rate || 20).toString(),
-          additionalAnimalRate: (occurrence.rates?.additional_animal_rate || 10).toString(),
-          appliesAfterAnimals: (occurrence.rates?.applies_after || 1).toString(),
-          holidayRate: (occurrence.rates?.holiday_rate || 0).toString(),
-          timeUnit: occurrence.rates?.unit_of_time?.toLowerCase().replace(/_/g, ' ') || 'per visit',
-          additionalRates: (occurrence.rates?.additional_rates || [])
+          baseRate: occurrence.rates.base_rate,
+          additionalAnimalRate: occurrence.rates.additional_animal_rate,
+          appliesAfterAnimals: occurrence.rates.applies_after.toString(),
+          holidayRate: occurrence.rates.holiday_rate,
+          timeUnit: occurrence.rates.unit_of_time.toLowerCase().replace(/_/g, ' '),
+          additionalRates: occurrence.rates.additional_rates
             .filter(rate => rate.title !== 'Booking Details Cost')
             .map(rate => ({
-              name: rate.title || '',
-              description: rate.description || '',
-              amount: (rate.amount?.replace(/[^0-9.]/g, '') || '0').toString()
+              name: rate.title,
+              description: rate.description,
+              amount: rate.amount.replace(/[^0-9.]/g, '')
             }))
         },
-        totalCost: (occurrence.calculated_cost || 0).toString(),
-        baseTotal: (occurrence.base_total?.replace(/[^0-9.]/g, '') || '0').toString(),
-        multiple: calculateMultiple(occurrence.base_total || '0', occurrence.rates?.base_rate || 20)
+        totalCost: occurrence.calculated_cost,
+        baseTotal: occurrence.base_total.replace(/[^0-9.]/g, ''),
+        multiple: calculateMultiple(occurrence.base_total, occurrence.rates.base_rate)
       };
 
       console.log('Transformed occurrence for modal (prototype):', transformedOccurrence);
@@ -910,10 +919,12 @@ const BookingDetails = () => {
           <Text>Subtotal:</Text>
           <Text>${(booking?.cost_summary?.subtotal || 0).toFixed(2)}</Text>
         </View>
-        <View style={styles.summaryRow}>
-          <Text>Platform Fee (10%):</Text>
-          <Text>${(booking?.cost_summary?.platform_fee || 0).toFixed(2)}</Text>
-        </View>
+        {!is_prototype && (
+          <View style={styles.summaryRow}>
+            <Text>Platform Fee (10%):</Text>
+            <Text>${(booking?.cost_summary?.platform_fee || 0).toFixed(2)}</Text>
+          </View>
+        )}
         <View style={styles.summaryRow}>
           <Text>Taxes (9%):</Text>
           <Text>${(booking?.cost_summary?.taxes || 0).toFixed(2)}</Text>
@@ -1619,12 +1630,12 @@ const styles = StyleSheet.create({
   },
   totalLabel: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '500',
   },
   totalAmount: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: theme.colors.primary,
+    fontWeight: '500',
+    // color: theme.colors.primary,
   },
   payoutRow: {
     marginTop: 12,

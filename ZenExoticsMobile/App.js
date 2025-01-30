@@ -9,6 +9,7 @@ import { theme } from './src/styles/theme';
 import { AuthProvider, AuthContext } from './src/context/AuthContext';
 import { API_BASE_URL } from './src/config/config';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createNavigationContainerRef } from '@react-navigation/native';
 
 // Import all your screen components
 import HomeScreen from './src/screens/HomeScreen';
@@ -152,6 +153,14 @@ const globalStyles = `
   }
 `;
 
+export const navigationRef = createNavigationContainerRef();
+
+export function navigate(name, params) {
+  if (navigationRef.isReady()) {
+    navigationRef.navigate(name, params);
+  }
+}
+
 function TabNavigator() {
   return (
     <Tab.Navigator tabBar={props => <Navigation {...props} />}>
@@ -241,6 +250,7 @@ function AppContent() {
 
   return (
     <NavigationContainer 
+      ref={navigationRef}
       linking={linking}
       onStateChange={async (state) => {
         if (Platform.OS !== 'web' && state?.routes?.length > 0) {
