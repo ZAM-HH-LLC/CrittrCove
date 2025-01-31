@@ -1,8 +1,9 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useContext } from 'react';
 import { View, StyleSheet, FlatList, KeyboardAvoidingView, Platform, SafeAreaView, StatusBar, TextInput, Text, TouchableOpacity, Dimensions, Alert } from 'react-native';
 import { Button, Card, Paragraph, useTheme, ActivityIndicator } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons'; // Import the icon library
 import { theme } from '../styles/theme';
+import { AuthContext } from '../context/AuthContext';
 import RequestBookingModal from '../components/RequestBookingModal';
 import { createBooking, BOOKING_STATES, mockConversations, mockMessages, CURRENT_USER_ID } from '../data/mockData';
 import { format } from 'date-fns';
@@ -505,7 +506,7 @@ const MessageHistory = ({ navigation, route }) => {
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const IS_CLIENT = false; // This should come from your auth context
-
+  const { is_DEBUG } = useContext(AuthContext);
   // Use mockConversations instead of local state
   const [conversations, setConversations] = useState(mockConversations);
 
@@ -522,9 +523,11 @@ const MessageHistory = ({ navigation, route }) => {
       if (conversation) {
         // Get messages for this conversation from mockData
         const conversationMessages = mockMessages[selectedConversation] || [];
-        console.log('Selected conversation:', selectedConversation);
-        console.log('Available messages:', mockMessages);
-        console.log('Loading messages:', conversationMessages);
+        if (is_DEBUG) {
+          console.log('Selected conversation:', selectedConversation);
+          console.log('Available messages:', mockMessages);
+          console.log('Loading messages:', conversationMessages);
+        }
         
         setMessages(conversationMessages);
         setSelectedConversationData(conversation);

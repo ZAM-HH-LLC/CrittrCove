@@ -412,30 +412,29 @@ export const mockClients = [
 
 // Availability Tab
 export const fetchAvailabilityData = () => {
-  console.log("fetchAvailabilityData");
   return new Promise((resolve) => {
     // to get the bookings, we need to fetch the booking table on backend
     // to get available/unavailable dates we need to fetch the availability table on backend
     setTimeout(() => {
       resolve({
         availableDates: {
-          '2025-01-01': { startTime: '09:00', endTime: '17:00' },
-          '2025-01-02': { startTime: '10:00', endTime: '18:00' },
-          '2025-01-03': { startTime: '09:00', endTime: '17:00' },
+          '2025-02-01': { startTime: '09:00', endTime: '17:00' },
+          '2025-02-02': { startTime: '10:00', endTime: '18:00' },
+          '2025-02-03': { startTime: '09:00', endTime: '17:00' },
         },
         unavailableDates: {
-          '2025-01-04': { startTime: '00:00', endTime: '24:00' },
-          '2025-01-05': { startTime: '10:00', endTime: '18:00' },
+          '2025-02-04': { startTime: '00:00', endTime: '24:00' },
+          '2025-02-05': { startTime: '10:00', endTime: '18:00' },
         },
         bookings: {
-          '2025-01-06': [
-            { id: 'bk1', startTime: '14:00', endTime: '16:00', client_name: 'Charlie' },
-            { id: 'bk2', startTime: '16:00', endTime: '18:00', client_name: 'Bob' },
-            { id: 'bk3', startTime: '18:00', endTime: '20:00', client_name: 'Nick' },
-            { id: 'bk4', startTime: '20:00', endTime: '22:00', client_name: 'Alfred' }
+          '2025-02-06': [
+            { id: 'bk1', startTime: '14:00', endTime: '16:00', client_name: 'Charlie', service_type: 'Dog Walking' },
+            { id: 'bk2', startTime: '16:00', endTime: '18:00', client_name: 'Bob', service_type: 'Dog Walking' },
+            { id: 'bk3', startTime: '18:00', endTime: '20:00', client_name: 'Nick', service_type: 'Pet Boarding' },
+            { id: 'bk4', startTime: '20:00', endTime: '22:00', client_name: 'Alfred', service_type: 'Drop-In Visits (30 min)' }
           ],
-          '2025-01-07': [
-            { id: 'bk5', startTime: '10:00', endTime: '12:00', client_name: 'Uhtred' }
+          '2025-02-07': [
+            { id: 'bk5', startTime: '10:00', endTime: '12:00', client_name: 'Uhtred', service_type: 'Dog Walking' }
           ],
         },
       });
@@ -701,10 +700,7 @@ export const createBooking = async (clientId, freelancerId, initialData = {}) =>
 
 // Update fetchBookingDetails with better logging
 export const fetchBookingDetails = async (bookingId) => {
-  console.log('Fetching booking details:', {
-    requestedId: bookingId,
-    availableBookings: Object.keys(mockBookingDetails)
-  });
+  console.log('Fetching booking details');
   
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 1000));

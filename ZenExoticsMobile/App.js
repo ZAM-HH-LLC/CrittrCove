@@ -177,7 +177,7 @@ function TabNavigator() {
 }
 
 function AppContent() {
-  const { checkAuthStatus } = useContext(AuthContext);
+  const { checkAuthStatus, is_DEBUG } = useContext(AuthContext);
   const [initialRoute, setInitialRoute] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -190,7 +190,9 @@ function AppContent() {
         let route = 'Home'; // Default route
 
         if (authStatus.isSignedIn) {
-          console.log('Auth status on init:', authStatus);
+          if (is_DEBUG) {
+            console.log('Auth status on init:', authStatus);
+          }
           route = authStatus.userRole === 'professional' && authStatus.isApprovedProfessional
             ? 'ProfessionalDashboard'
             : 'Dashboard';

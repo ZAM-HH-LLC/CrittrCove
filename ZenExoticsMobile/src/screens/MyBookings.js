@@ -15,7 +15,7 @@ import { API_BASE_URL } from '../config/config';
 
 const MyBookings = () => {
   const navigation = useNavigation();
-  const { is_prototype, isApprovedProfessional, userRole } = useContext(AuthContext);
+  const { is_prototype, isApprovedProfessional, userRole, is_DEBUG } = useContext(AuthContext);
   const [activeTab, setActiveTab] = useState(userRole === 'professional' ? 'professional' : 'client');
   const [searchQuery, setSearchQuery] = useState('');
   const [bookings, setBookings] = useState([]);
@@ -34,11 +34,13 @@ const MyBookings = () => {
     setError(null);
     try {
       if (is_prototype) {
-        console.log('Fetching mock bookings:', {
-          isApprovedProfessional,
-          userRole,
-          activeTab
-        });
+        if (is_DEBUG) {
+          console.log('Fetching mock bookings:', {
+            isApprovedProfessional,
+            userRole,
+            activeTab
+          });
+        }
         
         // In prototype mode, use mock data
         if (activeTab === 'professional' && isApprovedProfessional) {
@@ -53,11 +55,13 @@ const MyBookings = () => {
           throw new Error('No authentication token found');
         }
 
-        console.log('Fetching real bookings:', {
-          isApprovedProfessional,
-          userRole,
-          activeTab
-        });
+        if (is_DEBUG) {
+          console.log('Fetching real bookings:', {
+            isApprovedProfessional,
+            userRole,
+            activeTab
+          });
+        }
 
         const response = await axios.get(
           `${API_BASE_URL}/api/bookings/v1/`,
@@ -80,12 +84,14 @@ const MyBookings = () => {
 
   // Fetch bookings when component mounts or when dependencies change
   useEffect(() => {
-    console.log('Fetching bookings due to dependency change:', {
-      activeTab,
-      userRole,
-      isApprovedProfessional,
-      is_prototype
-    });
+    if (is_DEBUG) {
+      console.log('Fetching bookings due to dependency change:', {
+        activeTab,
+        userRole,
+        isApprovedProfessional,
+        is_prototype
+      });
+    }
     fetchBookings();
   }, [activeTab, userRole, isApprovedProfessional, is_prototype]);
 
@@ -117,10 +123,12 @@ const MyBookings = () => {
   };
 
   const handleViewDetails = (booking) => {
-    console.log('Navigating to booking details:', {
-      bookingId: booking.booking_id || booking.id,
-      isProfessional: activeTab === 'professional'
-    });
+    if (is_DEBUG) {
+      console.log('Navigating to booking details:', {
+        bookingId: booking.booking_id || booking.id,
+        isProfessional: activeTab === 'professional'
+      });
+    }
     
     navigation.navigate('BookingDetails', {
       bookingId: booking.booking_id || booking.id,
@@ -130,7 +138,9 @@ const MyBookings = () => {
 
   const handleCancelBooking = async (bookingId) => {
     // Implement booking cancellation logic
-    console.log('Cancel booking:', bookingId);
+    if (is_DEBUG) {
+      console.log('Cancel booking:', bookingId);
+    }
   };
 
   const renderBookingCard = ({ item }) => (
@@ -249,7 +259,7 @@ const MyBookings = () => {
         <FlatList
           data={bookings}
           renderItem={renderBookingCard}
-          keyExtractor={item => item.booking_id?.toString()}
+          keyExtractor={item => (item.booking_id || item.id || Math.random().toString()).toString()}
           contentContainerStyle={styles.listContainer}
         />
         ) : (

@@ -9,7 +9,10 @@ import { theme } from '../styles/theme';
 import AddAvailabilityModal from '../components/AddAvailabilityModal';
 import DefaultSettingsModal from '../components/DefaultSettingsModal';
 import { format, parse } from 'date-fns';
-import { SERVICE_TYPES, fetchAvailabilityData } from '../data/mockData';
+import { SERVICE_TYPES, fetchAvailabilityData, ALL_SERVICES } from '../data/mockData';
+import AvailabilityBottomSheet from '../components/AvailabilityBottomSheet';
+import UnavailableTimesModal from '../components/UnavailableTimesModal';
+import { useNavigation } from '@react-navigation/native';
 
 const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -32,6 +35,9 @@ const AvailabilitySettings = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showBottomSheet, setShowBottomSheet] = useState(false);
+  const [showUnavailableTimesModal, setShowUnavailableTimesModal] = useState(false);
+  const navigation = useNavigation();
 
   useEffect(() => {
     const loadAvailabilityData = async () => {
@@ -160,20 +166,39 @@ const AvailabilitySettings = () => {
 
   const onDayPress = (day) => {
     const { dateString } = day;
-    if (selectedDates.length === 0 || selectedDates.length === 2) {
-      setSelectedDates([dateString]);
-    } else if (selectedDates.length === 1) {
-      const start = moment(selectedDates[0]);
-      const end = moment(dateString);
-      const range = [];
-      let current = start.clone();
+    const selectedDate = new Date(dateString);
+    selectedDate.setDate(selectedDate.getDate() + 1); // Adjust for timezone offset
+    selectedDate.setHours(0, 0, 0, 0);
+  
 
-      while (current.isSameOrBefore(end)) {
-        range.push(current.format('YYYY-MM-DD'));
-        current.add(1, 'days');
+    if (selectedDates.length === 0) {
+      setSelectedDates([dateString]);
+      setShowBottomSheet(true);
+    } else if (selectedDates.length >= 1) {
+      const firstDate = new Date(selectedDates[0]);
+      firstDate.setDate(firstDate.getDate() + 1); // Adjust for timezone offset
+      firstDate.setHours(0, 0, 0, 0);    
+
+      if (selectedDate.getTime() === firstDate.getTime()) {
+        return;
       }
+
+      if (selectedDate < firstDate) {
+        setSelectedDates([dateString]);
+        setShowBottomSheet(true);
+        return;
+      }
+
+      const range = [];
+      const currentDate = new Date(firstDate);
+      const endDate = new Date(selectedDate);
+
+      while (currentDate <= endDate) {
+        range.push(format(currentDate, 'yyyy-MM-dd'));
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+    
       setSelectedDates(range);
-      setIsAddModalVisible(true);
     }
   };
 
@@ -182,94 +207,50 @@ const AvailabilitySettings = () => {
     const newCurrentAvailability = { ...currentAvailability };
 
     availabilityData.dates.forEach(date => {
-      if (availabilityData.isAvailable) {
-        // If marking as available, remove the specific time slot
-        if (!availabilityData.isAllDay && availabilityData.timeToRemove) {
-          const currentTimes = newCurrentAvailability[date]?.unavailableTimes || [];
-          newCurrentAvailability[date] = {
-            isAvailable: true,
-            unavailableTimes: currentTimes.filter(time => 
-              time.startTime !== availabilityData.timeToRemove.startTime || 
-              time.endTime !== availabilityData.timeToRemove.endTime
-            )
-          };
+      const allServicesSelected = availabilityData.serviceTypes.includes(ALL_SERVICES) || 
+                                 availabilityData.serviceTypes.length === SERVICE_TYPES.length - 1;
 
-          // Update calendar marker based on remaining unavailable times
-          if (newCurrentAvailability[date].unavailableTimes.length === 0) {
-            newMarkedDates[date] = {
-              customStyles: {
-                container: { backgroundColor: 'white' },
-                text: { color: 'black' }
-              }
-            };
-          } else {
-            newMarkedDates[date] = {
-              customStyles: {
-                container: { backgroundColor: theme.colors.calendarColor },
-                text: { color: 'white' }
-              }
-            };
-          }
-        } else {
-          // Handle all-day available
-          newCurrentAvailability[date] = {
-            isAvailable: true,
-            unavailableTimes: []
-          };
-          newMarkedDates[date] = {
-            customStyles: {
-              container: { backgroundColor: 'white' },
-              text: { color: 'black' }
-            }
-          };
-        }
-      } else {
-        // Handle marking as unavailable
-        if (!availabilityData.isAllDay) {
-          const newUnavailableTime = {
+      if (!availabilityData.isAvailable) {
+        newCurrentAvailability[date] = {
+          isAvailable: false,
+          unavailableTimes: [{
             startTime: availabilityData.startTime,
             endTime: availabilityData.endTime,
             reason: availabilityData.reason
-          };
+          }]
+        };
 
-          newCurrentAvailability[date] = {
-            isAvailable: true,
-            unavailableTimes: [
-              ...(newCurrentAvailability[date]?.unavailableTimes || []),
-              newUnavailableTime
-            ]
-          };
-
-          newMarkedDates[date] = {
-            customStyles: {
-              container: { backgroundColor: theme.colors.calendarColor },
-              text: { color: 'white' }
-            }
-          };
-        } else {
-          // Handle all-day unavailable
-          const selectedServicesCount = availabilityData.serviceTypes?.length || 0;
-          const isAllServicesSelected = selectedServicesCount === (SERVICE_TYPES.length - 1); // -1 for "All Services" option
-
-          newCurrentAvailability[date] = {
-            isAvailable: false,
-            unavailableTimes: [{
-              startTime: '00:00',
-              endTime: '24:00',
-              reason: availabilityData.reason
-            }]
-          };
-
-          // Only mark as fully unavailable if ALL services are selected
-          newMarkedDates[date] = {
-            customStyles: {
-              container: { 
-                backgroundColor: isAllServicesSelected ? 'lightgrey' : theme.colors.calendarColor 
-              },
-              text: { color: 'white' }
-            }
-          };
-        }
+        newMarkedDates[date] = {
+          customStyles: {
+            container: {
+              backgroundColor: availabilityData.isAllDay && allServicesSelected ? 'lightgrey' : theme.colors.calendarColor,
+              width: 35,
+              height: 35,
+              borderRadius: 17.5,
+              alignItems: 'center',
+              justifyContent: 'center'
+            },
+            text: { color: 'white' }
+          }
+        };
+      } else {
+        newCurrentAvailability[date] = {
+          isAvailable: true,
+          unavailableTimes: []
+        };
+        newMarkedDates[date] = {
+          customStyles: {
+            container: { 
+              backgroundColor: 'white',
+              width: 35,
+              height: 35,
+              borderRadius: 17.5,
+              alignItems: 'center',
+              justifyContent: 'center'
+            },
+            text: { color: 'black' }
+          }
+        };
       }
     });
 
@@ -387,19 +368,21 @@ const AvailabilitySettings = () => {
     setIsSettingsModalVisible(false);
   };
 
-  // TODO: implement this with the backend data so we can save to the backend.
-  // const handleSaveAvailability = (data) => {
-  //   if (data.isRemoval) {
-  //     // Just update the availability directly
-  //     setCurrentAvailability(prev => ({
-  //       ...prev,
-  //       ...data.updatedAvailability
-  //     }));
-  //     return;
-  //   }
-
-  //   // ... rest of your existing save logic ...
-  // };
+  const handleSaveAvailability = (data) => {
+    const { startTime, endTime, services, isAvailable } = data;
+    const isAllDay = startTime === '00:00' && endTime === '24:00';
+    handleAddAvailability({
+      dates: selectedDates,
+      isAllDay,
+      startTime,
+      endTime,
+      isUnavailable: !isAvailable,
+      serviceTypes: services,
+      reason: `Unavailable for: ${services.join(', ')}`,
+    });
+    setShowBottomSheet(false);
+    setSelectedDates([]);
+  };
 
   // TODO: make this actually remove the timeslot on the backend
   const handleRemoveTimeSlot = (date, timeSlot, updatedAvailability, selectedDates) => {
@@ -456,6 +439,15 @@ const AvailabilitySettings = () => {
     }
   };
 
+  const handleViewBookings = () => {
+    if (selectedDates.length > 0) {
+      navigation.navigate('MyBookings', {
+        selectedDates,
+        initialTab: 'Upcoming'
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -487,136 +479,180 @@ const AvailabilitySettings = () => {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Availability</Text>
-        <TouchableOpacity 
-          style={styles.defaultSettingsButton} 
-          onPress={() => setIsSettingsModalVisible(true)}
+    <View style={styles.mainContainer}>
+      <SafeAreaView style={styles.container}>
+        <ScrollView 
+          style={styles.scrollView} 
+          contentContainerStyle={styles.scrollContent}
         >
-          <Text style={styles.defaultSettingsText}>Default Settings</Text>
-          <IconComponent 
-            name={Platform.OS === 'web' ? 'cog' : 'settings-outline'} 
-            size={24} 
-            color={theme.colors.text} 
-          />
-        </TouchableOpacity>
-      </View>
+          <View style={styles.centeredContainer}>
+            <View style={styles.header}>
+              <Text style={styles.title}>Availability</Text>
+              <TouchableOpacity 
+                style={styles.defaultSettingsButton} 
+                onPress={() => setIsSettingsModalVisible(true)}
+              >
+                <Text style={styles.defaultSettingsText}>Default Settings</Text>
+                <IconComponent 
+                  name={Platform.OS === 'web' ? 'cog' : 'settings-outline'} 
+                  size={24} 
+                  color={theme.colors.text} 
+                />
+              </TouchableOpacity>
+            </View>
 
-      {/* TODO: make the calendar look more user friendly */}
-      <Calendar
-        markedDates={{
-          ...markedDates,
-          ...selectedDates.reduce((acc, date, index) => {
-            const isFirstDate = index === 0;
-            const isLastDate = index === selectedDates.length - 1;
-            const isMiddleDate = !isFirstDate && !isLastDate;
-            
-            return {
-              ...acc,
-              [date]: {
-                ...markedDates[date],
-                selected: true,
-                customStyles: {
-                  container: {
-                    backgroundColor: theme.colors.primary,
-                    width: '100%',  // Take full width
-                    // height: 40,     // Fixed height
-                    marginHorizontal: 0,
+            {/* TODO: make the calendar look more user friendly */}
+            <Calendar
+              markedDates={{
+                ...markedDates,
+                ...selectedDates.reduce((acc, date) => ({
+                  ...acc,
+                  [date]: {
+                    ...markedDates[date],
+                    selected: true,
+                    customStyles: {
+                      container: {
+                        backgroundColor: theme.colors.primary,
+                        width: selectedDates.length === 1 ? 35 : '100%',
+                        height: 35,
+                        borderRadius: selectedDates.length === 1 ? 17.5 : 0,
+                        ...(selectedDates.length > 1 && {
+                          borderRadius: 0,
+                          ...(date === selectedDates[0] && {
+                            borderTopLeftRadius: 17.5,
+                            borderBottomLeftRadius: 17.5,
+                          }),
+                          ...(date === selectedDates[selectedDates.length - 1] && {
+                            borderTopRightRadius: 17.5,
+                            borderBottomRightRadius: 17.5,
+                          }),
+                        }),
+                      },
+                      text: { 
+                        color: 'white',
+                        fontWeight: 'bold',
+                      }
+                    }
+                  }
+                }), {})
+              }}
+              markingType={'custom'}
+              theme={{
+                'stylesheet.calendar.main': {
+                  week: {
                     marginVertical: 0,
-                    borderRadius: 0,  // Remove border radius for middle dates
-                    ...(isFirstDate && {
-                      borderTopLeftRadius: 20,
-                      borderBottomLeftRadius: 20,
-                    }),
-                    ...(isLastDate && {
-                      borderTopRightRadius: 20,
-                      borderBottomRightRadius: 20,
-                    }),
+                    flexDirection: 'row',
+                    justifyContent: 'space-around',
                   },
-                  text: { 
-                    color: 'white',
-                    fontWeight: 'bold',
+                  dayContainer: {
+                    flex: 1,
+                    alignItems: 'center',
+                    padding: 0,
+                    margin: 0,
+                  }
+                },
+                'stylesheet.calendar.header': {
+                  header: {
+                    paddingLeft: 10,
+                    paddingRight: 10,
+                    paddingBottom: 20,
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
                   }
                 }
-              }
-            };
-          }, {})
-        }}
-        markingType={'custom'}
-        theme={{
-          'stylesheet.calendar.main': {
-            week: {
-              marginVertical: 0,
-              flexDirection: 'row',
-              justifyContent: 'space-around',
-            },
-            dayContainer: {
-              flex: 1,
-              alignItems: 'center',
-              padding: 0,
-              margin: 0,
-            }
-          }
-        }}
-        onDayPress={onDayPress}
-        renderArrow={renderArrow}
-      />
+              }}
+              style={{
+                paddingBottom: 20,
+                paddingLeft: 10,
+                paddingRight: 10
+              }}
+              onDayPress={onDayPress}
+              renderArrow={renderArrow}
+            />
 
-      {/* Color Code Key */}
-      <View style={styles.colorKeyContainer}>
-        <Text style={styles.colorKeyTitle}>Color Code Key:</Text>
-        <View style={styles.colorKeyItem}>
-          <View style={[styles.colorBox, { backgroundColor: 'lightgrey' }]} />
-          <Text style={styles.colorKeyText}>Unavailable All Day</Text>
-        </View>
-        <View style={styles.colorKeyItem}>
-          <View style={[styles.colorBox, { backgroundColor: theme.colors.calendarColor }]} />
-          <Text style={styles.colorKeyText}>Partially Unavailable</Text>
-        </View>
-        <View style={styles.colorKeyItem}>
-          <View style={[styles.colorBox, { backgroundColor: theme.colors.calendarColorYellowBrown }]} />
-          <Text style={styles.colorKeyText}>Booked Dates</Text>
-        </View>
-        <View style={styles.colorKeyItem}>
-          <View style={[styles.colorBox, { backgroundColor: theme.colors.primary }]} />
-          <Text style={styles.colorKeyText}>Current Selection</Text>
-        </View>
-      </View>
+            {/* Color Code Key */}
+            <View style={styles.colorKeyContainer}>
+              <Text style={styles.colorKeyTitle}>Color Code Key:</Text>
+              <View style={styles.colorKeyItem}>
+                <View style={[styles.colorBox, { backgroundColor: 'lightgrey' }]} />
+                <Text style={styles.colorKeyText}>Unavailable All Day</Text>
+              </View>
+              <View style={styles.colorKeyItem}>
+                <View style={[styles.colorBox, { backgroundColor: theme.colors.calendarColor }]} />
+                <Text style={styles.colorKeyText}>Partially Unavailable</Text>
+              </View>
+              <View style={styles.colorKeyItem}>
+                <View style={[styles.colorBox, { backgroundColor: theme.colors.calendarColorYellowBrown }]} />
+                <Text style={styles.colorKeyText}>Booked Dates</Text>
+              </View>
+            </View>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
 
-        {/* Removed this because we don't want or need the add button */}
-      {/* <TouchableOpacity 
-        style={styles.addButton} 
-        onPress={() => setIsAddModalVisible(true)}
-      >
-        <IconComponent name={Platform.OS === 'web' ? 'plus' : 'add'} size={24} color="white" />
-      </TouchableOpacity> */}
-      <AddAvailabilityModal
-        isVisible={isAddModalVisible}
-        onClose={() => {
-          setIsAddModalVisible(false);
-          setSelectedDates([]);
-        }}
-        onSave={handleAddAvailability}
+      {showBottomSheet && (
+        <View style={styles.bottomSheetOverlay}>
+          <AvailabilityBottomSheet
+            selectedDates={selectedDates}
+            currentAvailability={currentAvailability}
+            onClose={() => {
+              setShowBottomSheet(false);
+              setSelectedDates([]);
+            }}
+            onViewUnavailableTimes={() => {
+              setShowUnavailableTimesModal(true);
+            }}
+            onSave={handleSaveAvailability}
+            onViewBookings={handleViewBookings}
+          />
+        </View>
+      )}
+
+      <UnavailableTimesModal
+        visible={showUnavailableTimesModal}
+        onClose={() => setShowUnavailableTimesModal(false)}
         selectedDates={selectedDates}
         currentAvailability={currentAvailability}
-        bookings={bookings}
         onRemoveTimeSlot={handleRemoveTimeSlot}
+        bookings={bookings}
       />
+
       <DefaultSettingsModal
         isVisible={isSettingsModalVisible}
         onClose={() => setIsSettingsModalVisible(false)}
         onSave={handleDefaultSettingsSave}
         defaultSettings={defaultSettings}
       />
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  mainContainer: {
     flex: 1,
     backgroundColor: theme.colors.background,
+  },
+  container: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  bottomSheetOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
+  centeredContainer: {
+    maxWidth: 1000,
+    width: '100%',
+    alignSelf: 'center',
+    flex: 1,
   },
   header: {
     flexDirection: 'row',

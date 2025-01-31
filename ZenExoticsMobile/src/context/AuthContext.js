@@ -4,6 +4,7 @@ import axios from 'axios';
 import { API_BASE_URL } from '../config/config';
 import { Dimensions, Platform } from 'react-native';
 import { navigate } from '../../App';
+import { initStripe } from '../utils/StripeService';
 
 export const SCREEN_WIDTH = Dimensions.get('window').width;
 export const SCREEN_HEIGHT = Dimensions.get('window').height;
@@ -20,6 +21,16 @@ export const AuthProvider = ({ children }) => {
 
   // SET TO "true" FOR NO API CALLS
   const [is_prototype, setIsPrototype] = useState(true);
+
+  // Set is_DEBUG to true by default in prototype mode
+  const [is_DEBUG, setIsDebug] = useState(false);
+
+  // Preload Stripe modules when user signs in
+  useEffect(() => {
+    if (isSignedIn && !is_prototype) {
+      initStripe();
+    }
+  }, [isSignedIn, is_prototype]);
 
   // Separate screen width handling from auth
   useEffect(() => {
@@ -102,10 +113,13 @@ export const AuthProvider = ({ children }) => {
           setIsSignedIn(true);
           setUserRole(storedRole[1] || 'petOwner');
           setIsApprovedProfessional(storedApproval[1] === 'true');
-          console.log('Initial auth state set:', {
-            role: storedRole[1] || 'petOwner',
-            isApproved: storedApproval[1] === 'true'
-          });
+
+          if (is_DEBUG) {
+            console.log('Initial auth state set:', {
+              role: storedRole[1] || 'petOwner',
+              isApproved: storedApproval[1] === 'true'
+            });
+          }
         } else {
           console.log('No token found, setting to signed out state');
           setIsSignedIn(false);
@@ -116,7 +130,9 @@ export const AuthProvider = ({ children }) => {
         console.error('Error loading auth state:', error);
       } finally {
         setLoading(false);
-        console.log('Finished loadAuthState');
+        if (is_DEBUG) {
+          console.log('Finished loadAuthState');
+        }
       }
     };
 
@@ -164,7 +180,9 @@ export const AuthProvider = ({ children }) => {
         ['refreshToken', refreshTokenValue],
       ]);
 
-      console.log('MBA sign in token', token, 'refreshToken', refreshTokenValue);
+      if (is_DEBUG) {
+        console.log('MBA sign in token', token, 'refreshToken', refreshTokenValue);
+      }
       setIsSignedIn(true);
       
       if (is_prototype) {
@@ -250,7 +268,9 @@ export const AuthProvider = ({ children }) => {
     try {
       if (is_prototype) {
         // In prototype mode, always return true for token validation
-        console.log('Prototype mode: Mock token validation successful');
+        if (is_DEBUG) {
+          console.log('Prototype mode: Mock token validation successful');
+        }
         return true;
       }
 
@@ -269,7 +289,9 @@ export const AuthProvider = ({ children }) => {
     try {
       if (is_prototype) {
         // In prototype mode, return a mock token
-        console.log('Prototype mode: Returning mock refreshed token');
+        if (is_DEBUG) {
+          console.log('Prototype mode: Mock token refresh successful');
+        }
         const mockNewToken = 'mock_refreshed_token';
         await AsyncStorage.setItem('userToken', mockNewToken);
         return mockNewToken;
@@ -294,13 +316,17 @@ export const AuthProvider = ({ children }) => {
         // In prototype mode, check if we have any token (mock or real)
         const token = await AsyncStorage.getItem('userToken');
         if (!token) {
-          console.log('Prototype mode: No token found - signing out');
+          if (is_DEBUG) {
+            console.log('Prototype mode: No token found, signing out');
+          }
           await signOut();
           return { isSignedIn: false, userRole: null, isApprovedProfessional: false };
         }
 
         // In prototype mode, always consider the token valid
-        console.log('Prototype mode: Token found - staying signed in');
+        if (is_DEBUG) {
+          console.log('Prototype mode: Token found, setting signed in state');
+        }
         setIsSignedIn(true);
         const storedRole = await AsyncStorage.getItem('userRole') || 'petOwner';
         setUserRole(storedRole);
@@ -404,7 +430,9 @@ export const AuthProvider = ({ children }) => {
       await signOut();
       return { isSignedIn: false, userRole: null, isApprovedProfessional: false };
     } finally {
-      console.log('=== Ending checkAuthStatus ===');
+      if (is_DEBUG) {
+        console.log('=== Ending checkAuthStatus ===');
+      }
     }
   };
 
@@ -432,7 +460,9 @@ export const AuthProvider = ({ children }) => {
       checkAuthStatus,
       firstName,
       is_prototype,
-      setIsPrototype
+      setIsPrototype,
+      is_DEBUG,
+      setIsDebug
     }}>
       {children}
     </AuthContext.Provider>

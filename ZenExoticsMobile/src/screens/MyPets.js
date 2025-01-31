@@ -1,15 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Platform, SafeAreaView, StatusBar, Dimensions, ActivityIndicator } from 'react-native';
 import { Card, Title, Paragraph, Button } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
 import BackHeader from '../components/BackHeader';
 import { handleBack } from '../components/Navigation';
+import { AuthContext } from '../context/AuthContext';
 const { width: screenWidth } = Dimensions.get('window');
 
 const MyPets = ({ navigation }) => {
   const [pets, setPets] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { screenWidth } = useContext(AuthContext);
 
   useEffect(() => {
     fetchPets();
@@ -190,6 +192,16 @@ const MyPets = ({ navigation }) => {
     }
   };
 
+  const getCardWidth = () => {
+    if (screenWidth <= 600) {
+      return '90%';
+    } else if (screenWidth <= 800) {
+      return '60%';
+    } else {
+      return '30%';
+    }
+  };
+
   const Content = () => {
     if (loading) {
       return (
@@ -202,9 +214,10 @@ const MyPets = ({ navigation }) => {
     return (
       <ScrollView contentContainerStyle={[
         styles.scrollContent,
-        Platform.OS === 'web' && { alignItems: 'center' }
+        Platform.OS === 'web' && { alignItems: 'center' },
+        { marginBottom: 15 }
       ]}>
-        <View style={styles.contentWrapper}>
+        <View style={[styles.contentWrapper, { width: getCardWidth() }]}>
           {pets.map(pet => (
             <PetCard key={pet.id} pet={pet} />
           ))}
@@ -266,9 +279,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   contentWrapper: {
-    width: Platform.OS === 'web'
-      ? (screenWidth > 600 ? '30%' : '90%')
-      : '100%',
+    alignSelf: 'center',
   },
   title: {
     fontSize: theme.fontSizes.large,
@@ -277,6 +288,7 @@ const styles = StyleSheet.create({
   },
   petCard: {
     marginBottom: 16,
+    transform: [{ scale: Platform.OS === 'web' ? (screenWidth <= 800 && screenWidth > 600 ? 1.15 : 1) : 1 }],
   },
   petCardContent: {
     flexDirection: 'row',
@@ -302,7 +314,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   addButton: {
-    marginTop: 16,
+    marginTop: 5,
     alignSelf: 'center',
   },
   loadingContainer: {

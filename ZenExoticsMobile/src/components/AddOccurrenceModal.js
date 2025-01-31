@@ -73,13 +73,6 @@ const AddOccurrenceModal = ({
   isEditing = false,
   modalTitle = 'Add New Occurrence'
 }) => {
-  console.log('AddOccurrenceModal props:', {
-    visible,
-    defaultRates,
-    hideRates,
-    initialOccurrence,
-    isEditing
-  });
 
   // Helper function to create a Date object from a time string
   const createTimeDate = (timeStr) => {
@@ -92,7 +85,7 @@ const AddOccurrenceModal = ({
   };
 
   const [occurrence, setOccurrence] = useState(() => {
-    console.log('Initializing occurrence state with:', initialOccurrence);
+    
     
     if (initialOccurrence) {
       const initialState = {
@@ -115,7 +108,7 @@ const AddOccurrenceModal = ({
         totalCost: initialOccurrence.totalCost || '0',
         baseTotal: initialOccurrence.baseTotal || '0'
       };
-      console.log('Created initial state:', initialState);
+      
       return initialState;
     }
 
@@ -133,7 +126,7 @@ const AddOccurrenceModal = ({
         additionalRates: defaultRates?.additionalRates || []
       }
     };
-    console.log('Created default state:', defaultState);
+    
     return defaultState;
   });
 

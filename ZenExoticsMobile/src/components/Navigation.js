@@ -45,7 +45,7 @@ export default function Navigation({ navigation }) {
   const [visible, setVisible] = useState(false);
   const [isMobile, setIsMobile] = useState(Dimensions.get('window').width < 900);
   const { colors } = useTheme();
-  const { isSignedIn, setIsSignedIn, isApprovedProfessional, userRole, signOut } = useContext(AuthContext);
+  const { isSignedIn, is_DEBUG, userRole } = useContext(AuthContext);
 
   const openMenu = () => setVisible(true);
   const closeMenu = () => setVisible(false);
@@ -66,7 +66,9 @@ export default function Navigation({ navigation }) {
 
   const handleNavigation = async (screenName) => {
     closeMenu();
-    console.log('Screen name:', screenName);
+    if (is_DEBUG) {
+      console.log('Screen name:', screenName);
+    }
     try {
       if (Platform.OS === 'web') {
         // Web: Use sessionStorage

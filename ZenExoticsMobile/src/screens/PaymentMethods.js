@@ -7,6 +7,7 @@ import { theme } from '../styles/theme';
 import BackHeader from '../components/BackHeader';
 import { useNavigation } from '@react-navigation/native'; 
 import CrossPlatformView from '../components/CrossPlatformView';
+import STRIPE_PUBLISHABLE_KEY from '../../.env';
 import axios from 'axios';
 import { createPaymentMethod } from '../utils/StripeService';
 import { StripeCardElement } from '../components/StripeCardElement';
@@ -18,12 +19,11 @@ const MAX_WIDTH = 500; // Maximum width for web view
 
 const PaymentMethods = () => {
   const navigation = useNavigation();
-  const [activeTab, setActiveTab] = useState('pay');
-  const [receivePaymentMethods, setReceivePaymentMethods] = useState([]);
-  const [payForServicesMethods, setPayForServicesMethods] = useState([]);
+  const [paymentMethods, setPaymentMethods] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [confirmPrimaryDialogVisible, setConfirmPrimaryDialogVisible] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState(null);
+  const [primaryAction, setPrimaryAction] = useState(null); // 'payment' or 'receive'
   const [newPaymentMethod, setNewPaymentMethod] = useState({
     type: 'card',
     cardNumber: '',
@@ -32,13 +32,13 @@ const PaymentMethods = () => {
     accountNumber: '',
     routingNumber: '',
   });
-  const { isApprovedProfessional } = useContext(AuthContext);
+  const { isApprovedProfessional, is_prototype, is_DEBUG } = useContext(AuthContext);
   const [isConfirming, setIsConfirming] = useState(false);
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
   const [methodToDelete, setMethodToDelete] = useState(null);
   const [deleteError, setDeleteError] = useState(null);
   const stripe = Platform.OS !== 'web' ? stripeModule()?.useStripe() : null;
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [cardComplete, setCardComplete] = useState(false);
   const [cardElement, setCardElement] = useState(null);
@@ -53,21 +53,78 @@ const PaymentMethods = () => {
     second: ''
   });
   const [verifyingMethod, setVerifyingMethod] = useState(null);
+  const [modalLoading, setModalLoading] = useState(false);
 
   useEffect(() => {
     // Fetch payment methods from backend
     // This is a placeholder. Replace with actual API calls.
-    setReceivePaymentMethods([
-      { id: '1', type: 'bank', accountNumber: '****1234', routingNumber: '123456789', isPrimary: true, is_verified: true },
-      { id: '2', type: 'bank', accountNumber: '****5678', routingNumber: '987654321', isPrimary: false, is_verified: true },
-    ]);
-    setPayForServicesMethods([
-      { id: '1', type: 'card', last4: '4242', brand: 'Visa', isPrimary: true, is_verified: true },
-      { id: '2', type: 'bank', accountNumber: '****9012', routingNumber: '123456789', isPrimary: false, is_verified: true },
+    setPaymentMethods([
+      { 
+        id: '1', 
+        type: 'bank', 
+        accountNumber: '****1234', 
+        routingNumber: '123456789', 
+        isPrimaryPayment: true,
+        isPrimaryReceive: true,
+        is_verified: true 
+      },
+      { 
+        id: '2', 
+        type: 'card', 
+        last4: '4242', 
+        brand: 'Visa', 
+        isPrimaryPayment: false,
+        isPrimaryReceive: false,
+        is_verified: true 
+      },
+      { 
+        id: '3', 
+        type: 'bank', 
+        accountNumber: '****5678', 
+        routingNumber: '987654321', 
+        isPrimaryPayment: false,
+        isPrimaryReceive: false,
+        is_verified: true 
+      }
     ]);
   }, []);
 
-  const renderPaymentMethod = (method, isReceivePayment) => (
+  // Check if Stripe is ready
+  useEffect(() => {
+    if (!is_prototype && Platform.OS === 'web') {
+      console.log('Stripe loading started');
+      setLoading(true);
+      const checkStripeReady = async () => {
+        try {
+          const stripe = await import('@stripe/stripe-js');
+          const stripeReact = await import('@stripe/react-stripe-js');
+          if (stripe && stripeReact) {
+            console.log('Stripe modules loaded');
+            setLoading(false);
+          }
+        } catch (error) {
+          console.error('Error loading Stripe modules:', error);
+          setLoading(false);
+        }
+      };
+      checkStripeReady();
+    } else {
+      setLoading(false);
+    }
+  }, [is_prototype]);
+
+  if (loading) {
+    if (is_DEBUG) {
+      console.log('Loading indicator should be visible');
+    }
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      </View>
+    );
+  }
+
+  const renderPaymentMethod = (method) => (
     <Card key={method.id} style={styles.card}>
       <Card.Content>
         <View style={styles.cardContent}>
@@ -78,7 +135,6 @@ const PaymentMethods = () => {
                 : `Bank Account ${method.accountNumber || '•••• undefined'}`}
             </Text>
             {method.bankName && <Text style={styles.bankName}>{method.bankName}</Text>}
-            {method.isPrimary && <Text style={styles.primaryLabel}>Primary</Text>}
             {!method.is_verified && (
               <Text style={styles.verificationNeeded}>
                 {method.type === 'card' 
@@ -100,33 +156,63 @@ const PaymentMethods = () => {
               <>
                 <IconButton
                   icon={() => <MaterialCommunityIcons name="pencil" size={20} color={theme.colors.primary} />}
-                  onPress={() => handleEditMethod(method, isReceivePayment)}
+                  onPress={() => handleEditMethod(method)}
                 />
                 <IconButton
                   icon={() => <MaterialCommunityIcons name="delete" size={20} color={theme.colors.error} />}
-                  onPress={() => handleDeleteMethod(method, isReceivePayment)}
+                  onPress={() => handleDeleteMethod(method)}
                 />
               </>
             )}
           </View>
         </View>
-        {!method.isPrimary && method.is_verified && (
-          <Button 
-            onPress={() => handleSetPrimary(method.id, isReceivePayment)}
-            style={styles.setPrimaryButton}
-          >
-            Set as Primary
-          </Button>
+        {method.is_verified && (
+          <View style={styles.primaryOptionsContainer}>
+            <View style={styles.checkboxRow}>
+              <IconButton
+                icon={() => (
+                  <MaterialCommunityIcons 
+                    name={method.isPrimaryPayment ? "checkbox-marked" : "checkbox-blank-outline"} 
+                    size={24} 
+                    color={theme.colors.primary}
+                  />
+                )}
+                onPress={() => handleSetPrimary(method.id, 'payment')}
+                style={styles.checkbox}
+              />
+              <Text style={styles.checkboxLabel}>
+                {method.isPrimaryPayment ? "Primary Payment Method" : "Make Primary Payment Method"}
+              </Text>
+            </View>
+            {(method.type === 'bank' && isApprovedProfessional) && (
+              <View style={styles.checkboxRow}>
+                <IconButton
+                  icon={() => (
+                    <MaterialCommunityIcons 
+                      name={method.isPrimaryReceive ? "checkbox-marked" : "checkbox-blank-outline"} 
+                      size={24} 
+                      color={theme.colors.primary}
+                    />
+                  )}
+                  onPress={() => handleSetPrimary(method.id, 'receive')}
+                  style={styles.checkbox}
+                />
+                <Text style={styles.checkboxLabel}>
+                  {method.isPrimaryReceive ? "Primary Receive Method" : "Make Primary Receive Method"}
+                </Text>
+              </View>
+            )}
+          </View>
         )}
       </Card.Content>
     </Card>
   );
 
-  const handleAddMethod = async (isReceivePayment) => {
+  const handleAddMethod = async () => {
     setError(null);
-    setSelectedMethod({ isReceivePayment });
+    setSelectedMethod(null);
     setNewPaymentMethod({
-      type: isReceivePayment ? 'bank' : 'card',
+      type: 'card',
       cardNumber: '',
       expiryDate: '',
       cvc: '',
@@ -134,11 +220,58 @@ const PaymentMethods = () => {
       routingNumber: '',
     });
     setModalVisible(true);
+    if (is_DEBUG) {
+      console.log('MBA: Setting modalLoading to true');
+    }
+    setModalLoading(true);
+
+    if (!is_prototype && Platform.OS === 'web') {
+      if (is_DEBUG) {
+        console.log('MBA: Initializing Stripe elements for web');
+      }
+      if (!cardElement || !cardElement.stripe || !cardElement.elements) {
+        if (is_DEBUG) {
+          console.log('MBA: Stripe elements not initialized, setting up now');
+        }
+        try {
+          const { loadStripe } = await import('@stripe/stripe-js');
+          const stripe = await loadStripe(STRIPE_PUBLISHABLE_KEY);
+          if (stripe) {
+            if (is_DEBUG) {
+              console.log('MBA: Stripe loaded successfully');
+            }
+            const elements = stripe.elements();
+            setCardElement({
+              stripe,
+              elements,
+              complete: false,
+              paymentType: 'card',
+              value: {}
+            });
+          }
+        } catch (error) {
+          if (is_DEBUG) {
+            console.error('MBA: Error initializing Stripe elements:', error);
+          }
+        }
+      } else {
+        if (is_DEBUG) {
+          console.log('MBA: Stripe elements already initialized');
+        }
+      }
+    }
+    // Add a short delay before setting modalLoading to false
+    setTimeout(() => {
+      if (is_DEBUG) {
+        console.log('MBA: Setting modalLoading to false');
+      }
+      setModalLoading(false);
+    }, 500); // 500ms delay
   };
 
-  const handleEditMethod = (method, isReceivePayment) => {
+  const handleEditMethod = (method) => {
     setError('');
-    setSelectedMethod({ ...method, isReceivePayment });
+    setSelectedMethod({ ...method });
     setNewPaymentMethod({
       type: method.type,
       cardNumber: '',
@@ -150,14 +283,15 @@ const PaymentMethods = () => {
     setModalVisible(true);
   };
 
-  const handleDeleteMethod = (method, isReceivePayment) => {
-    setMethodToDelete({ ...method, isReceivePayment });
+  const handleDeleteMethod = (method) => {
+    setMethodToDelete({ ...method });
     setDeleteError(null);
     setDeleteDialogVisible(true);
   };
 
-  const handleSetPrimary = (id, isReceivePayment) => {
-    setSelectedMethod({ id, isReceivePayment });
+  const handleSetPrimary = (id, type) => {
+    setSelectedMethod({ id });
+    setPrimaryAction(type);
     setConfirmPrimaryDialogVisible(true);
   };
 
@@ -168,34 +302,41 @@ const PaymentMethods = () => {
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       // Update the state to reflect the change
-      if (selectedMethod.isReceivePayment) {
-        setReceivePaymentMethods(prevMethods =>
-          prevMethods.map(method => ({
-            ...method,
-            isPrimary: method.id === selectedMethod.id
-          }))
-        );
-      } else {
-        setPayForServicesMethods(prevMethods =>
-          prevMethods.map(method => ({
-            ...method,
-            isPrimary: method.id === selectedMethod.id
-          }))
-        );
-      }
+      setPaymentMethods(prevMethods =>
+        prevMethods.map(method => ({
+          ...method,
+          ...(primaryAction === 'payment' && {
+            isPrimaryPayment: method.id === selectedMethod.id
+          }),
+          ...(primaryAction === 'receive' && {
+            isPrimaryReceive: method.id === selectedMethod.id
+          })
+        }))
+      );
       
-      console.log('Primary payment method updated:', selectedMethod);
+      console.log('Primary method updated:', selectedMethod);
     } catch (error) {
-      console.error('Failed to update primary payment method:', error);
+      console.error('Failed to update primary method:', error);
     } finally {
       setIsConfirming(false);
       setConfirmPrimaryDialogVisible(false);
+      setPrimaryAction(null);
     }
   };
 
   const confirmDeleteMethod = async () => {
-    if (methodToDelete.isPrimary) {
-      setDeleteError("You can't delete the primary payment method. Please add a new payment method and set it as primary before deleting this one.");
+    if (methodToDelete.isPrimaryPayment && methodToDelete.isPrimaryReceive) {
+      setDeleteError("This payment method is set as both your primary payment and receive method. Please select another payment method for both before deleting this one.");
+      return;
+    }
+    
+    if (methodToDelete.isPrimaryPayment) {
+      setDeleteError("This is your primary payment method. Please select another payment method before deleting this one.");
+      return;
+    }
+
+    if (methodToDelete.isPrimaryReceive) {
+      setDeleteError("This is your primary receive method. Please select another receive method before deleting this one.");
       return;
     }
 
@@ -205,11 +346,7 @@ const PaymentMethods = () => {
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       // Update the state to reflect the deletion
-      if (methodToDelete.isReceivePayment) {
-        setReceivePaymentMethods(prevMethods => prevMethods.filter(method => method.id !== methodToDelete.id));
-      } else {
-        setPayForServicesMethods(prevMethods => prevMethods.filter(method => method.id !== methodToDelete.id));
-      }
+      setPaymentMethods(prevMethods => prevMethods.filter(method => method.id !== methodToDelete.id));
       
       console.log('Payment method deleted:', methodToDelete);
       setDeleteDialogVisible(false);
@@ -221,64 +358,91 @@ const PaymentMethods = () => {
     }
   };
 
-  const renderAddMethodModal = () => (
-    <Portal>
-      <Dialog visible={modalVisible} onDismiss={() => setModalVisible(false)} style={styles.dialog}>
-        <Dialog.Title>
-          {selectedMethod?.isReceivePayment ? 'Add Bank Account' : 'Add Payment Method'}
-        </Dialog.Title>
-        <IconButton
-          icon={() => <MaterialCommunityIcons name="close" size={24} color={theme.colors.text} />}
-          onPress={() => setModalVisible(false)}
-          style={styles.closeButton}
-        />
-        <Dialog.Content>
-          {!selectedMethod?.isReceivePayment && (
-            <SegmentedButtons
-              value={newPaymentMethod.type}
-              onValueChange={(value) => setNewPaymentMethod({ ...newPaymentMethod, type: value })}
-              buttons={[
-                { value: 'card', label: 'Credit Card' },
-                { value: 'bank', label: 'Bank Account' },
-              ]}
-              style={styles.segmentedButtons}
-            />
-          )}
-          <StripePaymentElement 
-            onChange={handlePaymentChange}
-            paymentType={newPaymentMethod.type}
+  const renderAddMethodModal = () => {
+    if (is_DEBUG) {
+      console.log('MBA: Rendering Add Payment Method Modal');
+      console.log('MBA: modalLoading state:', modalLoading);
+    }
+    return (
+      <Portal>
+        <Dialog visible={modalVisible} onDismiss={() => setModalVisible(false)} style={styles.dialog}>
+          <Dialog.Title>Add Payment Method</Dialog.Title>
+          <IconButton
+            icon={() => <MaterialCommunityIcons name="close" size={24} color={theme.colors.text} />}
+            onPress={() => setModalVisible(false)}
+            style={styles.closeButton}
           />
-          {error && <Text style={styles.errorText}>{error}</Text>}
-        </Dialog.Content>
-        <Dialog.Actions>
-          <Button onPress={() => setModalVisible(false)} disabled={loading}>Cancel</Button>
-          <Button 
-            onPress={handleSavePaymentMethod} 
-            disabled={loading || (newPaymentMethod.type === 'card' && !cardComplete)}
-            loading={loading}
-          >
-            Save
-          </Button>
-        </Dialog.Actions>
-      </Dialog>
-    </Portal>
-  );
+          <Dialog.Content>
+            {modalLoading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={theme.colors.primary} />
+                <Text style={styles.loadingText}>Loading...</Text>
+              </View>
+            ) : (
+              <>
+                <SegmentedButtons
+                  value={newPaymentMethod.type}
+                  onValueChange={(value) => setNewPaymentMethod({ ...newPaymentMethod, type: value })}
+                  buttons={[
+                    { value: 'card', label: 'Credit Card' },
+                    { value: 'bank', label: 'Bank Account' },
+                  ]}
+                  style={styles.segmentedButtons}
+                />
+                <StripePaymentElement 
+                  key={newPaymentMethod.type}
+                  onChange={handlePaymentChange}
+                  paymentType={newPaymentMethod.type}
+                />
+                {error && <Text style={styles.errorText}>{error}</Text>}
+              </>
+            )}
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setModalVisible(false)} disabled={loading}>Cancel</Button>
+            <Button 
+              onPress={handleSavePaymentMethod} 
+              disabled={loading || (
+                (newPaymentMethod.type === 'card' && !cardComplete) ||
+                (newPaymentMethod.type === 'bank' && (!bankAccountComplete.accountNumber || !bankAccountComplete.routingNumber))
+              )}
+              loading={loading}
+            >
+              Save
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
+    );
+  };
 
   const renderConfirmPrimaryDialog = () => (
     <Portal>
       <Dialog visible={confirmPrimaryDialogVisible} onDismiss={() => setConfirmPrimaryDialogVisible(false)} style={styles.dialog}>
-        <Dialog.Title>Confirm Primary Payment Method</Dialog.Title>
+        <Dialog.Title>
+          {primaryAction === 'receive' ? 'Confirm Primary Receive Method' : 'Confirm Primary Payment Method'}
+        </Dialog.Title>
         <IconButton
           icon={() => <MaterialCommunityIcons name="close" size={24} color={theme.colors.text} />}
           onPress={() => setConfirmPrimaryDialogVisible(false)}
           style={styles.closeButton}
         />
         <Dialog.Content>
-          <Text>Are you sure you want to make this your primary payment method?</Text>
+          <Text>
+            {primaryAction === 'receive' 
+              ? "Are you sure you want to make this your primary receive method?"
+              : "Are you sure you want to make this your primary payment method?"
+            }
+          </Text>
           {isConfirming && (
             <View style={styles.loadingContainer}>
               <ActivityIndicator animating={true} color={theme.colors.primary} />
-              <Text style={styles.loadingText}>Updating primary method...</Text>
+              <Text style={styles.loadingText}>
+                {primaryAction === 'receive' 
+                  ? "Updating primary receive method..."
+                  : "Updating primary payment method..."
+                }
+              </Text>
             </View>
           )}
         </Dialog.Content>
@@ -416,8 +580,7 @@ const PaymentMethods = () => {
             : m
         );
 
-      setReceivePaymentMethods(prev => updateMethod(prev));
-      setPayForServicesMethods(prev => updateMethod(prev));
+      setPaymentMethods(prev => updateMethod(prev));
 
       setVerificationModalVisible(false);
       setVerifyingMethod(null);
@@ -464,8 +627,7 @@ const PaymentMethods = () => {
             : m
         );
 
-      setReceivePaymentMethods(prev => updateMethod(prev));
-      setPayForServicesMethods(prev => updateMethod(prev));
+      setPaymentMethods(prev => updateMethod(prev));
 
       setError('Card successfully verified!');
     } catch (err) {
@@ -561,7 +723,7 @@ const PaymentMethods = () => {
           };
 
           // Only add to payForServicesMethods since cards can't be used for receiving
-          setPayForServicesMethods(prev => [...prev, paymentMethodData]);
+          setPaymentMethods(prev => [...prev, paymentMethodData]);
         } else {
           // Handle bank account
           result = await cardElement.stripe.createToken('bank_account', {
@@ -588,11 +750,7 @@ const PaymentMethods = () => {
           };
 
           // Update the appropriate list based on where it was added
-          if (selectedMethod?.isReceivePayment) {
-            setReceivePaymentMethods(prev => [...prev, paymentMethodData]);
-          } else {
-            setPayForServicesMethods(prev => [...prev, paymentMethodData]);
-          }
+          setPaymentMethods(prev => [...prev, paymentMethodData]);
 
           setError(
             'Bank account added but requires verification. Two small deposits will be made to your account in 1-2 business days. ' +
@@ -606,7 +764,7 @@ const PaymentMethods = () => {
         const { paymentMethod, error } = await createPaymentMethod({
           type: newPaymentMethod.type,
           card: cardElement,
-          is_receive_payment: selectedMethod?.isReceivePayment || false,
+          is_receive_payment: selectedMethod?.isPrimaryReceive || false,
         });
 
         if (error) {
@@ -614,11 +772,7 @@ const PaymentMethods = () => {
         }
 
         // Update the appropriate list
-        if (selectedMethod?.isReceivePayment) {
-          setReceivePaymentMethods(prev => [...prev, paymentMethod]);
-        } else {
-          setPayForServicesMethods(prev => [...prev, paymentMethod]);
-        }
+        setPaymentMethods(prev => [...prev, paymentMethod]);
       }
 
       setModalVisible(false);
@@ -637,55 +791,17 @@ const PaymentMethods = () => {
         onBackPress={() => navigation.navigate('More')} 
       />
       <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-        {isApprovedProfessional && (
-          <SegmentedButtons
-            value={activeTab}
-            onValueChange={setActiveTab}
-            buttons={[
-              { 
-                value: 'receive', 
-                label: 'Receive Payments',
-                style: { minWidth: 150 }
-              },
-              { 
-                value: 'pay', 
-                label: 'Pay for Services',
-                style: { minWidth: 150 }
-              },
-            ]}
-            style={[styles.segmentedButtons, { width: '100%' }]}
-          />
-        )}
-
-        {activeTab === 'receive' && isApprovedProfessional && (
-          <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>Receive Payments</Text>
-            {receivePaymentMethods.map(method => renderPaymentMethod(method, true))}
-            <Button
-              icon={() => <MaterialCommunityIcons name="plus" size={20} color={theme.colors.primary} />}
-              mode="contained"
-              onPress={() => handleAddMethod(true)}
-              style={styles.addButton}
-            >
-              Add Bank Account
-            </Button>
+        <View style={styles.sectionContainer}>
+          <View style={styles.headerContainer}>
+            <Text style={styles.sectionTitle}>Payment Methods</Text>
+            <IconButton
+              icon={() => <MaterialCommunityIcons name="plus" size={24} color={theme.colors.primary} />}
+              onPress={() => handleAddMethod()}
+              style={styles.addIconButton}
+            />
           </View>
-        )}
-
-        {activeTab === 'pay' && (
-          <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>Pay for Services</Text>
-            {payForServicesMethods.map(method => renderPaymentMethod(method, false))}
-            <Button
-              icon={() => <MaterialCommunityIcons name="plus" size={20} color={theme.colors.primary} />}
-              mode="contained"
-              onPress={() => handleAddMethod(false)}
-              style={styles.addButton}
-            >
-              Add Payment Method
-            </Button>
-          </View>
-        )}
+          {paymentMethods.map(method => renderPaymentMethod(method))}
+        </View>
 
         {renderAddMethodModal()}
         {renderConfirmPrimaryDialog()}
@@ -726,7 +842,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 16,
     color: theme.colors.primary,
   },
   cardContent: {
@@ -741,17 +856,26 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  primaryLabel: {
-    color: theme.colors.primary,
-    marginTop: 4,
+  primaryOptionsContainer: {
+    marginTop: 8,
+    gap: 4,
+  },
+  checkboxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  checkbox: {
+    margin: 0,
+    padding: 0,
+  },
+  checkboxLabel: {
+    fontSize: 14,
+    color: theme.colors.text,
+    marginLeft: -8,
   },
   cardActions: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  setPrimaryButton: {
-    marginTop: 8,
-    alignSelf: 'flex-start',
   },
   dialog: {
     width: '90%',
@@ -762,9 +886,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   loadingContainer: {
-    flexDirection: 'row',
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 16,
   },
   loadingText: {
     marginLeft: 8,
@@ -810,6 +934,26 @@ const styles = StyleSheet.create({
   verificationText: {
     marginBottom: 8,
     fontSize: 14,
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    width: '100%',
+  },
+  addIconButton: {
+    margin: 0,
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    width: '100%',
+  },
+  addIconButton: {
+    margin: 0,
   },
 });
 

@@ -1,11 +1,29 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { Platform, View, TextInput, StyleSheet } from 'react-native';
 import { STRIPE_PUBLISHABLE_KEY } from '@env';
-import { loadStripe } from '@stripe/stripe-js';
-import { Elements, useStripe, useElements, CardElement, IbanElement } from '@stripe/react-stripe-js';
+import { AuthContext } from '../context/AuthContext';
 
-// Initialize Stripe
-const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
+// Only import Stripe-related modules if we're not in prototype mode
+let stripePromise = null;
+let Elements = null;
+let useStripe = null;
+let useElements = null;
+let CardElement = null;
+let IbanElement = null;
+
+// Initialize Stripe conditionally
+const initializeStripe = async (is_prototype) => {
+  if (!is_prototype && Platform.OS === 'web') {
+    const stripe = await import('@stripe/stripe-js');
+    const stripeReact = await import('@stripe/react-stripe-js');
+    stripePromise = stripe.loadStripe(STRIPE_PUBLISHABLE_KEY);
+    Elements = stripeReact.Elements;
+    useStripe = stripeReact.useStripe;
+    useElements = stripeReact.useElements;
+    CardElement = stripeReact.CardElement;
+    IbanElement = stripeReact.IbanElement;
+  }
+};
 
 // Only import CardField for native platforms
 let CardField = null;
@@ -36,8 +54,8 @@ const ELEMENT_OPTIONS = {
 };
 
 const WebPaymentForm = ({ onChange, paymentType }) => {
-  const stripe = useStripe();
-  const elements = useElements();
+  const stripe = useStripe && useStripe();
+  const elements = useElements && useElements();
   const [bankFields, setBankFields] = useState({
     accountNumber: '',
     routingNumber: ''
@@ -178,13 +196,61 @@ const NativePaymentElement = ({ onChange, paymentType }) => {
 };
 
 export const StripePaymentElement = ({ onChange, paymentType }) => {
-  if (Platform.OS === 'web') {
+  const { is_prototype } = useContext(AuthContext);
+
+  useEffect(() => {
+    initializeStripe(is_prototype);
+  }, [is_prototype]);
+
+  if (is_prototype) {
+    // Return simplified input fields for prototype mode
+    return (
+      <View style={styles.container}>
+        {paymentType === 'card' ? (
+          <>
+            <TextInput
+              style={styles.input}
+              placeholder="Card Number"
+              keyboardType="numeric"
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="MM/YY"
+              keyboardType="numeric"
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="CVC"
+              keyboardType="numeric"
+              secureTextEntry
+            />
+          </>
+        ) : (
+          <>
+            <TextInput
+              style={styles.input}
+              placeholder="Account Number"
+              keyboardType="numeric"
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Routing Number"
+              keyboardType="numeric"
+            />
+          </>
+        )}
+      </View>
+    );
+  }
+
+  if (Platform.OS === 'web' && Elements && stripePromise) {
     return (
       <Elements stripe={stripePromise}>
         <WebPaymentForm onChange={onChange} paymentType={paymentType} />
       </Elements>
     );
   }
+
   return <NativePaymentElement onChange={onChange} paymentType={paymentType} />;
 };
 
@@ -203,5 +269,8 @@ const styles = StyleSheet.create({
   },
   bankInput: {
     marginBottom: 16,
+  },
+  container: {
+    padding: 16,
   },
 }); 

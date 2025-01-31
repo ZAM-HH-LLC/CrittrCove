@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, Switch, ScrollView, Platform, Dimensions } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { theme } from '../styles/theme';
 import DatePicker from './DatePicker';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { AuthContext } from '../context/AuthContext';
 
 const { width } = Dimensions.get('window');
 const modalWidth = Platform.OS === 'web' ? width * 0.4 : width * 0.9;
@@ -21,6 +22,7 @@ const DAYS_OF_WEEK = [
 ];
 
 const DefaultSettingsModal = ({ isVisible, onClose, onSave, defaultSettings }) => {
+  const { screenWidth } = useContext(AuthContext);
   const [selectedDays, setSelectedDays] = useState([]);
   const [settings, setSettings] = useState(defaultSettings || {
     Monday: { isAllDay: false, startTime: '09:00', endTime: '17:00', endDate: null },
@@ -36,6 +38,29 @@ const DefaultSettingsModal = ({ isVisible, onClose, onSave, defaultSettings }) =
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isCurrentlyUnavailable, setIsCurrentlyUnavailable] = useState(false);
   const [showDayDropdown, setShowDayDropdown] = useState(false);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const dropdownButton = document.getElementById('dropdown-button');
+      const dropdownContainer = document.getElementById('dropdown-container');
+      
+      // If click is not on the button and not inside the dropdown, close it
+      if (showDayDropdown && 
+          dropdownContainer && 
+          !dropdownContainer.contains(event.target) &&
+          !dropdownButton.contains(event.target)) {
+        setShowDayDropdown(false);
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [showDayDropdown]);
 
   const handleSave = () => {
     onSave({
@@ -75,7 +100,7 @@ const DefaultSettingsModal = ({ isVisible, onClose, onSave, defaultSettings }) =
     });
   };
 
-  const handleAvailabilityChange = () => {
+  const handleAvailabilityChange = (makeAvailable) => {
     console.log("Selected days:", selectedDays);
     if (selectedDays.length === 0) return;
 
@@ -85,14 +110,14 @@ const DefaultSettingsModal = ({ isVisible, onClose, onSave, defaultSettings }) =
     
     console.log("Days to update:", daysToUpdate);
     console.log("Current settings:", settings);
-    console.log("Is currently unavailable:", isCurrentlyUnavailable);
+    console.log("Making available:", makeAvailable);
 
     const newSettings = { ...settings };
     daysToUpdate.forEach(day => {
       console.log(`Updating ${day}`);
       newSettings[day] = {
         ...settings[day],
-        isUnavailable: !isCurrentlyUnavailable,
+        isUnavailable: !makeAvailable,
         startTime: settings[selectedDays[0]].startTime,
         endTime: settings[selectedDays[0]].endTime,
         isAllDay: settings[selectedDays[0]].isAllDay,
@@ -103,7 +128,7 @@ const DefaultSettingsModal = ({ isVisible, onClose, onSave, defaultSettings }) =
     console.log("New settings:", newSettings);
     setSettings(newSettings);
     onSave(newSettings);
-    setIsCurrentlyUnavailable(!isCurrentlyUnavailable);
+    setIsCurrentlyUnavailable(!makeAvailable);
   };
 
   const renderTimePicker = (type, value, onChange) => {
@@ -283,6 +308,7 @@ const DefaultSettingsModal = ({ isVisible, onClose, onSave, defaultSettings }) =
     <View style={styles.inputWrapper}>
       <Text style={styles.inputLabel}>Day(s) *</Text>
       <TouchableOpacity
+        id="dropdown-button"
         style={[
           styles.input,
           styles.customDropdown,
@@ -309,7 +335,10 @@ const DefaultSettingsModal = ({ isVisible, onClose, onSave, defaultSettings }) =
       </TouchableOpacity>
       
       {showDayDropdown && (
-        <View style={styles.dropdownContainer}>
+        <View 
+          id="dropdown-container"
+          style={styles.dropdownContainer}
+        >
           <ScrollView style={styles.dropdownScroll}>
             {DAYS_OF_WEEK.map((day) => (
               <TouchableOpacity
@@ -348,26 +377,32 @@ const DefaultSettingsModal = ({ isVisible, onClose, onSave, defaultSettings }) =
       onRequestClose={onClose}
     >
       <View style={styles.modalContainer}>
-        <View style={[styles.modalContent, { width: modalWidth }]}>
-          <Text style={styles.modalTitle}>Default Settings</Text>
+        <View style={[
+          styles.modalContent,
+          { width: screenWidth < 600 ? '90%' : 600 }
+        ]}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Default Settings</Text>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+              <MaterialCommunityIcons name="close" size={24} color={theme.colors.text} />
+            </TouchableOpacity>
+          </View>
           {renderDaySelector()}
           {renderDaySettings()}
           <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-              <Text style={styles.buttonText}>Cancel</Text>
-            </TouchableOpacity>
             <TouchableOpacity
-              style={[
-                styles.availabilityButton,
-                isCurrentlyUnavailable ? styles.availableButton : styles.unavailableButton,
-                selectedDays.length === 0 && styles.disabledButton
-              ]}
-              onPress={handleAvailabilityChange}
+              style={[styles.button, styles.availableButton]}
+              onPress={() => handleAvailabilityChange(true)}
               disabled={selectedDays.length === 0}
             >
-              <Text style={styles.availabilityButtonText}>
-                {isCurrentlyUnavailable ? 'Mark Available' : 'Mark Unavailable'}
-              </Text>
+              <Text style={styles.buttonText}>Mark Available</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.button, styles.unavailableButton]}
+              onPress={() => handleAvailabilityChange(false)}
+              disabled={selectedDays.length === 0}
+            >
+              <Text style={styles.buttonText}>Mark Unavailable</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -388,6 +423,15 @@ const styles = StyleSheet.create({
     padding: 22,
     borderRadius: 17,
     maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  closeButton: {
+    padding: 8,
   },
   modalTitle: {
     fontSize: theme.fontSizes.large,
@@ -417,20 +461,23 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: '100%',
+    gap: 12,
     marginTop: 20,
   },
   button: {
-    padding: 10,
-    borderRadius: 5,
-    width: '45%',
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
     alignItems: 'center',
   },
-  saveButton: {
+  availableButton: {
     backgroundColor: theme.colors.primary,
   },
+  unavailableButton: {
+    backgroundColor: theme.colors.error,
+  },
   buttonText: {
-    color: theme.colors.text,
+    color: theme.colors.whiteText,
     fontWeight: 'bold',
   },
   tabContainer: {
@@ -472,31 +519,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.border,
     borderRadius: 5,
-  },
-  cancelButton: {
-    padding: 10,
-    borderRadius: 5,
-    width: '45%',
-    alignItems: 'center',
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  availabilityButton: {
-    padding: 10,
-    borderRadius: 5,
-    width: '45%',
-    alignItems: 'center',
-  },
-  unavailableButton: {
-    backgroundColor: theme.colors.danger,
-  },
-  availableButton: {
-    backgroundColor: theme.colors.primary,
-  },
-  availabilityButtonText: {
-    color: theme.colors.whiteText,
-    fontWeight: 'bold',
   },
   inputWrapper: {
     position: 'relative',

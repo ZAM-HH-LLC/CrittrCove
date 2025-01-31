@@ -78,14 +78,6 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges, isProfess
         // Get the button's bounding rectangle relative to the viewport
         const rect = element.getBoundingClientRect();
         
-        console.log('Tooltip measurements:', { 
-          rect: {
-            top: rect.top,
-            left: rect.left,
-            width: rect.width,
-            height: rect.height
-          }
-        });
         
         setPosition({
           x: rect.left + (rect.width / 2),
@@ -93,10 +85,6 @@ const ServiceManager = ({ services, setServices, setHasUnsavedChanges, isProfess
           text: tooltipText
         });
         
-        console.log('Tooltip position set:', { 
-          x: rect.left + (rect.width / 2), 
-          y: rect.top
-        });
         
         setHoveredButton(tooltipText);
       }, 0);

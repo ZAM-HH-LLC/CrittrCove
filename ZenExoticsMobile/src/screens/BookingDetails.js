@@ -35,14 +35,12 @@ const PET_OPTIONS = [
 const mockUpdateBookingPets = async (bookingId, pets) => {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 1000));
-  console.log('Updating booking pets:', { bookingId, pets });
   return { success: true };
 };
 
 const mockUpdateBookingService = async (bookingId, serviceDetails) => {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 1000));
-  console.log('Updating booking service:', { bookingId, serviceDetails });
   return { success: true };
 };
 
@@ -150,7 +148,7 @@ const RequestChangesModal = ({ visible, onClose, onSubmit, loading }) => {
 const BookingDetails = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { is_prototype, currentUser } = useContext(AuthContext);
+  const { is_prototype, currentUser, is_DEBUG } = useContext(AuthContext);
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -229,10 +227,14 @@ const BookingDetails = () => {
             return;
           }
 
-          console.log('Fetching booking with ID:', bookingId);
+          if (is_DEBUG) {
+            console.log('Fetching booking with ID:', bookingId);
+          }
           await AsyncStorage.setItem(LAST_VIEWED_BOOKING_ID, bookingId);
           const bookingData = await fetchBookingDetails(bookingId);
-          console.log('Fetched booking data:', bookingData);
+          if (is_DEBUG) {
+            console.log('Fetched booking data:', bookingData);
+          }
           setBooking(bookingData);
         } else {
           // Real API call
@@ -260,7 +262,9 @@ const BookingDetails = () => {
             status: response.data.status
           };
 
-          console.log('Fetched and transformed booking data:', transformedBooking);
+          if (is_DEBUG) {
+            console.log('Fetched and transformed booking data:', transformedBooking);
+          }
           setBooking(transformedBooking);
         }
       } catch (error) {
@@ -314,7 +318,9 @@ const BookingDetails = () => {
 
   // Add function to fetch available pets
   const fetchAvailablePets = async () => {
-    console.log('fetching available pets with booking id:', booking.booking_id);
+    if (is_DEBUG) {
+      console.log('fetching available pets with booking id:', booking.booking_id);
+    }
     try {
       const token = await AsyncStorage.getItem('userToken');
       if (!token) {
@@ -326,7 +332,9 @@ const BookingDetails = () => {
         { headers: { Authorization: `Bearer ${token}` }}
       );
       setAvailablePets(response.data);
-      console.log('available pets:', response.data);
+      if (is_DEBUG) {
+        console.log('available pets:', response.data);
+      }
     } catch (error) {
       console.error('Error fetching available pets:', error);
       Alert.alert('Error', 'Failed to fetch available pets');
@@ -539,7 +547,9 @@ const BookingDetails = () => {
 
   const handleRemoveService = (index) => {
     // Add this function since it's referenced in the code
-    console.log('Removing service at index:', index);
+    if (is_DEBUG) {
+      console.log('Removing service at index:', index);
+    }
   };
 
   const canEdit = () => {
@@ -769,7 +779,9 @@ const BookingDetails = () => {
   };
 
   const handleDateTimeCardPress = (occurrence) => {
-    console.log('Original occurrence:', occurrence);
+    if (is_DEBUG) {
+      console.log('Original occurrence:', occurrence);
+    }
     
     if (is_prototype) {
       // In prototype mode, use the same data structure as API
@@ -798,7 +810,9 @@ const BookingDetails = () => {
         multiple: calculateMultiple(occurrence.base_total, occurrence.rates.base_rate)
       };
 
-      console.log('Transformed occurrence for modal (prototype):', transformedOccurrence);
+      if (is_DEBUG) {
+        console.log('Transformed occurrence for modal (prototype):', transformedOccurrence);
+      }
       setSelectedOccurrence(transformedOccurrence);
       setShowAddOccurrenceModal(true);
       return;
@@ -830,7 +844,9 @@ const BookingDetails = () => {
       multiple: calculateMultiple(occurrence.base_total, occurrence.rates?.base_rate)
     };
 
-    console.log('Transformed occurrence for modal:', transformedOccurrence);
+    if (is_DEBUG) {
+      console.log('Transformed occurrence for modal:', transformedOccurrence);
+    }
     setSelectedOccurrence(transformedOccurrence);
     setShowAddOccurrenceModal(true);
   };
@@ -959,16 +975,20 @@ const BookingDetails = () => {
         throw new Error('No booking data available');
       }
 
-      console.log('Sending booking message:', {
-        bookingId,
-        recipientId,
-        messageType,
-        booking
-      });
+      if (is_DEBUG) {
+        console.log('Sending booking message:', {
+          bookingId,
+          recipientId,
+          messageType,
+          booking
+        });
+      }
 
       // Find the existing conversation with Dr. Mike Johnson
       const conversationId = 'conv_2'; // This is the existing conversation ID from mockData
-      console.log('Using existing conversation:', conversationId);
+      if (is_DEBUG) {
+        console.log('Using existing conversation:', conversationId);
+      }
 
       const bookingMessage = {
         message_id: Date.now().toString(),
@@ -1009,8 +1029,10 @@ const BookingDetails = () => {
         conversation.unread = true;
       }
 
-      console.log('Message sent successfully to conversation:', conversationId);
-      console.log('Updated conversation messages:', mockMessages[conversationId]);
+      if (is_DEBUG) {
+        console.log('Message sent successfully to conversation:', conversationId);
+        console.log('Updated conversation messages:', mockMessages[conversationId]);
+      }
       return true;
     } catch (error) {
       console.error('Error sending booking message:', error);
@@ -1035,13 +1057,15 @@ const BookingDetails = () => {
       }
 
       // Then update the booking status
-      console.log('Updating booking status:', {
-        bookingId: booking.id,
-        currentStatus: booking.status,
-        newStatus,
-        reason,
-        metadata
-      });
+      if (is_DEBUG) {
+        console.log('Updating booking status:', {
+          bookingId: booking.id,
+          currentStatus: booking.status,
+          newStatus,
+          reason,
+          metadata
+        });
+      }
 
       const updatedBooking = await updateBookingStatus(
         booking.id, 
@@ -1193,8 +1217,10 @@ const BookingDetails = () => {
   }, [booking]);
 
   const handleServiceTypeChange = (newServiceType) => {
-    console.log('Previous editedBooking:', editedBooking);
-    console.log('New service type:', newServiceType);
+    if (is_DEBUG) {
+      console.log('Previous editedBooking:', editedBooking);
+      console.log('New service type:', newServiceType);
+    }
     
     setEditedBooking(prev => {
       const updated = {
@@ -1204,7 +1230,9 @@ const BookingDetails = () => {
           type: newServiceType
         }
       };
-      console.log('Updated editedBooking:', updated);
+      if (is_DEBUG) {
+        console.log('Updated editedBooking:', updated);
+      }
       return updated;
     });
   };
