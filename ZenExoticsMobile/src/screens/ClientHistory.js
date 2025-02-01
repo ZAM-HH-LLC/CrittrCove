@@ -2,6 +2,7 @@ import React from 'react';
 import { View, StyleSheet, ScrollView, Platform, SafeAreaView, StatusBar } from 'react-native';
 import { Card, Title, Paragraph, List, Button, useTheme } from 'react-native-paper';
 import { theme } from '../styles/theme';
+import { navigateToFrom } from '../components/Navigation';
 
 const ClientHistory = ({ route, navigation }) => {
   const { clientId } = route.params;
@@ -64,7 +65,7 @@ const ClientHistory = ({ route, navigation }) => {
           ))}
         </Card.Content>
         <Card.Actions>
-          <Button onPress={() => navigation.navigate('Contracts', { clientId })}>View All Contracts</Button>
+          <Button onPress={() => navigateToFrom(navigation, 'Contracts', 'ClientHistory', { clientId })}>View All Contracts</Button>
         </Card.Actions>
       </Card>
 
@@ -81,14 +82,14 @@ const ClientHistory = ({ route, navigation }) => {
           ))}
         </Card.Content>
         <Card.Actions>
-          <Button onPress={() => navigation.navigate('Invoices', { clientId })}>View All Invoices</Button>
+          <Button onPress={() => navigateToFrom(navigation, 'Invoices', 'ClientHistory', { clientId })}>View All Invoices</Button>
         </Card.Actions>
       </Card>
 
       <View style={styles.messageButtonContainer}>
         <Button 
           mode="contained" 
-          onPress={() => navigation.navigate('Messages', { clientId })}
+          onPress={() => navigateToFrom(navigation, 'Messages', 'ClientHistory', { clientId })}
           style={styles.messageButton}
         >
           View Messages

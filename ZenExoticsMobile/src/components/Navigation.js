@@ -16,6 +16,8 @@ export const handleBack = async (navigation) => {
       if (previousRoute) {
         sessionStorage.setItem('currentRoute', previousRoute);
         sessionStorage.setItem('previousRoute', currentRoute);
+        console.log('Previous Route:', previousRoute);
+        console.log('Current Route:', currentRoute);
         navigation.navigate(previousRoute);
       } else {
         // Default to More screen if no previous route
@@ -29,6 +31,8 @@ export const handleBack = async (navigation) => {
       if (previousRoute) {
         await AsyncStorage.setItem('currentRoute', previousRoute);
         await AsyncStorage.setItem('previousRoute', currentRoute);
+        console.log('Previous Route:', previousRoute);
+        console.log('Current Route:', currentRoute);
         navigation.navigate(previousRoute);
       } else {
         // Default to More screen if no previous route
@@ -38,6 +42,29 @@ export const handleBack = async (navigation) => {
   } catch (error) {
     console.error('Error handling back navigation:', error);
     navigation.navigate('More');
+  }
+};
+
+export const navigateToFrom = async (navigation, toLocation, fromLocation, params = {}) => {
+  try {
+    console.log('Navigating from:', fromLocation, 'to:', toLocation);
+    if (Platform.OS === 'web') {
+      sessionStorage.setItem('previousRoute', fromLocation);
+      sessionStorage.setItem('currentRoute', toLocation);
+      console.log('Web - Set previousRoute:', fromLocation);
+      console.log('Web - Set currentRoute:', toLocation);
+    } else {
+      await AsyncStorage.setItem('previousRoute', fromLocation);
+      await AsyncStorage.setItem('currentRoute', toLocation);
+      console.log('Mobile - Set previousRoute:', fromLocation);
+      console.log('Mobile - Set currentRoute:', toLocation);
+    }
+    setTimeout(() => {
+      navigation.navigate(toLocation, params);
+    }, 50);
+  } catch (error) {
+    console.error('Error navigating:', error);
+    navigation.navigate(toLocation, params);
   }
 };
 

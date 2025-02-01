@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthContext } from '../context/AuthContext';
 import CrossPlatformView from '../components/CrossPlatformView';
 import { theme } from '../styles/theme';
+import { navigateToFrom } from '../components/Navigation';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -120,12 +121,11 @@ const ProfessionalDashboard = ({ navigation }) => {
     : List.Icon;
 
   const navigateToServiceManager = async () => {
-    if (Platform.OS === 'web') {
-      sessionStorage.setItem('previousRoute', 'ProfessionalDashboard');
-    } else {
-      await AsyncStorage.setItem('previousRoute', 'ProfessionalDashboard');
-    }
-    navigation.navigate('ServiceManager');
+    console.log('Setting previousRoute to:', 'ProfessionalDashboard');
+    console.log('Setting currentRoute to:', 'ServiceManager');
+    setTimeout(async () => {
+      await navigateToFrom(navigation, 'ServiceManager', 'ProfessionalDashboard');
+    }, 100);
   };
 
   const Content = () => (

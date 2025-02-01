@@ -5,6 +5,7 @@ import { theme } from '../styles/theme';
 import CustomButton from '../components/CustomButton';
 import axios from 'axios';
 import { API_BASE_URL } from '../config/config';
+import { navigateToFrom } from '../components/Navigation';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -33,12 +34,12 @@ export default function ResetPasswordConfirm({ route }) {
       });
       if (Platform.OS === 'ios' || Platform.OS === 'android') {
         Alert.alert('Success', 'Your password has been reset.', [
-          { text: 'OK', onPress: () => navigation.navigate('SignIn') }
+          { text: 'OK', onPress: () => navigateToFrom(navigation, 'SignIn', 'ResetPasswordConfirm') }
         ]);
       } else {
         setSuccessMessage('Your password has been reset.');
         setTimeout(() => {
-          navigation.navigate('SignIn');
+          navigateToFrom(navigation, 'SignIn', 'ResetPasswordConfirm');
         }, 2000); // Navigate after 2 seconds
       }
     } catch (error) {

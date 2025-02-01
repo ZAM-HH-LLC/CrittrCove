@@ -5,28 +5,14 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
 import { AuthContext } from '../context/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { navigateToFrom } from '../components/Navigation';
 
 const MoreScreen = ({ navigation }) => {
   const { isSignedIn, isApprovedProfessional, userRole, switchRole, signOut } = useContext(AuthContext);
 
   const handleNavigation = async (route) => {
     try {
-      if (Platform.OS === 'web') {
-        // Web: Use sessionStorage
-        const currentRoute = sessionStorage.getItem('currentRoute') ? sessionStorage.getItem('currentRoute') : "More";
-        if (currentRoute) {
-          sessionStorage.setItem('previousRoute', currentRoute);
-        }
-        sessionStorage.setItem('currentRoute', route);
-      } else {
-        // Mobile: Use AsyncStorage
-        const currentRoute = await AsyncStorage.getItem('currentRoute');
-        if (currentRoute) {
-          await AsyncStorage.setItem('previousRoute', currentRoute);
-        }
-        await AsyncStorage.setItem('currentRoute', route);
-      }
-      navigation.navigate(route);
+      await navigateToFrom(navigation, route, 'More');
     } catch (error) {
       console.error('Error handling navigation:', error);
       navigation.navigate(route);

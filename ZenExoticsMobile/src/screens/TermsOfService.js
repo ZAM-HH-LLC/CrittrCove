@@ -4,6 +4,7 @@ import { theme } from '../styles/theme';
 import BackHeader from '../components/BackHeader';
 import CrossPlatformView from '../components/CrossPlatformView';
 import { useNavigation } from '@react-navigation/native';
+import { navigateToFrom } from '../components/Navigation';
 
 const appName = 'Zen Exotics';
 
@@ -14,7 +15,7 @@ const TermsOfService = () => {
     <CrossPlatformView fullWidthHeader={true}>
       <BackHeader 
         title="Terms of Service" 
-        onBackPress={() => navigation.navigate('More')} 
+        onBackPress={() => navigateToFrom(navigation, 'More', 'TermsOfService')} 
       />
       <ScrollView 
         style={styles.container}
