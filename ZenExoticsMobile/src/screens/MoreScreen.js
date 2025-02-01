@@ -13,7 +13,7 @@ const MoreScreen = ({ navigation }) => {
     try {
       if (Platform.OS === 'web') {
         // Web: Use sessionStorage
-        const currentRoute = sessionStorage.getItem('currentRoute');
+        const currentRoute = sessionStorage.getItem('currentRoute') ? sessionStorage.getItem('currentRoute') : "More";
         if (currentRoute) {
           sessionStorage.setItem('previousRoute', currentRoute);
         }

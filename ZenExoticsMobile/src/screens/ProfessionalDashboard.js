@@ -119,6 +119,15 @@ const ProfessionalDashboard = ({ navigation }) => {
     ? ({ name, ...props }) => <MaterialCommunityIcons name={name} {...props} />
     : List.Icon;
 
+  const navigateToServiceManager = async () => {
+    if (Platform.OS === 'web') {
+      sessionStorage.setItem('previousRoute', 'ProfessionalDashboard');
+    } else {
+      await AsyncStorage.setItem('previousRoute', 'ProfessionalDashboard');
+    }
+    navigation.navigate('ServiceManager');
+  };
+
   const Content = () => (
     <ScrollView style={styles.scrollView} contentContainerStyle={styles.contentContainer}>
       <View style={styles.cardContainer}>
@@ -225,7 +234,7 @@ const ProfessionalDashboard = ({ navigation }) => {
               <Button 
                 icon={Platform.OS === 'web' ? ({ size, color }) => <MaterialCommunityIcons name="briefcase" size={size} color={color} /> : "briefcase"}
                 mode="outlined" 
-                onPress={() => navigation.navigate('ServiceManager')}
+                onPress={navigateToServiceManager}
                 style={styles.quickActionButton}
                 labelStyle={dynamicStyles.buttonText}
               >

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Platform } from 'react-native';
 import { Button } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import ServiceManager from '../components/ServiceManager';
@@ -8,6 +8,8 @@ import { theme } from '../styles/theme';
 import { DEFAULT_SERVICES } from '../data/mockData';
 import CrossPlatformView from '../components/CrossPlatformView';
 import BackHeader from '../components/BackHeader';
+import { handleBack } from '../components/Navigation';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ServiceManagerScreen = () => {
   const navigation = useNavigation();
@@ -29,6 +31,22 @@ const ServiceManagerScreen = () => {
     };
 
     fetchServices();
+  }, []);
+
+  useEffect(() => {
+    const setRouteHistory = async () => {
+      const currentRoute = 'ServiceManager';
+      if (Platform.OS === 'web') {
+        const previousRoute = sessionStorage.getItem('currentRoute');
+        sessionStorage.setItem('previousRoute', previousRoute || '');
+        sessionStorage.setItem('currentRoute', currentRoute);
+      } else {
+        const previousRoute = await AsyncStorage.getItem('currentRoute');
+        await AsyncStorage.setItem('previousRoute', previousRoute || '');
+        await AsyncStorage.setItem('currentRoute', currentRoute);
+      }
+    };
+    setRouteHistory();
   }, []);
 
   const handleAddService = (newService) => {
@@ -55,7 +73,7 @@ const ServiceManagerScreen = () => {
       <View style={{ position: 'relative', zIndex: 1 }}>
         <BackHeader 
           title="Service Manager" 
-          onBackPress={() => navigation.navigate('More')}
+          onBackPress={() => handleBack(navigation)} 
           style={{ zIndex: 1 }}
         />
       </View>
