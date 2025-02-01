@@ -700,7 +700,7 @@ export const createBooking = async (clientId, freelancerId, initialData = {}) =>
 
 // Update fetchBookingDetails with better logging
 export const fetchBookingDetails = async (bookingId) => {
-  console.log('Fetching booking details');
+  // console.log('Fetching booking details');
   
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 1000));

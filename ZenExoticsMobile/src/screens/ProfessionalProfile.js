@@ -124,7 +124,7 @@ const ProfessionalProfile = ({ route, navigation }) => {
   const [favoriteServices, setFavoriteServices] = useState([]);
   const [servicesModalVisible, setServicesModalVisible] = useState(false);
   const isWideScreen = useResponsiveLayout();
-
+  const { is_prototype } = useContext(AuthContext);
   const dynamicStyles = {
     servicesBox: {
       backgroundColor: theme.colors.surface,
@@ -472,20 +472,23 @@ const ProfessionalProfile = ({ route, navigation }) => {
     </View>
   );
 
-  const renderGallery = () => (
-    <View style={styles.gallerySection}>
-      <Text style={styles.sectionTitle}>53 Photos</Text>
-      <View style={styles.photoGrid}>
-        {[1, 2, 3, 4].map((_, index) => (
-          <Image 
-            key={index}
-            source={{ uri: 'https://via.placeholder.com/150' }}
-            style={styles.galleryPhoto}
-                    />
-        ))}
+  const renderGallery = () => {
+    if (is_prototype) return null;
+    return (
+      <View style={styles.gallerySection}>
+        <Text style={styles.sectionTitle}>53 Photos</Text>
+        <View style={styles.photoGrid}>
+          {[1, 2, 3, 4].map((_, index) => (
+            <Image 
+              key={index}
+              source={{ uri: 'https://via.placeholder.com/150' }}
+              style={styles.galleryPhoto}
+                      />
+          ))}
+        </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   const additionalStyles = StyleSheet.create({
     servicesSection: {

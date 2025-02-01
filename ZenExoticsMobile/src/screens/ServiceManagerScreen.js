@@ -36,14 +36,28 @@ const ServiceManagerScreen = () => {
   useEffect(() => {
     const setRouteHistory = async () => {
       const currentRoute = 'ServiceManager';
+      let previousRoute;
+
       if (Platform.OS === 'web') {
-        const previousRoute = sessionStorage.getItem('currentRoute');
+        previousRoute = sessionStorage.getItem('previousRoute');
         sessionStorage.setItem('previousRoute', previousRoute || '');
         sessionStorage.setItem('currentRoute', currentRoute);
       } else {
-        const previousRoute = await AsyncStorage.getItem('currentRoute');
+        previousRoute = await AsyncStorage.getItem('previousRoute');
         await AsyncStorage.setItem('previousRoute', previousRoute || '');
         await AsyncStorage.setItem('currentRoute', currentRoute);
+      }
+
+      if (!previousRoute) {
+        previousRoute = 'ProfessionalDashboard';
+        currentRoute = 'ServiceManager';
+        if (Platform.OS === 'web') {
+          sessionStorage.setItem('previousRoute', previousRoute || '');
+          sessionStorage.setItem('currentRoute', currentRoute);
+        } else {
+          await AsyncStorage.setItem('previousRoute', previousRoute || '');
+          await AsyncStorage.setItem('currentRoute', currentRoute);
+        }
       }
     };
     setRouteHistory();

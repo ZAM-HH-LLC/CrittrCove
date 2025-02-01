@@ -39,6 +39,12 @@ export const handleBack = async (navigation) => {
         navigation.navigate('More');
       }
     }
+
+    if (previousRoute === currentRoute) {
+      console.log('Two routes are the same');
+      navigation.navigate('More');
+      return;
+    }
   } catch (error) {
     console.error('Error handling back navigation:', error);
     navigation.navigate('More');

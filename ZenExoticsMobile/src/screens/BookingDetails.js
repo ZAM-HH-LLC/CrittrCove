@@ -1521,7 +1521,7 @@ const BookingDetails = () => {
               <View style={styles.serviceDetailsContainer}>
                 <View style={styles.serviceDetailRow}>
                   <Text style={styles.label}>Service Type: </Text>
-                  <Text style={styles.value}>{booking.serviceType}</Text>
+                  <Text style={styles.value}>{booking.service_details.service_type}</Text>
                 </View>
               </View>
             )}
