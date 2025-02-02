@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, TextInput, StyleSheet, ScrollView, SafeAreaView, Platform, StatusBar, TouchableOpacity, ActivityIndicator, Alert, Dimensions } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
 import * as ImagePicker from 'expo-image-picker';
+import { AuthContext } from '../context/AuthContext';
+import { navigateToFrom, handleBack } from '../components/Navigation';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 // TODO: mention to user initially we are doing a manual verification process, will implement automation later.
@@ -16,6 +19,25 @@ const BecomeProfessional = ({ navigation }) => {
   const [certifications, setCertifications] = useState([]);
   const [insuranceProof, setInsuranceProof] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { is_DEBUG } = useContext(AuthContext);
+
+  useEffect(() => {
+    const initializeNavigation = async () => {
+      const currentRoute = Platform.OS === 'web' ? sessionStorage.getItem('currentRoute') : await AsyncStorage.getItem('currentRoute');
+      if (currentRoute !== 'BecomeProfessional') {
+        await navigateToFrom(navigation, 'BecomeProfessional', currentRoute);
+      } else {
+        if (is_DEBUG) {
+          console.log('Error, currentRoute is BecomeProfessional');
+        }
+      }
+    };
+    initializeNavigation();
+  }, []);
+
+  const handleBackPress = () => {
+    handleBack(navigation);
+  };
 
   const togglePetSelection = (pet) => {
     setSelectedPets({ ...selectedPets, [pet]: !selectedPets[pet] });
@@ -72,7 +94,7 @@ const BecomeProfessional = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.navigate('More')} style={styles.backButton}>
+        <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
           <MaterialCommunityIcons name="arrow-left" size={24} color={theme.colors.primary} />
         </TouchableOpacity>
         <Text style={styles.headerText}>Become a Professional</Text>
@@ -113,7 +135,7 @@ const BecomeProfessional = ({ navigation }) => {
           onChangeText={setAbout}
         />
 
-        <Text style={styles.label}>Upload Certifications:</Text>
+        <Text style={styles.label}>Upload Certifications/Resume:</Text>
         <TouchableOpacity style={styles.uploadButton} onPress={pickCertification}>
           <MaterialCommunityIcons name="file-upload" size={24} color="#666" />
           <Text style={styles.uploadText}>Upload Documents</Text>

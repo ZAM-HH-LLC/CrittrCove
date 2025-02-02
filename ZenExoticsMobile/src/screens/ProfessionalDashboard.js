@@ -14,7 +14,7 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 const ProfessionalDashboard = ({ navigation }) => {
   const { colors } = useTheme();
-  const { signOut, firstName, is_prototype, screenWidth } = useContext(AuthContext);
+  const { signOut, firstName, is_prototype, screenWidth, is_DEBUG } = useContext(AuthContext);
   const [upcomingBookings, setUpcomingBookings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -80,7 +80,7 @@ const ProfessionalDashboard = ({ navigation }) => {
 
     try {
       setIsLoading(true);
-      let token = await AsyncStorage.getItem('userToken');
+      let token = Platform.OS === 'web' ? sessionStorage.getItem('userToken') : await AsyncStorage.getItem('userToken');
       const response = await axios.get(`${API_BASE_URL}/api/professionals/v1/dashboard/`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -121,8 +121,10 @@ const ProfessionalDashboard = ({ navigation }) => {
     : List.Icon;
 
   const navigateToServiceManager = async () => {
-    console.log('Setting previousRoute to:', 'ProfessionalDashboard');
-    console.log('Setting currentRoute to:', 'ServiceManager');
+    if (is_DEBUG) {
+      console.log('Setting previousRoute to:', 'ProfessionalDashboard');
+      console.log('Setting currentRoute to:', 'ServiceManager');
+    }
     setTimeout(async () => {
       await navigateToFrom(navigation, 'ServiceManager', 'ProfessionalDashboard');
     }, 100);

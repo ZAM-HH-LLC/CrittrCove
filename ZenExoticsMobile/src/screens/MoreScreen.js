@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { View, StyleSheet, Alert, Platform, SafeAreaView, StatusBar } from 'react-native';
 import { List, Divider, Button } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -9,6 +9,28 @@ import { navigateToFrom } from '../components/Navigation';
 
 const MoreScreen = ({ navigation }) => {
   const { isSignedIn, isApprovedProfessional, userRole, switchRole, signOut } = useContext(AuthContext);
+
+  useEffect(() => {
+    const initializeRoutes = async () => {
+      try {
+        const initialRoute = isSignedIn 
+          ? (userRole === 'professional' ? 'ProfessionalDashboard' : 'Dashboard')
+          : 'Home';
+
+        if (Platform.OS === 'web') {
+          sessionStorage.setItem('currentRoute', initialRoute);
+          sessionStorage.setItem('previousRoute', 'More');
+        } else {
+          await AsyncStorage.setItem('currentRoute', initialRoute);
+          await AsyncStorage.setItem('previousRoute', 'More');
+        }
+      } catch (error) {
+        console.error('Error initializing routes:', error);
+      }
+    };
+
+    initializeRoutes();
+  }, [isSignedIn, userRole]);
 
   const handleNavigation = async (route) => {
     try {
@@ -40,8 +62,8 @@ const MoreScreen = ({ navigation }) => {
   const handleSwitchRole = async () => {
     if (isApprovedProfessional) {
       const newRole = userRole === 'professional' ? 'petOwner' : 'professional';
-      console.log('Current role:', userRole);
-      console.log('Switching to:', newRole);
+      // console.log('Current role:', userRole);
+      // console.log('Switching to:', newRole);
       
       await switchRole();
       
@@ -55,7 +77,7 @@ const MoreScreen = ({ navigation }) => {
       
       // Add a small delay to ensure state is updated before navigation
       setTimeout(() => {
-        console.log('Navigating to:', newRoute);
+        // console.log('Navigating to:', newRoute);
         navigation.navigate(newRoute);
       }, 0);
     } else {
@@ -79,6 +101,7 @@ const MoreScreen = ({ navigation }) => {
       { title: 'Payment Methods', icon: 'credit-card', route: 'PaymentMethods' },
       { title: 'Become a Professional', icon: 'account-tie', route: 'BecomeProfessional' },
       { title: 'Settings', icon: 'cog', route: 'Settings' },
+      { title: 'My Pets', icon: 'paw', route: 'MyPets' },
       { title: 'Privacy Policy', icon: 'shield-account', route: 'PrivacyPolicy' },
       { title: 'Terms of Service', icon: 'file-document', route: 'TermsOfService' },
       { title: 'Contact Us', icon: 'email', route: 'ContactUs' },

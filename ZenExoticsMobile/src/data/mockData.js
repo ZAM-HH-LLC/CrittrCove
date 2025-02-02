@@ -580,7 +580,7 @@ const mockBookingDetails = {
   '56782': {
     ...sharedBookingDetails,
     id: '56782',
-    clientName: 'Zoe Neale',
+    clientName: 'Zoe Aerial',
     status: BOOKING_STATES.DENIED,
     startDate: '2024-02-21',
     startTime: '15:30',
@@ -588,7 +588,7 @@ const mockBookingDetails = {
   '5673': {
     ...sharedBookingDetails,
     id: '5673',
-    clientName: 'Matt Aertker',
+    clientName: 'Matt Clark',
     status: BOOKING_STATES.PENDING_INITIAL_PROFESSIONAL_CHANGES,
     startDate: '2024-02-21',
     startTime: '15:30',
@@ -604,7 +604,7 @@ const mockBookingDetails = {
   '5675': {
     ...sharedBookingDetails,
     id: '5675',
-    clientName: 'Booty Smith',
+    clientName: 'Lauren Smith',
     status: BOOKING_STATES.PENDING_PROFESSIONAL_CHANGES,
     startDate: '2024-02-21',
     startTime: '15:30',
@@ -612,7 +612,7 @@ const mockBookingDetails = {
   '5675': {
     ...sharedBookingDetails,
     id: '56712',
-    clientName: 'Booty Butt Licker',
+    clientName: 'Matt Smith',
     status: BOOKING_STATES.CONFIRMED_PENDING_PROFESSIONAL_CHANGES,
     startDate: '2024-02-21',
     startTime: '15:30',
@@ -620,7 +620,7 @@ const mockBookingDetails = {
   '56713': {
     ...sharedBookingDetails,
     id: '567123',
-    clientName: 'bolaskdnflkasjfdaslkdfj',
+    clientName: 'Albert Einstein',
     status: BOOKING_STATES.PENDING_INITIAL_PROFESSIONAL_CHANGES,
     startDate: '2025-02-21',
     startTime: '15:30',
@@ -632,6 +632,22 @@ const mockBookingDetails = {
     startDate: '2025-02-21',
     startTime: '15:30',
   },
+  '91011': {
+    ...sharedBookingDetails,
+    id: '91011',
+    clientName: 'Dr. Bla Johnson',
+    status: BOOKING_STATES.PENDING_INITIAL_PROFESSIONAL_CHANGES,
+    startDate: '2025-02-21',
+    startTime: '15:30',
+  },
+  '91012': {
+    ...sharedBookingDetails,
+    id: '91012',
+    clientName: 'Dr. Blabla Johnson',
+    status: BOOKING_STATES.PENDING_INITIAL_PROFESSIONAL_CHANGES,
+    startDate: '2025-02-21',
+    startTime: '15:30',
+  }
 };
 
 // Map mockProfessionalBookings from mockBookingDetails

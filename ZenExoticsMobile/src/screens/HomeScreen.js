@@ -19,13 +19,13 @@ export default function HomeScreen({ navigation }) {
           style={styles.heroImage}
           resizeMode="cover"
         />
-        <Text style={styles.heroText}>Welcome to ZenExotics</Text>
+        <Text style={styles.heroText}>Welcome to CrittrCove</Text>
       </View>
 
       <View style={styles.section}>
         <Title style={styles.sectionTitle}>Our Services</Title>
         <Paragraph>
-          At ZenExotics, we offer premium pet sitting services with a focus on exotic pets. Our unique features include:
+          At CrittrCove, we offer premium pet sitting services with a focus on exotic pets. Our unique features include:
         </Paragraph>
         <Card style={styles.card}>
           <Card.Content>
@@ -44,7 +44,7 @@ export default function HomeScreen({ navigation }) {
       <View style={styles.section}>
         <Title style={styles.sectionTitle}>About Us</Title>
         <Paragraph>
-          ZenExotics is dedicated to providing top-quality care for all pets, with a special focus on exotic animals. Our network of experienced and passionate professionals ensures your beloved pets receive the best care possible.
+          CrittrCove is dedicated to providing top-quality care for all pets, with a special focus on exotic animals. Our network of experienced and passionate professionals ensures your beloved pets receive the best care possible.
         </Paragraph>
       </View>
 
@@ -65,7 +65,7 @@ export default function HomeScreen({ navigation }) {
         <Card style={styles.card}>
           <Card.Content>
             <Title>3. Relax</Title>
-            <Paragraph>Stay connected with photos and messaging. Your booking is protected by ZenExotics, including 24/7 support.</Paragraph>
+            <Paragraph>Stay connected with photos and messaging. CrittrCove offers your booking with 24/7 support.</Paragraph>
           </Card.Content>
         </Card>
       </View>

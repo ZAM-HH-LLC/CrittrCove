@@ -6,33 +6,35 @@ import { AuthContext } from '../context/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Appbar, Menu, useTheme } from 'react-native-paper';
 
+let previousRoute, currentRoute;
+
 export const handleBack = async (navigation) => {
   try {
     if (Platform.OS === 'web') {
-      // Web: Use sessionStorage
-      const previousRoute = sessionStorage.getItem('previousRoute');
-      const currentRoute = sessionStorage.getItem('currentRoute');
+      previousRoute = sessionStorage.getItem('previousRoute');
+      currentRoute = sessionStorage.getItem('currentRoute');
       
       if (previousRoute) {
         sessionStorage.setItem('currentRoute', previousRoute);
         sessionStorage.setItem('previousRoute', currentRoute);
-        console.log('Previous Route:', previousRoute);
-        console.log('Current Route:', currentRoute);
+        // if (is_DEBUG) {
+        //   console.log('Previous Route:', previousRoute);
+        //   console.log('Current Route:', currentRoute);
+        // }
         navigation.navigate(previousRoute);
       } else {
         // Default to More screen if no previous route
         navigation.navigate('More');
       }
     } else {
-      // Mobile: Use AsyncStorage
-      const previousRoute = await AsyncStorage.getItem('previousRoute');
-      const currentRoute = await AsyncStorage.getItem('currentRoute');
+      previousRoute = await AsyncStorage.getItem('previousRoute');
+      currentRoute = await AsyncStorage.getItem('currentRoute');
       
       if (previousRoute) {
         await AsyncStorage.setItem('currentRoute', previousRoute);
         await AsyncStorage.setItem('previousRoute', currentRoute);
-        console.log('Previous Route:', previousRoute);
-        console.log('Current Route:', currentRoute);
+        // console.log('Previous Route:', previousRoute);
+        // console.log('Current Route:', currentRoute);
         navigation.navigate(previousRoute);
       } else {
         // Default to More screen if no previous route
@@ -41,7 +43,7 @@ export const handleBack = async (navigation) => {
     }
 
     if (previousRoute === currentRoute) {
-      console.log('Two routes are the same');
+      // console.log('Two routes are the same');
       navigation.navigate('More');
       return;
     }
@@ -53,17 +55,19 @@ export const handleBack = async (navigation) => {
 
 export const navigateToFrom = async (navigation, toLocation, fromLocation, params = {}) => {
   try {
-    console.log('Navigating from:', fromLocation, 'to:', toLocation);
+    // if (is_DEBUG) {
+    //   console.log('Navigating from:', fromLocation, 'to:', toLocation);
+    // }
     if (Platform.OS === 'web') {
       sessionStorage.setItem('previousRoute', fromLocation);
       sessionStorage.setItem('currentRoute', toLocation);
-      console.log('Web - Set previousRoute:', fromLocation);
-      console.log('Web - Set currentRoute:', toLocation);
+      // console.log('Web - Set previousRoute:', fromLocation);
+      // console.log('Web - Set currentRoute:', toLocation);
     } else {
       await AsyncStorage.setItem('previousRoute', fromLocation);
       await AsyncStorage.setItem('currentRoute', toLocation);
-      console.log('Mobile - Set previousRoute:', fromLocation);
-      console.log('Mobile - Set currentRoute:', toLocation);
+      // console.log('Mobile - Set previousRoute:', fromLocation);
+      // console.log('Mobile - Set currentRoute:', toLocation);
     }
     setTimeout(() => {
       navigation.navigate(toLocation, params);
@@ -177,7 +181,7 @@ export default function Navigation({ navigation }) {
         { title: 'Dashboard', icon: 'view-dashboard', route: 'Dashboard' },
         { title: professionalsTitle, icon: 'magnify', route: 'SearchProfessionalsListing' },
         { title: 'Messages', icon: 'message-text', route: 'MessageHistory' },
-        { title: 'My Pets', icon: 'paw', route: 'MyPets' },
+        { title: 'Become a Pro', icon: 'paw', route: 'BecomeProfessional' },
         { title: 'More', icon: 'dots-horizontal', route: 'More' },
       ];
     }
@@ -227,7 +231,7 @@ export default function Navigation({ navigation }) {
         <Appbar.Header style={[styles.header, { backgroundColor: colors.primary }]}>
           <View style={styles.titleContainer}>
             <TouchableOpacity onPress={() => handleNavigation('Home')}>
-              <Text style={[styles.title, { color: colors.whiteText }]}>ZenExotics</Text>
+              <Text style={[styles.title, { color: colors.whiteText }]}>CrittrCove</Text>
             </TouchableOpacity>
           </View>
           {isMobile ? (

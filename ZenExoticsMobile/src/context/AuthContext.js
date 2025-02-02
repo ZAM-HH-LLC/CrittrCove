@@ -23,7 +23,7 @@ export const AuthProvider = ({ children }) => {
   const [is_prototype, setIsPrototype] = useState(true);
 
   // Set is_DEBUG to true by default in prototype mode
-  const [is_DEBUG, setIsDebug] = useState(false);
+  const [is_DEBUG, setIsDebug] = useState(true);
 
   // Preload Stripe modules when user signs in
   useEffect(() => {
@@ -82,9 +82,11 @@ export const AuthProvider = ({ children }) => {
       return;
     }
     try {
-      let token = await AsyncStorage.getItem('userToken');
+      let token = Platform.OS === 'web' ? sessionStorage.getItem('userToken') : await AsyncStorage.getItem('userToken');
       if (!token) {
-        console.error('No token found');
+        if (is_DEBUG) {
+          console.error('No token found');
+        }
         return;
       }
       const response = await axios.get(`${API_BASE_URL}/api/users/v1/get-name/`, {
@@ -100,28 +102,46 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const loadAuthState = async () => {
       try {
+        // Ensure storedApproval is retrieved correctly and handle null or undefined values
+        let token, storedRole, storedApproval;
 
-        const [token, storedRole, storedApproval] = await AsyncStorage.multiGet([
-          'userToken',
-          'userRole',
-          'isApprovedProfessional'
-        ]);
+        if (Platform.OS === "web") {
+          token = sessionStorage.getItem('userToken');
+          storedRole = sessionStorage.getItem('userRole');
+          storedApproval = sessionStorage.getItem('isApprovedProfessional');
+          if (is_DEBUG) {
+            console.log("MBA got token:", token, "storedRole:", storedRole, "StoredApproval:", storedApproval);
+          }
+        } else {
+          [token, storedRole, storedApproval] = await AsyncStorage.multiGet([
+            'userToken',
+            'userRole',
+            'isApprovedProfessional'
+          ]);
+        }
+
+        // Handle null or undefined storedApproval
+        const isApproved = storedApproval ? storedApproval[1] === 'true' : false;
 
         // If we have stored values, use them
-        if (token[1]) {
-
+        if (token) {
+          if (is_DEBUG) {
+            console.log("MBA got into load auth state if token. storedRole:", storedRole);
+          }
           setIsSignedIn(true);
-          setUserRole(storedRole[1] || 'petOwner');
-          setIsApprovedProfessional(storedApproval[1] === 'true');
+          setUserRole(storedRole || 'petOwner');
+          setIsApprovedProfessional(isApproved);
 
           if (is_DEBUG) {
             console.log('Initial auth state set:', {
-              role: storedRole[1] || 'petOwner',
-              isApproved: storedApproval[1] === 'true'
+              role: storedRole || 'petOwner',
+              isApproved: isApproved
             });
           }
         } else {
-          console.log('No token found, setting to signed out state');
+          if (is_DEBUG) {
+            console.log('No token found, setting to signed out state');
+          }
           setIsSignedIn(false);
           setUserRole(null);
           setIsApprovedProfessional(false);
@@ -175,10 +195,15 @@ export const AuthProvider = ({ children }) => {
 
   const signIn = async (token, refreshTokenValue) => {
     try {
-      await AsyncStorage.multiSet([
-        ['userToken', token],
-        ['refreshToken', refreshTokenValue],
-      ]);
+      if (Platform.OS === "web") {
+        sessionStorage.setItem('userToken', token);
+        sessionStorage.setItem('refreshToken', refreshTokenValue);
+      } else {
+        await AsyncStorage.multiSet([
+          ['userToken', token],
+          ['refreshToken', refreshTokenValue],
+        ]);
+      }
 
       if (is_DEBUG) {
         console.log('MBA sign in token', token, 'refreshToken', refreshTokenValue);
@@ -189,7 +214,11 @@ export const AuthProvider = ({ children }) => {
         // In prototype mode, set default values without API calls
         const initialRole = 'professional';
         setUserRole(initialRole);
-        await AsyncStorage.setItem('userRole', initialRole);
+        if (Platform.OS === 'web') {
+          sessionStorage.setItem('userRole', initialRole);
+        } else {
+          await AsyncStorage.setItem('userRole', initialRole);
+        }
         setIsApprovedProfessional(true);
         return {
           userRole: initialRole,
@@ -206,8 +235,12 @@ export const AuthProvider = ({ children }) => {
       setUserRole(initialRole);
       await AsyncStorage.setItem('userRole', initialRole);
       
+      // Add logging to track access and refresh tokens during signIn
+      if (is_DEBUG) {
+        console.log('Access token stored:', token);
+        console.log('Refresh token stored:', refreshTokenValue);
+      }
 
-      
       return {
         userRole: initialRole,
         isApprovedProfessional: status.isApprovedProfessional
@@ -226,6 +259,11 @@ export const AuthProvider = ({ children }) => {
         'userRole', 
         'isApprovedProfessional'
       ]);
+
+      await sessionStorage.removeItem('userToken');
+      await sessionStorage.removeItem('refreshToken');
+      await sessionStorage.removeItem('userRole');
+      await sessionStorage.removeItem('isApprovedProfessional');
     } catch (error) {
       console.error('Error clearing storage:', error);
     }
@@ -240,28 +278,31 @@ export const AuthProvider = ({ children }) => {
 
   const switchRole = async () => {
     if (isApprovedProfessional) {
+      console.log("MBA userRole", userRole);
       const newRole = userRole === 'professional' ? 'petOwner' : 'professional';
-
-      
-      // Update state first
       setUserRole(newRole);
-      
-      // Then update AsyncStorage
       try {
-
-        await AsyncStorage.setItem('userRole', newRole);
+        if (Platform.OS === "web") {
+          sessionStorage.setItem('userRole', newRole);
+        } else {
+          await AsyncStorage.setItem('userRole', newRole);
+        }
         
         // Verify the role was stored correctly
-        const storedRole = await AsyncStorage.getItem('userRole');
+        const storedRole = Platform.OS === "web" ? sessionStorage.getItem('userRole') : await AsyncStorage.getItem('userRole');
+        console.log("MBA Stored role:", storedRole);
 
-        
+        console.log("MBA New role:", newRole);
 
       } catch (error) {
-        console.error('Error updating role in AsyncStorage:', error);
+        console.error('Error updating role in storage:', error);
       }
     } else {
       console.log('User is not an approved professional, cannot switch roles');
     }
+
+    // Add logging in switchRole to track isApprovedProfessional state
+    console.log('Switching role. Current isApprovedProfessional:', isApprovedProfessional);
   };
 
   const validateToken = async (token) => {
@@ -293,16 +334,30 @@ export const AuthProvider = ({ children }) => {
           console.log('Prototype mode: Mock token refresh successful');
         }
         const mockNewToken = 'mock_refreshed_token';
-        await AsyncStorage.setItem('userToken', mockNewToken);
+        if (Platform.OS === 'web') {
+          sessionStorage.setItem('userToken', mockNewToken);
+        } else {
+          await AsyncStorage.setItem('userToken', mockNewToken);
+        }
         return mockNewToken;
+      }
+
+      // Ensure refresh token is retrieved correctly in refreshUserToken
+      const refreshToken = Platform.OS === "web" ? sessionStorage.getItem('refreshToken') : await AsyncStorage.getItem('refreshToken');
+      if (!refreshToken) {
+        console.error('No refresh token found');
+        return null;
       }
 
       const response = await axios.post(`${API_BASE_URL}/api/token/refresh/`, {
         refresh: refreshToken
       });
       const newToken = response.data.access;
-      await AsyncStorage.setItem('userToken', newToken);
-
+      if (Platform.OS === 'web') {
+        sessionStorage.setItem('userToken', newToken);
+      } else {
+        await AsyncStorage.setItem('userToken', newToken);
+      }
       return newToken;
     } catch (error) {
       console.error('Error refreshing token:', error.response?.status);
@@ -313,8 +368,7 @@ export const AuthProvider = ({ children }) => {
   const checkAuthStatus = async () => {
     try {
       if (is_prototype) {
-        // In prototype mode, check if we have any token (mock or real)
-        const token = await AsyncStorage.getItem('userToken');
+        const token = Platform.OS === "web" ? sessionStorage.getItem('userToken') : await AsyncStorage.getItem('userToken');
         if (!token) {
           if (is_DEBUG) {
             console.log('Prototype mode: No token found, signing out');
@@ -323,45 +377,65 @@ export const AuthProvider = ({ children }) => {
           return { isSignedIn: false, userRole: null, isApprovedProfessional: false };
         }
 
-        // In prototype mode, always consider the token valid
         if (is_DEBUG) {
           console.log('Prototype mode: Token found, setting signed in state');
         }
         setIsSignedIn(true);
-        const storedRole = await AsyncStorage.getItem('userRole') || 'petOwner';
-        setUserRole(storedRole);
+        const storedRole = Platform.OS === "web" ? sessionStorage.getItem('userRole') : await AsyncStorage.getItem('userRole');
+
+        if (is_DEBUG) {
+          console.log("MBA setting user role", storedRole);
+        }
+        setUserRole(storedRole === 'professional' || storedRole === 'petOwner' ? storedRole : 'petOwner');
         setIsApprovedProfessional(true);
         return {
           isSignedIn: true,
-          userRole: storedRole,
+          userRole: storedRole === 'professional' || storedRole === 'petOwner' ? storedRole : 'petOwner',
           isApprovedProfessional: true
         };
       }
 
-      const [token, refreshToken, storedRole, storedApproval] = await AsyncStorage.multiGet([
-        'userToken',
-        'refreshToken',
-        'userRole',
-        'isApprovedProfessional'
-      ]);
+      let token, refreshToken, storedRole, storedApproval;
 
-      if (!token[1] && !refreshToken[1]) {
+      if (Platform.OS === "web") {
+        token = sessionStorage.getItem('userToken');
+        refreshToken = sessionStorage.getItem('refreshToken');
+        storedRole = sessionStorage.getItem('userRole');
+        storedApproval = sessionStorage.getItem('isApprovedProfessional');
+      } else {
+        [token, refreshToken, storedRole, storedApproval] = await AsyncStorage.multiGet([
+          'userToken',
+          'refreshToken',
+          'userRole',
+          'isApprovedProfessional'
+        ]);
+      }
+
+      if (is_DEBUG) {
+        console.log("MBA userToken:", token);
+        console.log("MBA refreshToken:", refreshToken);
+        console.log("MBA storedRole:", storedRole);
+        console.log("MBA isApprovedProfessional:", isApprovedProfessional);
+        console.log("MBA storedApproval:", storedApproval);
+      }
+
+      if (!token || !refreshToken) {
         console.log('No tokens found - signing out');
-        await signOut(); // This will handle both clearing state and navigation
+        await signOut();
         return { isSignedIn: false, userRole: null, isApprovedProfessional: false };
       }
 
       // First try to validate current token
-      let currentToken = token[1];
+      let currentToken = token;
       let isValid = false;
-      
+
       if (currentToken) {
         isValid = await validateToken(currentToken);
       }
 
       // If current token is invalid but we have refresh token, try to refresh
-      if (!isValid && refreshToken[1]) {
-        const newToken = await refreshUserToken(refreshToken[1]);
+      if (!isValid && refreshToken) {
+        const newToken = await refreshUserToken(refreshToken);
         if (newToken) {
           currentToken = newToken;
           isValid = true;
@@ -378,7 +452,7 @@ export const AuthProvider = ({ children }) => {
       console.log('Token validation successful, checking professional status with token:', currentToken);
       const status = await getProfessionalStatus(currentToken);
       console.log('Professional status check result:', status);
-      
+
       setIsSignedIn(true);
       setIsApprovedProfessional(status.isApprovedProfessional);
 
@@ -402,8 +476,8 @@ export const AuthProvider = ({ children }) => {
       }
 
       // For all other cases, use the stored role if it exists
-      if (storedRole[1]) {
-        const role = storedRole[1];
+      if (storedRole) {
+        const role = storedRole;
 
         setUserRole(role);
         return {
@@ -419,7 +493,7 @@ export const AuthProvider = ({ children }) => {
 
       setUserRole(newRole);
       await AsyncStorage.setItem('userRole', newRole);
-      
+
       return {
         isSignedIn: true,
         userRole: newRole,
@@ -443,6 +517,16 @@ export const AuthProvider = ({ children }) => {
       AsyncStorage.setItem('isApprovedProfessional', String(isApprovedProfessional));
     }
   }, [is_prototype, isSignedIn, userRole, isApprovedProfessional]);
+
+  // Ensure isApprovedProfessional is set to true in prototype mode
+  useEffect(() => {
+    if (is_prototype) {
+      setIsApprovedProfessional(true);
+      if (is_DEBUG) {
+        console.log('Prototype mode: isApprovedProfessional set to true');
+      }
+    }
+  }, [is_prototype]);
 
   return (
     <AuthContext.Provider value={{ 
