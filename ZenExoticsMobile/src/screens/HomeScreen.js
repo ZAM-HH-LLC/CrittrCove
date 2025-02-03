@@ -9,6 +9,9 @@ import { FontAwesome } from '@expo/vector-icons';
 import { FontAwesome5 } from '@expo/vector-icons';
 import RoadmapSection from '../components/RoadmapSection';
 import { useForm, ValidationError } from '@formspree/react';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { FontAwesome6 } from '@expo/vector-icons';
+import { MaterialIcons } from '@expo/vector-icons';
 
 const { width: windowWidth, height: windowHeight } = Dimensions.get('window');
 
@@ -93,6 +96,19 @@ export default function HomeScreen({ navigation }) {
   const Features = () => {
     const [activeTab, setActiveTab] = useState('owners'); // Default to owners tab
 
+    // Update the feature item structure and styles
+    const featureItemStyle = {
+      flexDirection: 'row',
+      marginBottom: 20,
+      alignItems: 'flex-start',
+      width: '100%',
+    };
+
+    const featureContentStyle = {
+      flex: 1,
+      marginLeft: 15,
+    };
+
     return (
       <View style={styles.featuresSection}>
         <Text style={styles.sectionTitle}>How It Works</Text>
@@ -116,25 +132,41 @@ export default function HomeScreen({ navigation }) {
             <View style={styles.featureColumn}>
               <Text style={styles.columnTitle}>For Pet Owners</Text>
               <View style={styles.featuresList}>
-              <View style={styles.featureItem}>
-                  <View style={styles.featureIconCircle}><Text style={styles.featureIcon}>📝</Text></View>
-                  <Text style={styles.featureTitle}>Complete Your Profile</Text>
-                  <Text style={styles.featureText}>Submit details about you and your requirements.</Text>
+                <View style={featureItemStyle}>
+                  <View style={styles.featureIconCircle}>
+                    <FontAwesome6 name="person-running" size={24} color={theme.colors.primary} />
+                  </View>
+                  <View style={featureContentStyle}>
+                    <Text style={styles.featureTitle}>Complete Your Profile</Text>
+                    <Text style={styles.featureText}>Submit details about you and your requirements.</Text>
+                  </View>
                 </View>
-                <View style={styles.featureItem}>
-                  <View style={styles.featureIconCircle}><Text style={styles.featureIcon}>📋</Text></View>
-                  <Text style={styles.featureTitle}>Complete Pet Profile</Text>
-                  <Text style={styles.featureText}>Submit details about your pet and sitting requirements.</Text>
+                <View style={featureItemStyle}>
+                  <View style={styles.featureIconCircle}>
+                    <MaterialCommunityIcons name="horse-human" size={24} color={theme.colors.primary} />
+                  </View>
+                  <View style={featureContentStyle}>
+                    <Text style={styles.featureTitle}>Complete Pet Profile</Text>
+                    <Text style={styles.featureText}>Submit details about your pet and sitting requirements.</Text>
+                  </View>
                 </View>
-                <View style={styles.featureItem}>
-                  <View style={styles.featureIconCircle}><Text style={styles.featureIcon}>🤝</Text></View>
-                  <Text style={styles.featureTitle}>Search for Pro's</Text>
-                  <Text style={styles.featureText}>You can use our marketplace to find the best pro for your desired service.</Text>
+                <View style={featureItemStyle}>
+                  <View style={styles.featureIconCircle}>
+                    <MaterialCommunityIcons name="professional-hexagon" size={24} color={theme.colors.primary} />
+                  </View>
+                  <View style={featureContentStyle}>
+                    <Text style={styles.featureTitle}>Search for Pro's</Text>
+                    <Text style={styles.featureText}>You can use our marketplace to find the best pro for your desired service.</Text>
+                  </View>
                 </View>
-                <View style={styles.featureItem}>
-                  <View style={styles.featureIconCircle}><Text style={styles.featureIcon}>✅</Text></View>
-                  <Text style={styles.featureTitle}>Confirm Your Booking</Text>
-                  <Text style={styles.featureText}>Coordinate directly with your professional to finalize details.</Text>
+                <View style={featureItemStyle}>
+                  <View style={styles.featureIconCircle}>
+                    <FontAwesome5 name="calendar-check" size={24} color={theme.colors.primary} />
+                  </View>
+                  <View style={featureContentStyle}>
+                    <Text style={styles.featureTitle}>Confirm Your Booking</Text>
+                    <Text style={styles.featureText}>Coordinate directly with your professional to finalize details.</Text>
+                  </View>
                 </View>
               </View>
               <TouchableOpacity style={styles.actionButton} onPress={() => Linking.openURL('https://your-google-form')}>
@@ -146,20 +178,41 @@ export default function HomeScreen({ navigation }) {
             <View style={styles.featureColumn}>
               <Text style={styles.columnTitle}>For Pet Professionals</Text>
               <View style={styles.featuresList}>
-                <View style={styles.featureItem}>
-                  <View style={styles.featureIconCircle}><Text style={styles.featureIcon}>📋</Text></View>
-                  <Text style={styles.featureTitle}>Sign Up to Join</Text>
-                  <Text style={styles.featureText}>Submit your profile, specialties, and availability.</Text>
+                <View style={featureItemStyle}>
+                  <View style={styles.featureIconCircle}>
+                    <FontAwesome name="sign-in" size={24} color={theme.colors.primary} />
+                  </View>
+                  <View style={featureContentStyle}>
+                    <Text style={styles.featureTitle}>Apply to Join Pro Community</Text>
+                    <Text style={styles.featureText}>Submit your specialties, documents, bio, and availability to begin.</Text>
+                  </View>
                 </View>
-                <View style={styles.featureItem}>
-                  <View style={styles.featureIconCircle}><Text style={styles.featureIcon}>🔍</Text></View>
-                  <Text style={styles.featureTitle}>Get Matched with Clients</Text>
-                  <Text style={styles.featureText}>Pet owners in your area will reach out to you once you create services.</Text>
+                <View style={featureItemStyle}>
+                  <View style={styles.featureIconCircle}>
+                    <MaterialCommunityIcons name="plus-circle" size={24} color={theme.colors.primary} />
+                  </View>
+                  <View style={featureContentStyle}>
+                    <Text style={styles.featureTitle}>Create Services</Text>
+                    <Text style={styles.featureText}>Create services to offer to pet owners.</Text>
+                  </View>
                 </View>
-                <View style={styles.featureItem}>
-                  <View style={styles.featureIconCircle}><Text style={styles.featureIcon}>📈</Text></View>
-                  <Text style={styles.featureTitle}>Grow Your Business</Text>
-                  <Text style={styles.featureText}>Manage bookings and get support as you build your pet service business.</Text>
+                <View style={featureItemStyle}>
+                  <View style={styles.featureIconCircle}>
+                    <FontAwesome6 name="handshake-simple" size={24} color={theme.colors.primary} />
+                  </View>
+                  <View style={featureContentStyle}>
+                    <Text style={styles.featureTitle}>Get Matched with Clients</Text>
+                    <Text style={styles.featureText}>Pet owners in your area will reach out to you for yourservices.</Text>
+                  </View>
+                </View>
+                <View style={featureItemStyle}>
+                  <View style={styles.featureIconCircle}>
+                    <MaterialIcons name="auto-graph" size={24} color={theme.colors.primary} />
+                  </View>
+                  <View style={featureContentStyle}>
+                    <Text style={styles.featureTitle}>Grow Your Business</Text>
+                    <Text style={styles.featureText}>Manage bookings and get support as you build your pet service business.</Text>
+                  </View>
                 </View>
               </View>
               <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('BecomeProfessional')}>
@@ -555,9 +608,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   featureColumn: {
-    width: SCREEN_WIDTH < 768 ? '90%' : '',
+    width: SCREEN_WIDTH < 768 ? '90%' : '100%',
     maxWidth: 600,
-    padding: 10,
+    padding: 20,
+    backgroundColor: 'white',
     borderRadius: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -566,23 +620,30 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   columnTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 20,
+    color: 'black',
+    textAlign: 'center',
   },
   featuresList: {
+    width: '100%',
     marginBottom: 20,
   },
   featureItem: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 20,
+    alignItems: 'flex-start',
+    width: '100%',
   },
   featureIconCircle: {
-    // width: 60,
-    // height: 60,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#f5f5f5',
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 5,
   },
   featureIcon: {
     fontSize: 40,
@@ -590,13 +651,13 @@ const styles = StyleSheet.create({
   featureTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginLeft: 10,
-    marginRight: 10,
+    marginBottom: 5,
     color: 'black',
   },
   featureText: {
     fontSize: 16,
     color: 'black',
+    lineHeight: 22,
   },
   actionButton: {
     backgroundColor: '#6A6C51',

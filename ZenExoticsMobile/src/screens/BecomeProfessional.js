@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { View, Text, TextInput, StyleSheet, ScrollView, SafeAreaView, Platform, StatusBar, TouchableOpacity, ActivityIndicator, Alert, Dimensions } from 'react-native';
+import { View, Text, TextInput, StyleSheet, ScrollView, SafeAreaView, Platform, StatusBar, TouchableOpacity, ActivityIndicator, Alert, Dimensions, Image } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
 import * as ImagePicker from 'expo-image-picker';
 import { AuthContext } from '../context/AuthContext';
 import { navigateToFrom, handleBack } from '../components/Navigation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useForm, ValidationError } from '@formspree/react';
 
 
 // TODO: mention to user initially we are doing a manual verification process, will implement automation later.
@@ -19,7 +20,8 @@ const BecomeProfessional = ({ navigation }) => {
   const [certifications, setCertifications] = useState([]);
   const [insuranceProof, setInsuranceProof] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { is_DEBUG } = useContext(AuthContext);
+  const { is_DEBUG, is_prototype } = useContext(AuthContext);
+  const [state, handleFormspreeSubmit] = useForm("mkgobpro");
 
   useEffect(() => {
     const initializeNavigation = async () => {
@@ -49,10 +51,16 @@ const BecomeProfessional = ({ navigation }) => {
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
+      base64: true,
     });
 
     if (!result.canceled) {
-      setCertifications([...certifications, result.uri]);
+      const newCertification = {
+        uri: result.assets[0].uri,
+        base64: result.assets[0].base64,
+        name: result.assets[0].uri.split('/').pop()
+      };
+      setCertifications([...certifications, newCertification]);
     }
   };
 
@@ -62,34 +70,144 @@ const BecomeProfessional = ({ navigation }) => {
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
+      base64: true,
     });
 
     if (!result.canceled) {
-      setInsuranceProof([...insuranceProof, result.uri]);
+      const newProof = {
+        uri: result.assets[0].uri,
+        base64: result.assets[0].base64,
+        name: result.assets[0].uri.split('/').pop()
+      };
+      setInsuranceProof([...insuranceProof, newProof]);
     }
   };
 
-  const handleSubmit = () => {
-    setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setSelectedPets({
-        dog: false,
-        cat: false,
-        exotics: false,
-      });
-      setAbout('');
-      setCertifications([]);
-      setInsuranceProof([]);
-      if (Platform.OS === 'web') {
-        window.confirm('Success: Your application has been submitted successfully!') && navigation.navigate('More');
-      } else {
-        Alert.alert('Success', 'Your application has been submitted successfully!', [
-          { text: 'OK', onPress: () => navigation.navigate('More', { screen: 'More', transition: 'slide' }) },
-        ]);
-      }
-    }, 2000);
+  const removeCertification = (index) => {
+    setCertifications(certifications.filter((_, i) => i !== index));
   };
+
+  const removeInsuranceProof = (index) => {
+    setInsuranceProof(insuranceProof.filter((_, i) => i !== index));
+  };
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+
+    if (is_prototype) {
+      try {
+        // Create form data object
+        const formData = new FormData();
+        
+        // Add text fields
+        formData.append('type', 'Professional Application');
+        formData.append('selectedPets', Object.entries(selectedPets)
+          .filter(([_, value]) => value)
+          .map(([pet]) => pet)
+          .join(', '));
+        formData.append('about', about);
+
+        // Add certifications as files
+        certifications.forEach((cert, index) => {
+          // Create file name
+          const fileName = cert.name || `certification${index + 1}.jpg`;
+          
+          // Create file object
+          const fileData = {
+            uri: Platform.OS === 'ios' ? cert.uri.replace('file://', '') : cert.uri,
+            type: 'image/jpeg',
+            name: fileName,
+          };
+          
+          formData.append(`certification_${index + 1}`, fileData);
+        });
+
+        // Add insurance proofs as files
+        insuranceProof.forEach((proof, index) => {
+          // Create file name
+          const fileName = proof.name || `insurance${index + 1}.jpg`;
+          
+          // Create file object
+          const fileData = {
+            uri: Platform.OS === 'ios' ? proof.uri.replace('file://', '') : proof.uri,
+            type: 'image/jpeg',
+            name: fileName,
+          };
+          
+          formData.append(`insurance_${index + 1}`, fileData);
+        });
+
+        // Send as multipart form data
+        await handleFormspreeSubmit(formData);
+        
+        if (state.succeeded) {
+          setSelectedPets({
+            dog: false,
+            cat: false,
+            exotics: false,
+          });
+          setAbout('');
+          setCertifications([]);
+          setInsuranceProof([]);
+
+          if (Platform.OS === 'web') {
+            window.confirm('Success: Your application has been submitted successfully!') && navigation.navigate('More');
+          } else {
+            Alert.alert('Success', 'Your application has been submitted successfully!', [
+              { text: 'OK', onPress: () => navigation.navigate('More', { screen: 'More', transition: 'slide' }) },
+            ]);
+          }
+        }
+      } catch (error) {
+        console.error('Error submitting form:', error);
+        Alert.alert('Error', 'Failed to submit application. Please try again.');
+      } finally {
+        setIsSubmitting(false);
+      }
+    } else {
+      // Original submission logic for non-prototype mode
+      setTimeout(() => {
+        setIsSubmitting(false);
+        setSelectedPets({
+          dog: false,
+          cat: false,
+          exotics: false,
+        });
+        setAbout('');
+        setCertifications([]);
+        setInsuranceProof([]);
+        if (Platform.OS === 'web') {
+          window.confirm('Success: Your application has been submitted successfully!') && navigation.navigate('More');
+        } else {
+          Alert.alert('Success', 'Your application has been submitted successfully!', [
+            { text: 'OK', onPress: () => navigation.navigate('More', { screen: 'More', transition: 'slide' }) },
+          ]);
+        }
+      }, 2000);
+    }
+  };
+
+  // Show success message if form submission succeeded in prototype mode
+  if (is_prototype && state.succeeded) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
+            <MaterialCommunityIcons name="arrow-left" size={24} color={theme.colors.primary} />
+          </TouchableOpacity>
+          <Text style={styles.headerText}>Become a Professional</Text>
+        </View>
+        <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+          <Text style={[styles.title, { color: theme.colors.primary }]}>
+            Thanks for applying!
+          </Text>
+          <Text style={styles.subtitle}>
+            We'll review your application and get back to you soon.
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -141,7 +259,18 @@ const BecomeProfessional = ({ navigation }) => {
           <Text style={styles.uploadText}>Upload Documents</Text>
         </TouchableOpacity>
         {certifications.map((cert, index) => (
-          <Text key={index} style={styles.certificationText}>{cert}</Text>
+          <View key={index} style={styles.uploadedFileContainer}>
+            <Image source={{ uri: cert.uri }} style={styles.uploadedFilePreview} />
+            <Text style={styles.certificationText} numberOfLines={1}>
+              {cert.name}
+            </Text>
+            <TouchableOpacity 
+              style={styles.removeFileButton}
+              onPress={() => removeCertification(index)}
+            >
+              <MaterialCommunityIcons name="close" size={20} color={theme.colors.error} />
+            </TouchableOpacity>
+          </View>
         ))}
 
         <Text style={styles.label}>Upload Insurance Proof:</Text>
@@ -150,7 +279,18 @@ const BecomeProfessional = ({ navigation }) => {
           <Text style={styles.uploadText}>Upload Insurance</Text>
         </TouchableOpacity>
         {insuranceProof.map((proof, index) => (
-          <Text key={index} style={styles.certificationText}>{proof}</Text>
+          <View key={index} style={styles.uploadedFileContainer}>
+            <Image source={{ uri: proof.uri }} style={styles.uploadedFilePreview} />
+            <Text style={styles.certificationText} numberOfLines={1}>
+              {proof.name}
+            </Text>
+            <TouchableOpacity 
+              style={styles.removeFileButton}
+              onPress={() => removeInsuranceProof(index)}
+            >
+              <MaterialCommunityIcons name="close" size={20} color={theme.colors.error} />
+            </TouchableOpacity>
+          </View>
         ))}
 
         <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={isSubmitting}>
@@ -265,6 +405,30 @@ const styles = StyleSheet.create({
   },
   loadingIndicator: {
     marginTop: 10, // Add margin to separate the loading indicator from the submit button
+  },
+  subtitle: {
+    fontSize: theme.fontSizes.medium,
+    color: theme.colors.text,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  uploadedFileContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+    padding: 8,
+    borderRadius: 4,
+    marginBottom: 8,
+  },
+  uploadedFilePreview: {
+    width: 40,
+    height: 40,
+    borderRadius: 4,
+    marginRight: 8,
+  },
+  removeFileButton: {
+    padding: 4,
+    marginLeft: 'auto',
   },
 });
 

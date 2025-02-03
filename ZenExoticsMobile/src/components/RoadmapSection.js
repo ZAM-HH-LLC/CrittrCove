@@ -19,7 +19,7 @@ const RoadmapSection = () => {
       title: 'Prototype Launch',
       description: 'Initial release of CrittrCove webpage and landing page with no signup or app functionality.',
       icon: 'dog',
-      color: '#4169E1' // Royal Blue
+      color: '#515d6c' // Royal Blue
     },
     {
       id: 2,
@@ -27,7 +27,7 @@ const RoadmapSection = () => {
       title: 'Launch of MVP',
       description: 'This is when users will be able to sign up and use the app fully for the first time! For a full feature list, please check our blog or discord.',
       icon: 'dragon',
-      color: '#9370DB' // Medium Purple
+      color: '#516a6c' // Medium Purple
     },
     {
       id: 3,
@@ -35,7 +35,7 @@ const RoadmapSection = () => {
       title: 'Launch of App',
       description: 'Mobile app release with real-time messaging, notifications, and payment integration. For a full feature list, please check our blog or discord.',
       icon: 'cat',
-      color: theme.colors.primary // Royal Blue
+      color: '#516C61' // Royal Blue
     },
     {
       id: 4,
@@ -43,7 +43,7 @@ const RoadmapSection = () => {
       title: 'Community Features',
       description: 'Adding social features, pet communities, and expert advice forums.',
       icon: 'fish',
-      color: '#516C61' // Medium Purple
+      color: '#6A6C51' // Medium Purple
     }
   ];
 

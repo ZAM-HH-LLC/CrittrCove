@@ -23,7 +23,7 @@ export const AuthProvider = ({ children }) => {
   const [is_prototype, setIsPrototype] = useState(true);
 
   // Set is_DEBUG to true by default in prototype mode
-  const [is_DEBUG, setIsDebug] = useState(true);
+  const [is_DEBUG, setIsDebug] = useState(false);
 
   // Preload Stripe modules when user signs in
   useEffect(() => {
@@ -278,7 +278,9 @@ export const AuthProvider = ({ children }) => {
 
   const switchRole = async () => {
     if (isApprovedProfessional) {
-      console.log("MBA userRole", userRole);
+      if (is_DEBUG) {
+        console.log("MBA userRole", userRole);
+      }
       const newRole = userRole === 'professional' ? 'petOwner' : 'professional';
       setUserRole(newRole);
       try {
