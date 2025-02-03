@@ -50,7 +50,7 @@ const MyBookings = () => {
         }
       } else {
         // Real API call logic
-        let token = await AsyncStorage.getItem('userToken');
+        let token = Platform.OS === 'web' ? sessionStorage.getItem('userToken') : await AsyncStorage.getItem('userToken');
         if (!token) {
           throw new Error('No authentication token found');
         }
