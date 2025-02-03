@@ -46,6 +46,8 @@ import SearchProfessionalsListing from './src/screens/SearchProfessionalsListing
 import MyBookings from './src/screens/MyBookings';
 import BookingDetails from './src/screens/BookingDetails';
 import ServiceManagerScreen from './src/screens/ServiceManagerScreen';
+import BlogScreen from './src/screens/BlogScreen';
+import BlogPost from './src/screens/BlogPost';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -85,6 +87,8 @@ const screens = [
   { name: 'MyBookings', component: MyBookings },
   { name: 'BookingDetails', component: BookingDetails },
   { name: 'ServiceManager', component: ServiceManagerScreen },
+  { name: 'Blog', component: BlogScreen },
+  { name: 'BlogPost', component: BlogPost },
 ];
 
 const linking = {
@@ -141,6 +145,8 @@ const linking = {
       MyBookings: 'MyBookings',
       BookingDetails: 'BookingDetails',
       ServiceManager: 'ServiceManager',
+      Blog: 'Blog',
+      BlogPost: 'BlogPost',
       '*': '*'
     }
   }

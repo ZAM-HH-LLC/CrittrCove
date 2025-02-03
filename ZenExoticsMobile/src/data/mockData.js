@@ -1164,3 +1164,301 @@ export const ANIMAL_TYPE_SUGGESTIONS = [
   'Rabbit',
   'Fish',
 ];
+
+export const BLOG_POSTS = [
+  {
+    id: 'blog_1',
+    title: 'Crack the Code: What Your Dog is Really Saying',
+    author: {
+      id: 'author_1',
+      name: 'Zoe Neale',
+      profilePicture: 'https://via.placeholder.com/150',
+      bio: 'Professional dog trainer and animal behavior specialist with over 10 years of experience.'
+    },
+    publishDate: '2024-02-22',
+    readTime: '8 min',
+    tags: ['Dogs', 'Behavior', 'Training', 'Pet Care'],
+    content: `You know that moment when your dog tilts their head at you like you just asked them to solve a calculus problem? Turns out, they're not the only ones trying to understand you—they've been communicating with you this whole time, and you probably didn't even realize it.
+
+Dogs may not speak English (yet—give them time), but they have an entire language built on tail wags, ear positions, and those big, soulful eyes they use to manipulate you into giving them extra treats. Learning to read their body language isn't just a party trick—it can help prevent stress, deepen your bond, and maybe even stop your dog from embarrassing you at the dog park. So, let's finally crack the code on what your dog has been trying to tell you.
+
+Tail Wagging: Not Always a Sign of Happiness
+One of the biggest myths out there is that a wagging tail means a happy dog. Nope. Not always. A dog's tail is basically their mood ring, and the way they wag tells a whole different story.
+Loose, full-body wag (with bonus butt wiggles): This is the classic "OMG YOU'RE HOME!!" happy dance. A+ vibes.
+Slow wag, tail held high: The "I'm analyzing this situation" wag. Suspicious, calculating, possibly deciding if you're worth their energy.
+Stiff, fast wag with a raised tail: Yikes. This is "I'm on edge, don't mess with me" energy. Proceed with caution.
+Low, fast wag: "I'm nervous, and I don't know what's happening, so I'm just gonna keep wiggling and hope for the best."
+Tucked tail: Fear. If the tail is all the way tucked under, your dog is basically saying, "I regret everything, please don't yell at me."
+Even the direction of the wag matters—researchers found that dogs wag more to the right when they're happy and to the left when they're unsure or stressed (Quaranta et al., 2007). Yes, your dog's tail literally has anxiety tells.
+
+Ears and Eyes: The Silent Storytellers
+Dogs don't just talk with their tails—they also use their ears and eyes like tiny, furry actors in a silent film.
+Soft eyes, relaxed ears: Your dog is living their best life. No stress, just vibes.
+Wide eyes, whites showing (a.k.a. "whale eye"): "I am uncomfortable with the energy we have created in this room." This is a warning sign—your dog feels uneasy or trapped.
+Perked-up ears: "I heard something, and I will investigate." Could be excitement, curiosity, or them preparing to bark at absolutely nothing.
+Ears pinned back: "I'm nervous" or "I did something bad, and I hope you don't notice." Classic guilty dog move.
+Ever notice how some dogs do a little squint when they're happy? It's their version of a smile. On the flip side, prolonged direct eye contact—especially with an unfamiliar dog—can be a challenge. So, if you're having a staring contest with a dog you just met…maybe don't.
+
+The Freeze: When Your Dog Hits Pause (And You Should Pay Attention)
+If a dog suddenly stops moving and stiffens, pay attention. Freezing is often their last warning before things escalate to growling, snapping, or biting. A lot of people miss this and then wonder why their dog "suddenly" lashed out.
+You might see this when:
+A child is hugging a dog (which, fun fact, most dogs hate).
+Someone is petting a dog too aggressively.
+The dog feels cornered and has no escape route.
+Research by Rooney Clark and Casey (2016) helped show that when a dog freezes, in some way or another they are stressed, its best to give them space in that moment and take a mental note of your newest training goal! Sometimes, they just need a minute to de-escalate, like when you have to breathe through a customer service call that's not going well.
+
+Mouth Matters: Smiles vs. Stress
+Dogs can technically smile, but it's not always what you think.
+Loose, open mouth, tongue hanging out: Happy, relaxed, living their best life.
+Closed mouth, tight lips: Alert or unsure. They're analyzing the situation.
+Lips pulled back, slight teeth showing: Some dogs do a "submissive grin," which isn't aggression—it's their way of saying, "Hey, I'm friendly!"
+Wrinkled nose, full teeth bared: This is aggression. Back off.
+Excessive yawning in a new situation: Dogs don't just yawn when they're tired—they also yawn when they're stressed. To put it simply, they are overstimulated. (Glenk, 2020) Don't be fooled by the parrot dog, sometimes they yawn because they saw you yawn first! (D'Aniello, 2019)
+
+Conclusion: Your Dog Has Been Sending You Texts—Now You Can Finally Read Them
+Dogs may not be able to talk (yet), but they've been communicating loud and clear this whole time. That tail wag? Could be excitement, could be stress. That little squint? Doggy love. The full-body freeze? That's a big ol' "DO NOT DISTURB" sign.
+The more you pay attention, the better you'll understand your dog—and the fewer awkward misunderstandings you'll have (like mistaking a stress yawn for a nap cue). As we said in the beginning, your dog already knows exactly how to read you. They know your routine, when you're about to leave the house, and how to guilt-trip you into sharing your snacks. The least you can do is return the favor.
+So next time your dog gives you the side-eye, perks their ears, or flops over dramatically after a single walk, you'll finally know what they're saying. And let's be honest—it's probably, "I love you… now give me a treat."`,
+    references: [
+      {
+        title: '7 tips for canine body language',
+        authors: 'American Society for the Prevention of Cruelty to Animals (ASPCA)',
+        publication: 'ASPCApro',
+        url: 'https://www.aspcapro.org/resource/7-tips-canine-body-language'
+      },
+      {
+        title: "Therapy dogs' salivary cortisol levels vary during animal-assisted interventions",
+        authors: 'Glenk, L. M., Kothgassner, O. D., Stetina, B. U., Palme, R., & Kepplinger, B.',
+        publication: 'Frontiers in Veterinary Science',
+        year: 2020,
+        doi: '10.3389/fvets.2020.564201'
+      },
+      {
+        title: 'The importance of associative learning in cross-species social bonding: Dogs and humans',
+        authors: "D'Aniello, B., Scandurra, A., Alterisio, A., Aria, M., & Siniscalchi, M.",
+        publication: 'Frontiers in Psychology',
+        year: 2019,
+        doi: '10.3389/fpsyg.2019.01678'
+      },
+      {
+        title: 'Oxytocin-gaze positive loop and the coevolution of human-dog bonds',
+        authors: 'Nagasawa, M., Mitsui, S., En, S., Ohtani, N., Ohta, M., Sakuma, Y., Onaka, T., Mogi, K., & Kikusui, T.',
+        publication: 'Science',
+        year: 2015,
+        doi: '10.1126/science.1261022'
+      },
+      {
+        title: 'Asymmetric tail-wagging responses by dogs to different emotive stimuli',
+        authors: 'Quaranta, A., Siniscalchi, M., & Vallortigara, G.',
+        publication: 'Current Biology',
+        year: 2007,
+        doi: '10.1016/j.cub.2007.02.008'
+      },
+      {
+        title: 'Minimizing fear and anxiety in working dogs: A review',
+        authors: 'Rooney, N. J., Clark, C. C. A., & Casey, R. A.',
+        publication: 'Journal of Veterinary Behavior',
+        year: 2016,
+        doi: '10.1016/j.jveb.2016.11.001'
+      }
+    ],
+    likes: 245,
+    comments: 56,
+    shares: 89
+  },
+  {
+    id: 'blog_2',
+    title: 'Crack the Code: What Your Cat is Really Saying',
+    author: {
+      id: 'author_2',
+      name: 'Zoe Neale',
+      profilePicture: 'https://via.placeholder.com/150',
+      bio: 'Feline behavior specialist and veterinarian with a focus on cat-human relationships.'
+    },
+    publishDate: '2024-02-23',
+    readTime: '7 min',
+    tags: ['Cats', 'Behavior', 'Pet Care', 'Communication'],
+    content: `Ever wonder why your cat stares at you before slowly blinking or why they randomly sprint across the house at 2 AM? While cats may seem mysterious, they actually have a complex system of communication—if you know what to look for. Unlike dogs, who wear their emotions on their tails (literally), cats are more subtle. But once you learn their signals, you'll start to see what your cat has been trying to tell you all along.
+
+The Myth of the Aloof Cat: Do They Actually Care About You?
+Many people think cats are independent and don't bond with their owners the way dogs do. But research suggests otherwise. A study by Vitale et al. (2019) found that cats form secure attachments to their owners, much like infants do with their caregivers. In an experiment where cats were briefly separated from their owners, many showed signs of distress when left alone and relief upon their owner's return. So yes, your cat does care about you—they just have their own way of showing it.
+
+The Slow Blink: A Feline "I Love You"
+One of the best-kept secrets of cat communication is the slow blink. If your cat locks eyes with you and then slowly closes and opens their eyes, congratulations! You've just received a cat's version of a smile. Research completed in 2020 (Humphrey) found that when humans slowly blink at their cats, the cats are more likely to return the gesture and approach them in a friendly manner. So, next time you want to say "I love you" to your cat, skip the baby talk and try a slow blink instead.
+
+Tail Talk: Not Just for Dogs
+A cat's tail is like a built-in mood ring. Learning to read tail signals can help you avoid scratches and strengthen your bond.
+Tail up, tip curved: A friendly, confident cat greeting. If your cat walks toward you with their tail high, they're happy to see you.
+Puffed-up tail: This is a defensive reaction. Your cat is startled or feels threatened.
+Low, slow-wagging tail: Unlike dogs, a slow-wagging cat tail isn't a good sign—it often signals irritation or mild aggression.
+Tail wrapped around you or another cat: This is a sign of affection, almost like holding hands.
+
+Purring: More Than Just Happiness
+Everyone loves the soothing sound of a purring cat, but did you know cats don't just purr when they're happy? While contentment is a common reason, studies suggest cats also purr when they're stressed, in pain, or even trying to heal themselves. The frequency of cat purrs (between 25 and 150 Hz) has been linked to tissue regeneration and bone healing in studies on vibrational therapy (Muggenthaler, 2001). So, if your cat is purring at the vet's office, they may not be enjoying themselves—they might just be self-soothing.
+
+Headbutting and Kneading: Strange but Sweet Gestures
+Headbutting (bunting): When your cat gently bumps their head against you, they're not just being cute—they're marking you with their scent glands, claiming you as their own (Rodan, 2015).
+Kneading: The rhythmic pressing of paws against a soft surface (or your lap) is a behavior kittens use to stimulate milk flow. In adult cats, it's a sign of comfort and contentment (Brown & Bradshaw, 2016).
+
+Do Cats Really Ignore Their Names?
+If you've ever called your cat and been met with a flick of the ear but no movement, you might think they don't recognize their name. But research says otherwise. A study by Saito & Shinozuka (2013) found that cats can distinguish their names from other words, even in a household with multiple cats. They just don't always feel the need to respond. Unlike dogs, who evolved to seek human approval, cats evolved as solitary hunters. They hear you—they're just deciding whether you're worth getting up for.
+
+The Zoomies: Science Behind the 2 AM Sprints
+Those sudden, chaotic bursts of energy—also known as "zoomies"—are actually a by normal part of feline behavior. Cats are natural hunters, and their instincts tell them to be most active at dawn and dusk. If your cat has zoomies at odd hours, they might just be burning off excess energy. Providing interactive play during the day can help prevent nighttime sprints (Turner, 2021).
+
+Conclusion: The More You Watch, the More You Understand
+Cats may seem mysterious, but once you learn their language, they're basically tiny, furry drama queens with very specific ways of expressing love (and judgment). That slow blink? A kiss. That tail flick? A warning. The 2 AM zoomies? Either pent-up energy or an exorcism—we may never know.
+
+The more you pay attention to their signals, the better you'll understand them. And honestly your cat already understands you. They know exactly how to guilt-trip you into giving extra treats, how to wake you up precisely one minute before your alarm, and how to act like they don't care—right before curling up in your lap.
+
+At the end of the day, cats aren't ignoring us. They're just selectively participating. And now that you can read their signals, you're officially part of their very exclusive club.`,
+    references: [
+      {
+        title: 'Communication in the domestic cat: within- and between-species',
+        authors: 'Brown, S. L., & Bradshaw, J. W. S.',
+        publication: 'Animal Behaviour',
+        year: 2016,
+        doi: '10.1016/j.anbehav.2016.05.015'
+      },
+      {
+        title: 'Feline Behavioral Health and Welfare',
+        authors: 'Rodan, I., & Heath, S.',
+        publication: 'Elsevier Health Sciences',
+        year: 2015
+      },
+      {
+        title: 'The felid purr: A healing mechanism?',
+        authors: 'Muggenthaler, E. von.',
+        publication: 'Proceedings of the 12th International Conference on Low Frequency Noise and Vibration',
+        year: 2001,
+        url: 'https://www.researchgate.net/publication/272259095_The_felid_purr_A_healing_mechanism'
+      },
+      {
+        title: 'Vocal recognition of owners by domestic cats (Felis catus)',
+        authors: 'Saito, A., & Shinozuka, K.',
+        publication: 'Animal Cognition',
+        year: 2013,
+        doi: '10.1007/s10071-013-0620-4'
+      },
+      {
+        title: 'The mechanics of social interactions between cats and their owners',
+        authors: 'Turner, D. C.',
+        publication: 'Frontiers in Veterinary Science',
+        year: 2021,
+        doi: '10.3389/fvets.2021.650143'
+      },
+      {
+        title: 'Attachment bonds between domestic cats and humans',
+        authors: 'Vitale, K. R., Behnke, A. C., & Udell, M. A. R.',
+        publication: 'Current Biology',
+        year: 2019,
+        doi: '10.1016/j.cub.2019.08.036'
+      },
+      {
+        title: 'The role of cat eye narrowing movements in cat–human communication',
+        authors: 'Humphrey, T., Proops, L., & McComb, K.',
+        publication: 'Scientific Reports',
+        year: 2020,
+        doi: '10.1038/s41598-020-73426-0'
+      }
+    ],
+    likes: 312,
+    comments: 78,
+    shares: 102
+  },
+  {
+    id: 'blog_3',
+    title: 'Crack the Code: What Your Bird is Really Saying',
+    author: {
+      id: 'author_3',
+      name: 'Zoe Neale',
+      profilePicture: 'https://via.placeholder.com/150',
+      bio: 'Avian specialist and researcher focusing on bird behavior and communication.'
+    },
+    publishDate: '2024-02-24',
+    readTime: '6 min',
+    tags: ['Birds', 'Behavior', 'Pet Care', 'Avian Communication'],
+    content: `Ever look at your bird and think, What's going on in that tiny dinosaur brain of yours? Well, good news—birds may not text, but they do have an entire language made up of wing flutters, tail flicks, and the occasional judgmental stare. And if you learn to read these signals, you'll finally understand what your feathered friend has been trying to tell you all along.
+
+Let's break down the mysterious world of bird body language so you can stop guessing and start actually communicating with your avian BFF.
+
+The Head Tilt: Curious or Plotting Something?
+That adorable head tilt your bird does isn't just to make you go aww—it's actually their way of getting a better look at something. Birds process images differently than we do, so when they tilt their head, they're adjusting their angle to see more clearly (Massen et al., 2014).
+
+Slow, curious head tilt: They're interested in what's happening and trying to analyze the situation. Basically, they're bird detectives.
+Frequent or extreme tilting: Could indicate a vision issue or neurological problem—if it looks excessive, a vet visit is a good idea (Massen et al., 2014).
+One-eye stare, body stiffened: A sign they're feeling cautious or potentially threatened. If they were a human, this would be the equivalent of side-eye.
+
+Feather Fluffing: Cozy or Cranky?
+Feather movements say a lot about how a bird is feeling. Think of them as mood indicators, kind of like how we use facial expressions—except, you know, with more feathers.
+
+Fluffed-up feathers for a few seconds: Just getting comfortable. If your bird puffs up and then smooths back down, they're basically stretching.
+Constantly fluffed-up feathers: Not good. This can be a sign of illness, stress, or even feeling cold (Massen et al., 2014).
+Feathers sleeked back tight to the body: Your bird is nervous or possibly feeling aggressive. Approach with caution (Pika & Bugnyar, 2011).
+
+The Wing Flutter: Excitement or Back Off?
+Birds use their wings for way more than just flying—they also use them to communicate. Unfortunately, no sign language because birds dont have thumbs
+
+Excited, quick flutters: Happiness! Your bird is basically doing a little happy dance (Osaka University, 2023).
+Slow, controlled wing movements: This can be a "stay away" signal, kind of like putting up a hand to say "not now."
+One wing slightly drooped: Could be a sign of injury—time to check in with your vet.
+
+Bunting: Love, Not a Headbutt Attack
+If your bird presses or rubs their beak against you, congratulations—they're bunting, which is a sign of affection (Pika & Bugnyar, 2011).
+
+Gentle beak rubbing: They're marking you as part of their flock. You're officially theirs now.
+Aggressive, sudden beak nudging: Might mean "Hey, stop that" or "Give me attention NOW."
+
+The Stare-Down: Challenge or Trust?
+Unlike with dogs, where prolonged eye contact can be a dominance move, birds love staring at their favorite humans. It's actually a good thing—eye contact helps strengthen bonds (Osaka University, 2023).
+
+Soft, relaxed eyes: A sign of trust and comfort. They're chilling.
+Wide eyes with pinning pupils: Intense excitement—or potential aggression. If they suddenly go from relaxed to laser-focused, read the room.
+
+Tail Wagging: A Whole Different Story Than Dogs
+If you thought tail wagging only meant happiness (like with dogs), think again—birds have their own unique tail signals.
+
+Fast, side-to-side tail wagging: Happy and excited! Your bird is feeling good.
+Slow, deliberate tail flick: Annoyed or getting ready to give you a warning. Think of this as their way of saying "I'm this close to losing it."
+Tail fanned out: Displaying dominance or excitement—this is common in birds like parrots when they're trying to show off.
+
+The Playful Side: Hanging Upside Down & Wing Spreading
+Some birds (especially parrots) love hanging upside down like little acrobats. This is usually a sign of happiness and playfulness. If your bird does this often, they're feeling safe and confident.
+
+Upside-down hanging: Your bird is comfortable with you and their surroundings. They trust you.
+One wing slightly lifted while playing: This can be an invitation to interact—kind of like a bird's version of waving at you.
+
+Conclusion: Your Bird Has Been Speaking—Now You're Fluent
+Birds may not use words the way we do (unless you have a talkative parrot), but their body language speaks volumes. From fluffed feathers to head tilts and beak bunts, every little movement is a clue to how they're feeling.
+
+The more you watch and learn, the better you'll understand their unique way of communicating. And let's be real—your bird already knows exactly how to get your attention. Whether it's staring at you until you feel guilty enough to offer a treat or flapping their wings dramatically for no reason, they've got you trained.
+
+Now that you can finally read their signals, you're one step closer to becoming the ultimate bird whisperer. Just don't be surprised if they start giving you even more attitude now that you know what's up.`,
+    references: [
+      {
+        title: 'Facial display and blushing: Means of visual communication in blue-and-yellow macaws',
+        authors: 'Massen, J. J. M., Vermunt, D. A., & Sterck, E. H. M.',
+        publication: 'PLoS ONE',
+        year: 2014,
+        doi: '10.1371/journal.pone.0108794'
+      },
+      {
+        title: 'The use of referential gestures in ravens (Corvus corax) in the wild',
+        authors: 'Pika, S., & Bugnyar, T.',
+        publication: 'Nature Communications',
+        year: 2011,
+        doi: '10.1038/ncomms1567'
+      },
+      {
+        title: 'Wild birds gesture "after you" to insist their mate go first',
+        authors: 'Osaka University',
+        publication: 'Scientific American',
+        year: 2023,
+        url: 'https://www.scientificamerican.com/article/wild-birds-gesture-after-you-to-insist-their-mate-go-first/'
+      }
+    ],
+    likes: 198,
+    comments: 45,
+    shares: 67
+  }
+];

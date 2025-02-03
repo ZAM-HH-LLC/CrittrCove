@@ -12,6 +12,7 @@ import { useForm, ValidationError } from '@formspree/react';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { FontAwesome6 } from '@expo/vector-icons';
 import { MaterialIcons } from '@expo/vector-icons';
+import { BLOG_POSTS } from '../data/mockData';
 
 const { width: windowWidth, height: windowHeight } = Dimensions.get('window');
 
@@ -82,7 +83,17 @@ export default function HomeScreen({ navigation }) {
                   <View>
                     <Text style={styles.reviewAuthorName}>{review.author}</Text>
                     <Text style={styles.reviewAuthorTitle}>Marketing Manager</Text>
-                    <Text>⭐⭐⭐⭐⭐</Text>
+                    <View style={styles.starsContainer}>
+                      {[1, 2, 3, 4, 5].map((_, index) => (
+                        <MaterialCommunityIcons 
+                          key={index}
+                          name="star"
+                          size={16}
+                          color={theme.colors.primary}
+                          style={styles.starIcon}
+                        />
+                      ))}
+                    </View>
                   </View>
                 </View>
               </View>
@@ -95,6 +106,9 @@ export default function HomeScreen({ navigation }) {
 
   const Features = () => {
     const [activeTab, setActiveTab] = useState('owners'); // Default to owners tab
+
+    // Add roadmap colors array
+    const roadmapColors = ['#515d6c', '#516a6c', '#516C61', '#6A6C51'];
 
     // Update the feature item structure and styles
     const featureItemStyle = {
@@ -133,8 +147,8 @@ export default function HomeScreen({ navigation }) {
               <Text style={styles.columnTitle}>For Pet Owners</Text>
               <View style={styles.featuresList}>
                 <View style={featureItemStyle}>
-                  <View style={styles.featureIconCircle}>
-                    <FontAwesome6 name="person-running" size={24} color={theme.colors.primary} />
+                  <View style={[styles.featureIconCircle, { backgroundColor: roadmapColors[0] }]}>
+                    <FontAwesome6 name="person-running" size={24} color="white" />
                   </View>
                   <View style={featureContentStyle}>
                     <Text style={styles.featureTitle}>Complete Your Profile</Text>
@@ -142,8 +156,8 @@ export default function HomeScreen({ navigation }) {
                   </View>
                 </View>
                 <View style={featureItemStyle}>
-                  <View style={styles.featureIconCircle}>
-                    <MaterialCommunityIcons name="horse-human" size={24} color={theme.colors.primary} />
+                  <View style={[styles.featureIconCircle, { backgroundColor: roadmapColors[1] }]}>
+                    <MaterialCommunityIcons name="horse-human" size={24} color="white" />
                   </View>
                   <View style={featureContentStyle}>
                     <Text style={styles.featureTitle}>Complete Pet Profile</Text>
@@ -151,8 +165,8 @@ export default function HomeScreen({ navigation }) {
                   </View>
                 </View>
                 <View style={featureItemStyle}>
-                  <View style={styles.featureIconCircle}>
-                    <MaterialCommunityIcons name="professional-hexagon" size={24} color={theme.colors.primary} />
+                  <View style={[styles.featureIconCircle, { backgroundColor: roadmapColors[2] }]}>
+                    <MaterialCommunityIcons name="professional-hexagon" size={24} color="white" />
                   </View>
                   <View style={featureContentStyle}>
                     <Text style={styles.featureTitle}>Search for Pro's</Text>
@@ -160,8 +174,8 @@ export default function HomeScreen({ navigation }) {
                   </View>
                 </View>
                 <View style={featureItemStyle}>
-                  <View style={styles.featureIconCircle}>
-                    <FontAwesome5 name="calendar-check" size={24} color={theme.colors.primary} />
+                  <View style={[styles.featureIconCircle, { backgroundColor: roadmapColors[3] }]}>
+                    <FontAwesome5 name="calendar-check" size={24} color="white" />
                   </View>
                   <View style={featureContentStyle}>
                     <Text style={styles.featureTitle}>Confirm Your Booking</Text>
@@ -179,8 +193,8 @@ export default function HomeScreen({ navigation }) {
               <Text style={styles.columnTitle}>For Pet Professionals</Text>
               <View style={styles.featuresList}>
                 <View style={featureItemStyle}>
-                  <View style={styles.featureIconCircle}>
-                    <FontAwesome name="sign-in" size={24} color={theme.colors.primary} />
+                  <View style={[styles.featureIconCircle, { backgroundColor: roadmapColors[0] }]}>
+                    <FontAwesome name="sign-in" size={24} color="white" />
                   </View>
                   <View style={featureContentStyle}>
                     <Text style={styles.featureTitle}>Apply to Join Pro Community</Text>
@@ -188,8 +202,8 @@ export default function HomeScreen({ navigation }) {
                   </View>
                 </View>
                 <View style={featureItemStyle}>
-                  <View style={styles.featureIconCircle}>
-                    <MaterialCommunityIcons name="plus-circle" size={24} color={theme.colors.primary} />
+                  <View style={[styles.featureIconCircle, { backgroundColor: roadmapColors[1] }]}>
+                    <MaterialCommunityIcons name="plus-circle" size={24} color="white" />
                   </View>
                   <View style={featureContentStyle}>
                     <Text style={styles.featureTitle}>Create Services</Text>
@@ -197,8 +211,8 @@ export default function HomeScreen({ navigation }) {
                   </View>
                 </View>
                 <View style={featureItemStyle}>
-                  <View style={styles.featureIconCircle}>
-                    <FontAwesome6 name="handshake-simple" size={24} color={theme.colors.primary} />
+                  <View style={[styles.featureIconCircle, { backgroundColor: roadmapColors[2] }]}>
+                    <FontAwesome6 name="handshake-simple" size={24} color="white" />
                   </View>
                   <View style={featureContentStyle}>
                     <Text style={styles.featureTitle}>Get Matched with Clients</Text>
@@ -206,8 +220,8 @@ export default function HomeScreen({ navigation }) {
                   </View>
                 </View>
                 <View style={featureItemStyle}>
-                  <View style={styles.featureIconCircle}>
-                    <MaterialIcons name="auto-graph" size={24} color={theme.colors.primary} />
+                  <View style={[styles.featureIconCircle, { backgroundColor: roadmapColors[3] }]}>
+                    <MaterialIcons name="auto-graph" size={24} color="white" />
                   </View>
                   <View style={featureContentStyle}>
                     <Text style={styles.featureTitle}>Grow Your Business</Text>
@@ -338,11 +352,57 @@ export default function HomeScreen({ navigation }) {
             style={[styles.blogContainer, { WebkitOverflowScrolling: 'touch' }]}
             contentContainerStyle={styles.blogScrollContainer}
           >
-            {[...Array(13)].map((_, index) => (
-              <TouchableOpacity key={index} style={styles.blogCard} onPress={() => Linking.openURL('https://your-blog-url')}>
-                <Text style={styles.blogDate}>November {index + 1}, 2024</Text>
-                <Text style={styles.blogTitle}>Managing Exotic Pets Effectively</Text>
-                <Text style={styles.blogSnippet}>Learn the best tips for managing exotic pets...</Text>
+            {BLOG_POSTS.map((post, index) => (
+              <TouchableOpacity 
+                key={post.id} 
+                style={styles.blogCard} 
+                onPress={() => navigation.navigate('BlogPost', { post })}
+              >
+                <View style={styles.authorContainer}>
+                  <Image
+                    source={{ uri: post.author.profilePicture }}
+                    style={styles.authorImage}
+                  />
+                  <View style={styles.blogContent}>
+                    <Text style={[styles.title, { color: theme.colors.primary }]} numberOfLines={2}>
+                      {post.title}
+                    </Text>
+                    <View style={styles.authorInfo}>
+                      <Text style={[styles.authorName, { color: theme.colors.secondary }]}>
+                        {post.author.name}
+                      </Text>
+                      <Text style={styles.dot}> • </Text>
+                      <Text style={styles.readTime}>{post.readTime}</Text>
+                    </View>
+                    <Text style={styles.preview} numberOfLines={3}>
+                      {post.content.slice(0, 100)}...
+                    </Text>
+                    <View style={styles.tags}>
+                      {post.tags.slice(0, 2).map((tag, tagIndex) => (
+                        <View 
+                          key={tagIndex} 
+                          style={[styles.tag, { backgroundColor: theme.colors.primary + '20' }]}
+                        >
+                          <Text style={[styles.tagText, { color: theme.colors.primary }]}>{tag}</Text>
+                        </View>
+                      ))}
+                    </View>
+                    <View style={styles.stats}>
+                      <View style={styles.stat}>
+                        <MaterialCommunityIcons name="heart-outline" size={16} color={theme.colors.secondary} />
+                        <Text style={styles.statText}>{post.likes}</Text>
+                      </View>
+                      <View style={styles.stat}>
+                        <MaterialCommunityIcons name="comment-outline" size={16} color={theme.colors.secondary} />
+                        <Text style={styles.statText}>{post.comments}</Text>
+                      </View>
+                      <View style={styles.stat}>
+                        <MaterialCommunityIcons name="share-outline" size={16} color={theme.colors.secondary} />
+                        <Text style={styles.statText}>{post.shares}</Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -640,7 +700,6 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#f5f5f5',
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 5,
@@ -675,9 +734,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   blogCard: {
-    width: 200,
-    // height: 200,
-    // marginRight: 5,
+    width: 300,
     backgroundColor: 'white',
     borderRadius: 10,
     shadowColor: '#000',
@@ -685,19 +742,79 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-    padding: 10,
+    padding: 15,
+    marginRight: 15,
   },
-  blogDate: {
-    fontSize: 14,
-    color: 'gray',
+  authorContainer: {
+    flexDirection: 'column',
   },
-  blogTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+  authorImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     marginBottom: 10,
   },
-  blogSnippet: {
-    fontSize: 16,
+  blogContent: {
+    flex: 1,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  authorInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  authorName: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  dot: {
+    marginHorizontal: 4,
+    color: '#666',
+  },
+  readTime: {
+    fontSize: 14,
+    color: '#666',
+  },
+  preview: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 12,
+    color: '#444',
+  },
+  tags: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 12,
+  },
+  tag: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 16,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  tagText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  stats: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    marginTop: 8,
+  },
+  stat: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  statText: {
+    marginLeft: 4,
+    fontSize: 12,
+    color: '#666',
   },
   roadmapSection: {
     marginBottom: 20,
@@ -834,5 +951,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: -5,
     marginBottom: 10,
+  },
+  starsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  starIcon: {
+    marginRight: 2,
   },
 });
