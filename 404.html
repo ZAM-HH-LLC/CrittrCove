@@ -7,21 +7,15 @@
       // Single Page Apps for GitHub Pages
       // MIT License
       // https://github.com/rafgraph/spa-github-pages
-      var segmentCount = 1;
-      var basePath = '/CrittrCove';
+      var segmentCount = 0;
 
       var l = window.location;
       var path = l.pathname;
-      
-      // Handle paths that start with the base path
-      if (path.indexOf(basePath) === 0) {
-        path = path.substr(basePath.length);
-      }
 
       l.replace(
         l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
-        basePath + '/?/' +
-        path.split('/').slice(segmentCount).join('/').replace(/&/g, '~and~') +
+        '/?/' +
+        path.split('/').slice(segmentCount + 1).join('/').replace(/&/g, '~and~') +
         (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
         l.hash
       );
