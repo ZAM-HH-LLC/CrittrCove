@@ -1720,6 +1720,16 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     fontFamily: theme.fonts.regular.fontFamily,
   },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorText: {  
+    fontSize: theme.fontSizes.largeLarge,
+    color: theme.colors.error,
+    fontFamily: theme.fonts.regular.fontFamily,
+  },
   statusContainer: {
     flexDirection: 'row',
     alignItems: 'center',

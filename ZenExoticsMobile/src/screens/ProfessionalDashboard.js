@@ -74,8 +74,8 @@ const ProfessionalDashboard = ({ navigation }) => {
 
   // Prototype data
   const prototypeBookings = [
-    { id: '1', client: 'John Doe', pet: 'Max (Dog)', date: '2023-05-15', time: '14:00' },
-    { id: '2', client: 'Jane Smith', pet: 'Whiskers (Cat)', date: '2023-05-17', time: '10:00' },
+    { id: '56782', client: 'John Doe', pet: 'Max (Dog)', date: '2023-05-15', time: '14:00' },
+    { id: '5678', client: 'Jane Smith', pet: 'Whiskers (Cat)', date: '2023-05-17', time: '10:00' },
   ];
 
   const fetchDashboardData = async () => {
@@ -158,7 +158,7 @@ const ProfessionalDashboard = ({ navigation }) => {
               upcomingBookings.map((booking) => (
                 <TouchableOpacity
                   key={is_prototype ? booking.id : booking.booking_id}
-                  onPress={() => navigation.navigate('BookingDetails', { 
+                  onPress={() => navigateToFrom(navigation, 'BookingDetails', 'ProfessionalDashboard', { 
                     bookingId: is_prototype ? booking.id : booking.booking_id 
                   })}
                   style={styles.bookingItem}
@@ -184,7 +184,7 @@ const ProfessionalDashboard = ({ navigation }) => {
                 <Paragraph style={dynamicStyles.emptyStateText}>No bookings yet!</Paragraph>
                 <Button 
                   mode="contained" 
-                  onPress={() => navigation.navigate('ServiceManager')}
+                  onPress={() => navigateToFrom(navigation, 'ServiceManager', 'ProfessionalDashboard')}
                   style={styles.createServiceButton}
                   labelStyle={dynamicStyles.buttonText}
                 >
@@ -196,7 +196,7 @@ const ProfessionalDashboard = ({ navigation }) => {
           {upcomingBookings.length > 0 && (
             <Card.Actions>
               <Button 
-                onPress={() => navigation.navigate('MyBookings')}
+                onPress={() => navigateToFrom(navigation, 'MyBookings', 'ProfessionalDashboard')}
                 labelStyle={dynamicStyles.buttonText}
               >
                 View All Bookings
@@ -234,7 +234,7 @@ const ProfessionalDashboard = ({ navigation }) => {
               <Button 
                 icon={Platform.OS === 'web' ? ({ size, color }) => <MaterialCommunityIcons name="clock" size={size} color={color} /> : "clock"}
                 mode="outlined" 
-                onPress={() => navigation.navigate('AvailabilitySettings')}
+                onPress={() => navigateToFrom(navigation, 'AvailabilitySettings', 'ProfessionalDashboard')}
                 style={styles.quickActionButton}
                 labelStyle={dynamicStyles.buttonText}
               >

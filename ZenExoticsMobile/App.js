@@ -183,7 +183,7 @@ const PrototypeWarning = () => {
   useEffect(() => {
     const checkBannerStatus = async () => {
       if (Platform.OS === 'web') {
-        const hidden = 'false'; //sessionStorage.getItem('prototype_banner_hidden');
+        const hidden = sessionStorage.getItem('prototype_banner_hidden');
         if (hidden === 'true') {
           setIsVisible(false);
         }

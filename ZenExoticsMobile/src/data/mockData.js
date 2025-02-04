@@ -1168,7 +1168,7 @@ export const ANIMAL_TYPE_SUGGESTIONS = [
 export const BLOG_POSTS = [
   {
     id: 'blog_1',
-    title: 'Crack the Code: What Your Dog is Really Saying',
+    title: 'What Your Dog is Really Saying',
     author: {
       id: 'author_1',
       name: 'Zoe Neale',
@@ -1268,7 +1268,7 @@ So next time your dog gives you the side-eye, perks their ears, or flops over dr
   },
   {
     id: 'blog_2',
-    title: 'Crack the Code: What Your Cat is Really Saying',
+    title: 'What Your Cat is Really Saying',
     author: {
       id: 'author_2',
       name: 'Zoe Neale',
@@ -1368,7 +1368,7 @@ At the end of the day, cats aren't ignoring us. They're just selectively partici
   },
   {
     id: 'blog_3',
-    title: 'Crack the Code: What Your Bird is Really Saying',
+    title: 'What Your Bird is Really Saying',
     author: {
       id: 'author_3',
       name: 'Zoe Neale',

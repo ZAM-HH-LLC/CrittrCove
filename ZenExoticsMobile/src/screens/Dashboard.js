@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthContext } from '../context/AuthContext';
 import CrossPlatformView from '../components/CrossPlatformView';
 import { theme } from '../styles/theme';
+import { navigateToFrom } from '../components/Navigation';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -50,8 +51,8 @@ const Dashboard = ({ navigation }) => {
 
   // Mock data - replace with actual API calls
   const upcomingBookings = [
-    { id: '1', profepsronalsional: 'Jane Doe', pet: 'Max (Dog)', date: '2023-05-15', time: '14:00' },
-    { id: '2', profepsronalsional: 'John Smith', pet: 'Whiskers (Cat)', date: '2023-05-17', time: '10:00' },
+    { id: '56782', profepsronalsional: 'Jane Doe', pet: 'Max (Dog)', date: '2023-05-15', time: '14:00' },
+    { id: '5678', profepsronalsional: 'John Smith', pet: 'Whiskers (Cat)', date: '2023-05-17', time: '10:00' },
   ];
 
   const IconComponent = Platform.OS === 'web'
@@ -74,7 +75,7 @@ const Dashboard = ({ navigation }) => {
             {upcomingBookings.map((booking) => (
               <TouchableOpacity
                 key={booking.id}
-                onPress={() => navigation.navigate('BookingDetails', { bookingId: booking.id })}
+                onPress={() => navigateToFrom(navigation, 'BookingDetails', 'Dashboard', { bookingId: booking.id })}
                 style={styles.bookingItem}
               >
                 <List.Item
@@ -89,7 +90,12 @@ const Dashboard = ({ navigation }) => {
             ))}
           </Card.Content>
           <Card.Actions>
-            <Button labelStyle={dynamicStyles.buttonText} onPress={() => navigation.navigate('MyBookings')}>View All Bookings</Button>
+            <Button 
+              labelStyle={dynamicStyles.buttonText} 
+              onPress={() => navigateToFrom(navigation, 'MyBookings', 'Dashboard')}
+            >
+              View All Bookings
+            </Button>
           </Card.Actions>
         </Card>
 
@@ -100,7 +106,7 @@ const Dashboard = ({ navigation }) => {
               <Button 
                 icon={Platform.OS === 'web' ? ({ size, color }) => <MaterialCommunityIcons name="magnify" size={size} color={color} /> : "magnify"}
                 mode="outlined" 
-                onPress={() => navigation.navigate('SearchProfessionalsListing')}
+                onPress={() => navigateToFrom(navigation, 'SearchProfessionalsListing', 'Dashboard')}
                 style={styles.quickActionButton}
                 labelStyle={dynamicStyles.buttonText}
               >
@@ -109,7 +115,7 @@ const Dashboard = ({ navigation }) => {
               <Button 
                 icon={Platform.OS === 'web' ? ({ size, color }) => <MaterialCommunityIcons name="paw" size={size} color={color} /> : "paw"}
                 mode="outlined" 
-                onPress={() => navigation.navigate('MyPets')}
+                onPress={() => navigateToFrom(navigation, 'MyPets', 'Dashboard')}
                 style={styles.quickActionButton}
                 labelStyle={dynamicStyles.buttonText}
               >
