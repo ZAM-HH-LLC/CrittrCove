@@ -1,20 +1,23 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { View, StyleSheet, Platform, SafeAreaView, Text, TouchableOpacity, StatusBar } from 'react-native';
 import { List, Divider } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
 import BackHeader from '../components/BackHeader';
 import CrossPlatformView from '../components/CrossPlatformView';
+import { AuthContext } from '../context/AuthContext';
 
 const Settings = ({ navigation }) => {
+  const { is_prototype } = useContext(AuthContext);
+  
   const settingsItems = [
     { title: 'Change Password', icon: 'lock-reset', route: 'ChangePassword' },
-    // { title: 'Notification Preferences', icon: 'bell-outline', route: 'NotificationPreferences' },
-    // { title: 'Privacy Settings', icon: 'shield-account', route: 'PrivacySettings' },
-    // { title: 'Language', icon: 'translate', route: 'LanguageSettings' },
-    // { title: 'Display & Accessibility', icon: 'palette', route: 'DisplaySettings' },
-    // { title: 'Data Usage', icon: 'chart-bar', route: 'DataUsage' },
-    // { title: 'About', icon: 'information-outline', route: 'About' },
+    { title: 'Notification Preferences', icon: 'bell-outline', route: 'NotificationPreferences' },
+    { title: 'Privacy Settings', icon: 'shield-account', route: 'PrivacySettings' },
+    { title: 'Language', icon: 'translate', route: 'LanguageSettings' },
+    { title: 'Display & Accessibility', icon: 'palette', route: 'DisplaySettings' },
+    { title: 'Data Usage', icon: 'chart-bar', route: 'DataUsage' },
+    { title: 'About', icon: 'information-outline', route: 'About' },
   ];
 
   const renderSettingsItems = () => {
@@ -75,7 +78,7 @@ const styles = StyleSheet.create({
   webListItem: {
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
-  },
+  }
 });
 
 export default Settings;

@@ -18,6 +18,7 @@ import ConfirmationModal from '../components/ConfirmationModal';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import { API_BASE_URL } from '../config/config';
+import { handleBack } from '../components/Navigation';
 
 const LAST_VIEWED_BOOKING_ID = 'last_viewed_booking_id';
 
@@ -877,7 +878,7 @@ const BookingDetails = () => {
           )}
         >
           <View style={styles.occurrenceCostHeader}>
-            <Text>
+            <Text style={styles.occurrenceCostHeaderText}>
               {occurrence.end_date && occurrence.start_date !== occurrence.end_date ? 
                 `${format(formatDateWithoutTimezone(occurrence.start_date), 'MMM d, yyyy')} - ${format(formatDateWithoutTimezone(occurrence.end_date), 'MMM d, yyyy')}` :
                 format(formatDateWithoutTimezone(occurrence.start_date), 'MMM d, yyyy')
@@ -898,8 +899,8 @@ const BookingDetails = () => {
           {expandedOccurrenceId === occurrence.occurrence_id && (
             <View style={styles.expandedCostDetails}>
               <View style={styles.costDetailRow}>
-                <Text>Base Rate ({getTimeUnitDisplay(occurrence.rates?.unit_of_time)}):</Text>
-                <Text>
+                <Text style={styles.costDetailText}>Base Rate ({getTimeUnitDisplay(occurrence.rates?.unit_of_time)}):</Text>
+                <Text style={styles.costDetailText}>
                   ${parseFloat(occurrence.rates?.base_rate || 0).toFixed(2)} × {
                     calculateMultiple(occurrence.base_total, occurrence.rates?.base_rate)
                   } = ${parseFloat(occurrence.base_total.replace('$', '')).toFixed(2)}
@@ -907,22 +908,22 @@ const BookingDetails = () => {
               </View>
               {occurrence.rates?.additional_animal_rate_applies && occurrence.rates?.additional_animal_rate > 0 && (
                 <View style={styles.costDetailRow}>
-                  <Text>Additional Animal Rate (after {occurrence.rates.applies_after} animals):</Text>
-                  <Text>${parseFloat(occurrence.rates.additional_animal_rate).toFixed(2)}</Text>
+                  <Text style={styles.costDetailText}>Additional Animal Rate (after {occurrence.rates.applies_after} animals):</Text>
+                  <Text style={styles.costDetailText}>${parseFloat(occurrence.rates.additional_animal_rate).toFixed(2)}</Text>
                 </View>
               )}
               {occurrence.rates?.holiday_days > 0 && occurrence.rates?.holiday_rate > 0 && (
                 <View style={styles.costDetailRow}>
-                  <Text>Holiday Rate ({occurrence.rates.holiday_days} day{occurrence.rates.holiday_days > 1 ? 's' : ''}):</Text>
-                  <Text>${(parseFloat(occurrence.rates.holiday_rate) * occurrence.rates.holiday_days).toFixed(2)}</Text>
+                  <Text style={styles.costDetailText}>Holiday Rate ({occurrence.rates.holiday_days} day{occurrence.rates.holiday_days > 1 ? 's' : ''}):</Text>
+                  <Text style={styles.costDetailText}>${(parseFloat(occurrence.rates.holiday_rate) * occurrence.rates.holiday_days).toFixed(2)}</Text>
                 </View>
               )}
               {(occurrence.rates?.additional_rates || [])
                 .filter(rate => rate.title !== 'Booking Details Cost')
                 .map((rate, idx) => (
                   <View key={idx} style={styles.costDetailRow}>
-                    <Text>{rate.title}:</Text>
-                    <Text>${parseFloat(rate.amount.replace('$', '')).toFixed(2)}</Text>
+                    <Text style={styles.costDetailText}>{rate.title}:</Text>
+                    <Text style={styles.costDetailText}>${parseFloat(rate.amount.replace('$', '')).toFixed(2)}</Text>
                   </View>
               ))}
             </View>
@@ -932,18 +933,18 @@ const BookingDetails = () => {
 
       <View style={styles.costSummary}>
         <View style={styles.summaryRow}>
-          <Text>Subtotal:</Text>
-          <Text>${(booking?.cost_summary?.subtotal || 0).toFixed(2)}</Text>
+          <Text style={styles.summaryText}>Subtotal:</Text>
+          <Text style={styles.summaryText}>${(booking?.cost_summary?.subtotal || 0).toFixed(2)}</Text>
         </View>
         {!is_prototype && (
           <View style={styles.summaryRow}>
-            <Text>Platform Fee (10%):</Text>
-            <Text>${(booking?.cost_summary?.platform_fee || 0).toFixed(2)}</Text>
+            <Text style={styles.summaryText}>Platform Fee (10%):</Text>
+            <Text style={styles.summaryText}>${(booking?.cost_summary?.platform_fee || 0).toFixed(2)}</Text>
           </View>
         )}
         <View style={styles.summaryRow}>
-          <Text>Taxes (9%):</Text>
-          <Text>${(booking?.cost_summary?.taxes || 0).toFixed(2)}</Text>
+          <Text style={styles.summaryText}>Taxes (9%):</Text>
+          <Text style={styles.summaryText}>${(booking?.cost_summary?.taxes || 0).toFixed(2)}</Text>
         </View>
         <View style={[styles.summaryRow, styles.totalRow]}>
           <Text style={styles.totalLabel}>Total Cost to Client:</Text>
@@ -1451,7 +1452,7 @@ const BookingDetails = () => {
     <CrossPlatformView fullWidthHeader={true}>
       <BackHeader
         title="Booking Details"
-        onBackPress={() => navigation.navigate('MyBookings')}
+        onBackPress={() => handleBack(navigation)}
       />
       {loading ? (
         <View style={styles.loadingContainer}>
@@ -1468,7 +1469,7 @@ const BookingDetails = () => {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Booking Parties</Text>
             <View style={styles.serviceDetailRow}>
-              <Text style={styles.label}>Client:  </Text>
+              <Text style={styles.label}>Client: </Text>
               <Text style={styles.value}>{getDisplayValue(booking?.clientName)}</Text>
             </View>
             <View style={styles.serviceDetailRow}>
@@ -1615,11 +1616,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
-    // marginBottom: 16,
   },
   statusText: {
     fontSize: 14,
     fontWeight: '500',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   section: {
     marginBottom: 24,
@@ -1635,15 +1636,26 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: theme.colors.primary,
     marginBottom: 12,
+    fontFamily: theme.fonts.header.fontFamily,
   },
   label: {
-    fontSize: theme.fontSizes.largeLarge,
-    color: theme.colors.placeholder,
-    marginBottom: 4,
+    fontSize: theme.fontSizes.mediumLarge,
+    color: theme.colors.text,
+    fontFamily: theme.fonts.regular.fontFamily,
+    alignSelf: 'center',
+    fontWeight: '500',
+  },
+  value: {
+    fontSize: theme.fontSizes.mediumLarge,
+    color: theme.colors.text,
+    fontWeight: '500',
+    fontFamily: theme.fonts.regular.fontFamily,
+    alignSelf: 'center',
   },
   text: {
     fontSize: 16,
     marginBottom: 8,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   costRow: {
     flexDirection: 'row',
@@ -1659,11 +1671,12 @@ const styles = StyleSheet.create({
   totalLabel: {
     fontSize: 16,
     fontWeight: '500',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   totalAmount: {
     fontSize: 16,
     fontWeight: '500',
-    // color: theme.colors.primary,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   payoutRow: {
     marginTop: 12,
@@ -1675,42 +1688,37 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     color: theme.colors.success,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   payoutAmount: {
     fontSize: 16,
     fontWeight: '600',
     color: theme.colors.success,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   policyText: {
     fontSize: 14,
     lineHeight: 20,
-  },
-  actionButtons: {
-    width: 72, // Approximate width of both buttons + gap
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   button: {
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
   },
-  approveButton: {
-    backgroundColor: theme.colors.success,
-  },
-  modifyButton: {
-    backgroundColor: theme.colors.primary,
-  },
-  cancelButton: {
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.error,
-  },
   buttonText: {
     color: theme.colors.surface,
     fontSize: 16,
     fontWeight: '500',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   cancelButtonText: {
     color: theme.colors.error,
+    borderWidth: 1,
+    borderColor: theme.colors.error,
+    padding: 8,
+    borderRadius: 8,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   statusContainer: {
     flexDirection: 'row',
@@ -1721,47 +1729,52 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginRight: 8,
     color: theme.colors.text,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
-  dateTimeRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 15,
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    fontFamily: theme.fonts.header.fontFamily,
   },
-  dateTimeColumn: {
-    flex: 1,
-    marginRight: 10,
-  },
-  serviceTitle: {
+  dateText: {
     fontSize: 16,
     fontWeight: '500',
-    marginBottom: 12,
+    marginBottom: 4,
+    fontFamily: theme.fonts.regular.fontFamily,
+  },
+  timeText: {
+    fontSize: 14,
+    color: theme.colors.placeholder,
+    fontFamily: theme.fonts.regular.fontFamily,
+  },
+  addOccurrenceText: {
+    marginLeft: 8,
     color: theme.colors.primary,
-  },
-  costLabel: {
-    flex: 1,
-    fontSize: 14,
-    color: theme.colors.text,
-  },
-  costAmount: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: theme.colors.text,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: theme.colors.border,
-    marginVertical: 12,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  errorText: {
     fontSize: 16,
-    color: theme.colors.error,
-    textAlign: 'center',
+    fontFamily: theme.fonts.regular.fontFamily,
+  },
+  occurrenceCost: {
+    fontSize: 16,
+    fontWeight: '500',
+    fontFamily: theme.fonts.regular.fontFamily,
+  },
+  petName: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 4,
+    fontFamily: theme.fonts.regular.fontFamily,
+  },
+  noContentText: {
+    fontSize: 14,
+    color: theme.colors.placeholder,
+    fontStyle: 'italic',
+    fontFamily: theme.fonts.regular.fontFamily,
+  },
+  saveButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   editButton: {
   },
@@ -1807,14 +1820,6 @@ const styles = StyleSheet.create({
     color: theme.colors.primary,
     fontSize: 16,
   },
-  editableServiceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  removeServiceButton: {
-    marginLeft: 8,
-  },
   dropdownContainer: {
     position: 'relative',
     width: 150,
@@ -1851,10 +1856,12 @@ const styles = StyleSheet.create({
   },
   dropdownText: {
     color: theme.colors.text,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   selectedOption: {
     color: theme.colors.primary,
     fontWeight: 'bold',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   bookingDatesSection: {
     marginTop: 20,
@@ -1864,6 +1871,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     marginBottom: 10,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   dateTimeRow: {
     flexDirection: 'row',
@@ -1912,6 +1920,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 12,
     color: theme.colors.primary,
+    fontFamily: theme.fonts.header.fontFamily,
   },
   rateInputRow: {
     flexDirection: 'row',
@@ -1922,9 +1931,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   inputLabel: {
-    fontSize: 12,
-    color: theme.colors.placeholder,
-    marginBottom: 4,
+    fontSize: theme.fontSizes.largeLarge,
+    color: theme.colors.text,
+    flex: 1,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   rateInput: {
     borderWidth: 1,
@@ -1966,6 +1976,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: theme.colors.placeholder,
     fontWeight: '500',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   rateAmountColumn: {
     alignItems: 'flex-start',
@@ -1996,11 +2007,6 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.surface,
     borderRadius: 8,
     padding: 16,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 16,
   },
   reasonInput: {
     borderWidth: 1,
@@ -2066,15 +2072,14 @@ const styles = StyleSheet.create({
   serviceDetailRow: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  label: {
-    fontSize: theme.fontSizes.mediumLarge,
-    color: theme.colors.text,
+    marginBottom: 8,
   },
   value: {
-    fontSize: theme.fontSizes.medium,
+    fontSize: theme.fontSizes.mediumLarge,
     color: theme.colors.text,
     fontWeight: '500',
+    fontFamily: theme.fonts.regular.fontFamily,
+    alignSelf: 'center',
   },
   occurrenceActions: {
     flexDirection: 'row',
@@ -2093,6 +2098,7 @@ const styles = StyleSheet.create({
   saveButtonText: {
     color: 'white',
     fontWeight: '600',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   actionButtons: {
     width: 72, // Approximate width of both buttons + gap
@@ -2124,10 +2130,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     marginBottom: 4,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   timeText: {
     fontSize: 14,
     color: theme.colors.placeholder,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   editOccurrenceButton: {
     flexDirection: 'row',
@@ -2163,6 +2171,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  occurrenceCostHeaderText: {
+    fontSize: 16,
+    fontFamily: theme.fonts.regular.fontFamily,
+  },
   costAndIcon: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -2189,6 +2201,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 4,
   },
+  costDetailText: {
+    fontFamily: theme.fonts.regular.fontFamily,
+  },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -2208,11 +2223,6 @@ const styles = StyleSheet.create({
   },
   petInfo: {
     flex: 1,
-  },
-  petName: {
-    fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 4,
   },
   petDetails: {
     fontSize: 14,
@@ -2288,6 +2298,136 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: theme.colors.success,
+  },
+  clientName: {
+    fontSize: 18,
+    fontWeight: 'normal',
+    marginBottom: 4,
+    fontFamily: theme.fonts.header.fontFamily,
+  },
+  proName: {
+    fontSize: 18,
+    fontWeight: 'normal',
+    marginBottom: 4,
+    fontFamily: theme.fonts.header.fontFamily,
+  },
+  serviceTypeLabel: {
+    fontSize: theme.fontSizes.mediumLarge,
+    color: theme.colors.text,
+    fontFamily: theme.fonts.header.fontFamily,
+    fontWeight: 'normal',
+  },
+  petListTitle: {
+    fontSize: 16,
+    fontWeight: '900',
+    marginBottom: 8,
+    fontFamily: theme.fonts.header.fontFamily,
+  },
+  petInfo: {
+    fontSize: 14,
+    color: theme.colors.placeholder,
+    fontFamily: theme.fonts.regular.fontFamily,
+  },
+  occurrenceTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    fontFamily: theme.fonts.header.fontFamily,
+  },
+  occurrenceDate: {
+    fontSize: 16,
+    fontWeight: '500',
+    fontFamily: theme.fonts.regular.fontFamily,
+  },
+  occurrenceTime: {
+    fontSize: 14,
+    color: theme.colors.placeholder,
+    fontFamily: theme.fonts.regular.fontFamily,
+  },
+  costBreakdownTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    fontFamily: theme.fonts.header.fontFamily,
+  },
+  costLabel: {
+    fontSize: 16,
+    fontFamily: theme.fonts.regular.fontFamily,
+  },
+  costAmount: {
+    fontSize: 16,
+    fontWeight: '500',
+    fontFamily: theme.fonts.regular.fontFamily,
+  },
+  additionalRateLabel: {
+    fontSize: 14,
+    color: theme.colors.placeholder,
+    fontFamily: theme.fonts.regular.fontFamily,
+  },
+  additionalRateAmount: {
+    fontSize: 14,
+    fontWeight: '500',
+    fontFamily: theme.fonts.regular.fontFamily,
+  },
+  serviceDetailLabel: {
+    fontSize: 16,
+    color: theme.colors.text,
+    fontFamily: theme.fonts.regular.fontFamily,
+  },
+  serviceDetailValue: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: theme.colors.text,
+    fontFamily: theme.fonts.regular.fontFamily,
+  },
+  occurrenceCardTitle: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 4,
+    fontFamily: theme.fonts.header.fontFamily,
+  },
+  occurrenceCardDate: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 4,
+    fontFamily: theme.fonts.regular.fontFamily,
+  },
+  occurrenceCardTime: {
+    fontSize: 14,
+    color: theme.colors.placeholder,
+    fontFamily: theme.fonts.regular.fontFamily,
+  },
+  editOccurrenceText: {
+    color: theme.colors.primary,
+    marginLeft: 5,
+    fontFamily: theme.fonts.regular.fontFamily,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  summaryText: {
+    fontSize: 16,
+    fontFamily: theme.fonts.regular.fontFamily,
+  },
+  dropdownText: {
+    color: theme.colors.text,
+    fontSize: 16,
+    fontFamily: theme.fonts.regular.fontFamily,
+  },
+  dropdownItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  dropdownItemText: {
+    fontSize: 16,
+    fontFamily: theme.fonts.regular.fontFamily,
+  },
+  occurrenceCardText: {
+    fontSize: 16,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
 });
 

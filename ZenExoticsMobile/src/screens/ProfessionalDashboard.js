@@ -26,26 +26,33 @@ const ProfessionalDashboard = ({ navigation }) => {
       fontSize: isLargeScreen ? theme.fontSizes.extraLarge : theme.fontSizes.large,
       fontWeight: '500',
       color: theme.colors.text,
+      fontFamily: theme.fonts.header.fontFamily,
     },
     emptyStateText: {
       fontSize: isLargeScreen ? theme.fontSizes.large : theme.fontSizes.smallMedium,
       marginBottom: 16,
       textAlign: 'center',
+      fontFamily: theme.fonts.regular.fontFamily,
     },
     cardTitle: {
       fontSize: isLargeScreen ? theme.fontSizes.largeLarge : theme.fontSizes.large,
+      fontFamily: theme.fonts.header.fontFamily,
     },
     cardParagraph: {
       fontSize: isLargeScreen ? theme.fontSizes.large : theme.fontSizes.medium,
+      fontFamily: theme.fonts.regular.fontFamily,
     },
     listItemTitle: {
       fontSize: isLargeScreen ? theme.fontSizes.large : theme.fontSizes.medium,
+      fontFamily: theme.fonts.regular.fontFamily,
     },
     listItemDescription: {
       fontSize: isLargeScreen ? theme.fontSizes.mediumLarge : theme.fontSizes.smallMedium,
+      fontFamily: theme.fonts.regular.fontFamily,
     },
     buttonText: {
       fontSize: isLargeScreen ? theme.fontSizes.mediumLarge : theme.fontSizes.smallMedium,
+      fontFamily: theme.fonts.regular.fontFamily,
     },
   };
 

@@ -54,7 +54,7 @@ export const ServiceCard = ({
 
   return (
     <View style={styles.serviceCard}>
-      <TouchableOpacity 
+      {/* <TouchableOpacity 
         style={styles.heartButton}
         onPress={() => onHeartPress(service.id)}
       >
@@ -63,15 +63,19 @@ export const ServiceCard = ({
           size={24} 
           color={theme.colors.primary} 
         />
-      </TouchableOpacity>
-      <MaterialCommunityIcons name={service.icon} size={30} color={theme.colors.primary} />
-      <Text style={styles.serviceName}>{service.name}</Text>
-      <Text style={styles.startingPrice}>Starting at ${service.startingPrice}</Text>
-      <View style={styles.animalTypeContainer}>
-        {service.animalTypes.map((type, index) => (
-          <Text key={index} style={styles.animalType}>{type}</Text>
-        ))}
+      </TouchableOpacity> */}
+      
+      <View style={styles.contentContainer}>
+        <MaterialCommunityIcons name={service.icon} size={30} color={theme.colors.primary} />
+        <Text numberOfLines={2} style={styles.serviceName}>{service.name}</Text>
+        <Text style={styles.startingPrice}>Starting at ${service.startingPrice}</Text>
+        <View style={styles.animalTypeContainer}>
+          {service.animalTypes.map((type, index) => (
+            <Text key={index} style={styles.animalType}>{type}</Text>
+          ))}
+        </View>
       </View>
+
       <TouchableOpacity 
         style={styles.calculateButton}
         onPress={() => setIsModalVisible(true)}
@@ -96,55 +100,68 @@ const styles = StyleSheet.create({
   serviceCard: {
     backgroundColor: theme.colors.surface,
     borderRadius: 12,
-    padding: 16,
-    marginRight: 16,
-    width: 250,
+    padding: 12,
+    marginRight: 12,
+    width: 280,
+    height: 220,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
     position: 'relative',
+    justifyContent: 'space-between',
   },
   heartButton: {
     position: 'absolute',
-    right: 12,
-    top: 12,
+    right: 8,
+    top: 8,
     zIndex: 1,
   },
   serviceName: {
     fontSize: theme.fontSizes.mediumLarge,
     fontWeight: '600',
-    marginTop: 12,
-    marginBottom: 8,
+    marginTop: 8,
+    marginBottom: 6,
+    fontFamily: theme.fonts.header.fontFamily,
+    flexShrink: 1,
   },
   startingPrice: {
-    fontSize: theme.fontSizes.medium,
+    fontSize: theme.fontSizes.medium + 2,
     color: theme.colors.secondary,
-    marginBottom: 8,
+    marginBottom: 6,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   animalTypeContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 4,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   animalType: {
-    fontSize: theme.fontSizes.small,
+    fontSize: theme.fontSizes.small + 2,
     color: theme.colors.secondary,
     backgroundColor: theme.colors.background,
-    borderRadius: 12,
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   calculateButton: {
     backgroundColor: theme.colors.primary,
-    padding: 8,
+    padding: 10,
     borderRadius: 8,
     alignItems: 'center',
+    marginTop: 'auto',
   },
   calculateButtonText: {
     color: theme.colors.surface,
-    fontSize: theme.fontSizes.smallMedium,
+    fontSize: theme.fontSizes.medium,
     fontWeight: '600',
+    fontFamily: theme.fonts.regular.fontFamily,
+  },
+  contentContainer: {
+    flex: 1,
   },
 });
 

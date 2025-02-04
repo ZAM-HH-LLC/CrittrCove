@@ -135,6 +135,7 @@ const MoreScreen = ({ navigation }) => {
       <List.Item
         key={index}
         title={item.title}
+        titleStyle={styles.listItemTitle}
         left={props => 
           Platform.OS === 'web' 
             ? <MaterialCommunityIcons name={item.icon} size={24} color={theme.colors.primary} />
@@ -153,14 +154,24 @@ const MoreScreen = ({ navigation }) => {
         </List.Section>
         {isSignedIn && isApprovedProfessional && (
           <View style={styles.webButtonContainer}>
-            <Button mode="outlined" onPress={handleSwitchRole} style={styles.webButton}>
+            <Button 
+              mode="outlined" 
+              onPress={handleSwitchRole} 
+              style={styles.webButton}
+              labelStyle={styles.buttonText}
+            >
               Switch to {userRole === 'professional' ? 'Pet Owner' : 'Professional'} Mode
             </Button>
           </View>
         )}
         {isSignedIn && (
           <View style={styles.webButtonContainer}>
-            <Button mode="contained" onPress={handleLogout} style={[styles.webButton, styles.logoutButton]}>
+            <Button 
+              mode="contained" 
+              onPress={handleLogout} 
+              style={[styles.webButton, styles.logoutButton]}
+              labelStyle={styles.buttonText}
+            >
               Log Out
             </Button>
           </View>
@@ -239,6 +250,15 @@ const styles = StyleSheet.create({
   webButton: {
     width: '100%',
   },
+  listItemTitle: {
+    fontFamily: theme.fonts.regular.fontFamily,
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  buttonText: {
+    fontFamily: theme.fonts.regular.fontFamily,
+    fontWeight: '600',
+  }
 });
 
 export default MoreScreen;

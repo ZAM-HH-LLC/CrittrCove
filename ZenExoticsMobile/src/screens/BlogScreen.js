@@ -200,6 +200,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 8,
+    fontFamily: theme.fonts.header.fontFamily,
   },
   authorInfo: {
     flexDirection: 'row',
@@ -209,19 +210,23 @@ const styles = StyleSheet.create({
   authorName: {
     fontSize: 14,
     fontWeight: '500',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   dot: {
     marginHorizontal: 4,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   readTime: {
     fontSize: 14,
     color: '#666',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   preview: {
     fontSize: 14,
     lineHeight: 20,
     marginBottom: 12,
     color: '#444',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   tags: {
     flexDirection: 'row',
@@ -238,6 +243,7 @@ const styles = StyleSheet.create({
   tagText: {
     fontSize: 12,
     fontWeight: '500',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   stats: {
     flexDirection: 'row',
@@ -252,6 +258,7 @@ const styles = StyleSheet.create({
   statText: {
     marginLeft: 4,
     color: '#666',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   noResultsContainer: {
     flex: 1,
@@ -264,13 +271,13 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '500',
     marginTop: 16,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   webSearchInput: {
     flex: 1,
     padding: 8,
     fontSize: 16,
     color: theme.colors.text,
-    outline: 'none',
     border: 'none',
     backgroundColor: 'transparent',
     WebkitTapHighlightColor: 'transparent',
@@ -278,6 +285,7 @@ const styles = StyleSheet.create({
     outlineStyle: 'none',
     boxShadow: 'none',
     borderColor: 'transparent',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
 });
 

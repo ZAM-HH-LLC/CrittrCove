@@ -11,6 +11,7 @@ import {
 import { useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import BackHeader from '../components/BackHeader';
+import { theme } from '../styles/theme';
 
 const BlogPost = ({ route, navigation }) => {
   const post = route?.params?.post;
@@ -156,11 +157,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 4,
+    fontFamily: theme.fonts.header.fontFamily,
   },
   authorBio: {
     fontSize: 14,
     color: '#666',
     marginBottom: 4,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   postInfo: {
     flexDirection: 'row',
@@ -169,14 +172,17 @@ const styles = StyleSheet.create({
   date: {
     fontSize: 14,
     color: '#666',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   dot: {
     marginHorizontal: 4,
     color: '#666',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   readTime: {
     fontSize: 14,
     color: '#666',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   tags: {
     flexDirection: 'row',
@@ -194,11 +200,13 @@ const styles = StyleSheet.create({
   tagText: {
     fontSize: 14,
     fontWeight: '500',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   content: {
     fontSize: 16,
     lineHeight: 24,
     padding: 16,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   stats: {
     flexDirection: 'row',
@@ -216,6 +224,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     fontSize: 16,
     color: '#666',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   references: {
     padding: 16,
@@ -224,6 +233,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 12,
+    fontFamily: theme.fonts.header.fontFamily,
   },
   reference: {
     marginBottom: 12,
@@ -232,6 +242,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#444',
     lineHeight: 20,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   errorContainer: {
     flex: 1,
@@ -244,6 +255,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginTop: 16,
     marginBottom: 24,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   errorButton: {
     paddingHorizontal: 20,
@@ -253,6 +265,7 @@ const styles = StyleSheet.create({
   errorButtonText: {
     fontSize: 16,
     fontWeight: '500',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
 });
 

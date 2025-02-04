@@ -10,7 +10,7 @@ import { mockProfessionalBookings, mockClientBookings } from '../data/mockData';
 import { AuthContext } from '../context/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import { handleBack } from '../components/Navigation';
+import { handleBack, navigateToFrom } from '../components/Navigation';
 import { API_BASE_URL } from '../config/config';
 
 const MyBookings = () => {
@@ -122,7 +122,7 @@ const MyBookings = () => {
     setBookings(filtered);
   };
 
-  const handleViewDetails = (booking) => {
+  const handleViewDetails = async (booking) => {
     if (is_DEBUG) {
       console.log('Navigating to booking details:', {
         bookingId: booking.booking_id || booking.id,
@@ -130,7 +130,7 @@ const MyBookings = () => {
       });
     }
     
-    navigation.navigate('BookingDetails', {
+    await navigateToFrom(navigation, 'BookingDetails', 'MyBookings', {
       bookingId: booking.booking_id || booking.id,
       isProfessional: activeTab === 'professional'
     });
@@ -274,9 +274,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     width: '100%',
-    maxWidth: 600,
+    maxWidth: Platform.OS === 'web' ? 632 : 600, // 600 + padding for scrollbar
     alignSelf: 'center',
     padding: 16,
+    height: Platform.OS === 'web' ? 'calc(100vh - 124px)' : '100%',
+    maxHeight: Platform.OS === 'web' ? 'calc(100vh - 124px)' : '100%',
+    overflow: Platform.OS === 'web' ? 'auto' : 'scroll',
+    backgroundColor: theme.colors.background,
   },
   tabContainer: {
     flexDirection: 'row',
@@ -298,6 +302,7 @@ const styles = StyleSheet.create({
   tabText: {
     color: theme.colors.primary,
     fontWeight: '500',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   activeTabText: {
     color: theme.colors.surface,
@@ -316,9 +321,11 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 8,
     fontSize: 16,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   listContainer: {
     paddingBottom: 16,
+    paddingHorizontal: Platform.OS === 'web' ? 16 : 0, // Space for scrollbar
   },
   loadingContainer: {
     flex: 1,
@@ -337,6 +344,7 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     marginTop: 16,
     textAlign: 'center',
+    fontFamily: theme.fonts.header.fontFamily,
   },
   emptyStateSubtitle: {
     fontSize: 16,
@@ -344,6 +352,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
     marginBottom: 24,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   createServiceButton: {
     backgroundColor: theme.colors.primary,
@@ -356,6 +365,7 @@ const styles = StyleSheet.create({
     color: theme.colors.surface,
     fontSize: 16,
     fontWeight: '600',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   retryButton: {
     backgroundColor: theme.colors.error,
@@ -368,6 +378,7 @@ const styles = StyleSheet.create({
     color: theme.colors.surface,
     fontSize: 16,
     fontWeight: '600',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
 });
 

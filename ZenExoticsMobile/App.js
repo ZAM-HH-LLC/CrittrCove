@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { Platform } from 'react-native';
+import { Platform, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator, TransitionPresets } from '@react-navigation/stack';
@@ -10,6 +10,7 @@ import { AuthProvider, AuthContext } from './src/context/AuthContext';
 import { API_BASE_URL } from './src/config/config';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createNavigationContainerRef } from '@react-navigation/native';
+import { Linking } from 'react-native';
 
 // Import all your screen components
 import HomeScreen from './src/screens/HomeScreen';
@@ -152,12 +153,6 @@ const linking = {
   }
 };
 
-const globalStyles = `
-  input, textarea {
-    outline: none;
-    -webkit-tap-highlight-color: transparent;
-  }
-`;
 
 export const navigationRef = createNavigationContainerRef();
 
@@ -182,8 +177,62 @@ function TabNavigator() {
   );
 }
 
+const PrototypeWarning = () => {
+  const [isVisible, setIsVisible] = useState(true);
+
+  useEffect(() => {
+    const checkBannerStatus = async () => {
+      if (Platform.OS === 'web') {
+        const hidden = 'false'; //sessionStorage.getItem('prototype_banner_hidden');
+        if (hidden === 'true') {
+          setIsVisible(false);
+        }
+      } else {
+        const hidden = await AsyncStorage.getItem('prototype_banner_hidden');
+        if (hidden === 'true') {
+          setIsVisible(false);
+        }
+      }
+    };
+    checkBannerStatus();
+  }, []);
+
+  const hideBanner = async () => {
+    if (Platform.OS === 'web') {
+      sessionStorage.setItem('prototype_banner_hidden', 'true');
+    } else {
+      await AsyncStorage.setItem('prototype_banner_hidden', 'true');
+    }
+    setIsVisible(false);
+  };
+
+  if (!isVisible) return null;
+
+  return (
+    <View style={styles.warningBanner}>
+      <View style={styles.warningContent}>
+        <TouchableOpacity 
+          style={styles.closeButton}
+          onPress={hideBanner}
+        >
+          <Text style={styles.closeButtonText}>✕</Text>
+        </TouchableOpacity>
+        <Text style={styles.warningText}>
+          🚧 Prototype Mode: All features are currently under development. Join our waitlist for the full version to receive exclusive discounts, bonuses, and early-access promotions!
+        </Text>
+        <TouchableOpacity 
+          style={styles.waitlistButton}
+          onPress={() => Linking.openURL('https://docs.google.com/forms/d/e/1FAIpQLSesHBn9IydQwf0kvr-pz-RvVW_UMs61Y6mvauVfXvdFewFwRw/viewform?usp=header')}
+        >
+          <Text style={styles.waitlistButtonText}>Join Waitlist</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+};
+
 function AppContent() {
-  const { checkAuthStatus, is_DEBUG } = useContext(AuthContext);
+  const { checkAuthStatus, is_DEBUG, is_prototype } = useContext(AuthContext);
   const [initialRoute, setInitialRoute] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -268,35 +317,97 @@ function AppContent() {
         }
       }}
     >
-      {Platform.OS === 'web' ? (
-        <Stack.Navigator
-          initialRouteName={initialRoute}
-          screenOptions={{
-            headerShown: true,
-            header: ({ navigation }) => <Navigation navigation={navigation} />,
-            ...TransitionPresets.SlideFromRightIOS,
-            presentation: 'card',
-            animation: 'slide_from_right'
-          }}
-        >
-          {screens.map(screen => (
-            <Stack.Screen 
-              key={screen.name}
-              name={screen.name} 
-              component={screen.component}
-              options={{
-                headerShown: true,
-                animation: 'slide_from_right'
-              }}
-            />
-          ))}
-        </Stack.Navigator>
-      ) : (
-        <TabNavigator />
-      )}
+      <View style={styles.container}>
+        {is_prototype && <PrototypeWarning />}
+        {Platform.OS === 'web' ? (
+          <Stack.Navigator
+            initialRouteName={initialRoute}
+            screenOptions={{
+              headerShown: true,
+              header: ({ navigation }) => <Navigation navigation={navigation} />,
+              ...TransitionPresets.SlideFromRightIOS,
+              presentation: 'card',
+              animation: 'slide_from_right'
+            }}
+          >
+            {screens.map(screen => (
+              <Stack.Screen 
+                key={screen.name}
+                name={screen.name} 
+                component={screen.component}
+                options={{
+                  headerShown: true,
+                  animation: 'slide_from_right'
+                }}
+              />
+            ))}
+          </Stack.Navigator>
+        ) : (
+          <TabNavigator />
+        )}
+      </View>
     </NavigationContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100%',
+  },
+  warningBanner: {
+    backgroundColor: '#ffebee',
+    padding: Platform.OS === 'web' ? 12 : 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ef5350',
+    width: '100%',
+    flexShrink: 0, // Prevent banner from shrinking
+  },
+  warningContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 10,
+    maxWidth: 1200,
+    marginHorizontal: 'auto',
+    width: '100%',
+  },
+  warningText: {
+    color: '#c62828',
+    textAlign: 'center',
+    fontSize: Platform.OS === 'web' ? 15 : 14,
+    flexShrink: 1,
+    flex: 1,
+    marginHorizontal: 15,
+  },
+  waitlistButton: {
+    backgroundColor: '#ef5350',
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginLeft: 'auto',
+  },
+  waitlistButtonText: {
+    color: 'white',
+    fontSize: Platform.OS === 'web' ? 14 : 13,
+    fontWeight: '600',
+  },
+  closeButton: {
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 5,
+  },
+  closeButtonText: {
+    color: '#c62828',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+});
 
 export default function App() {
   return (
@@ -307,3 +418,4 @@ export default function App() {
     </AuthProvider>
   );
 }
+

@@ -13,25 +13,40 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 const Dashboard = ({ navigation }) => {
   const { colors } = useTheme();
-  const { firstName } = useContext(AuthContext);
+  const { firstName, screenWidth } = useContext(AuthContext);
   const { signOut } = useContext(AuthContext);
 
-  const refreshToken = async () => {
-    try {
-      const refreshToken = await AsyncStorage.getItem('refreshToken');
-      const response = await axios.post(`${API_BASE_URL}/api/token/refresh/`, {
-        refresh: refreshToken,
-      });
-      const { access } = response.data;
-      await AsyncStorage.setItem('userToken', access);
-      return access;
-    } catch (error) {
-      console.error('Error refreshing token:', error);
-      await signOut();
-      navigation.navigate('SignIn');
-    }
-  };
+  const isLargeScreen = screenWidth > 600;
 
+  // Dynamic styles based on screen size
+  const dynamicStyles = {
+    headerTitle: {
+      fontSize: isLargeScreen ? theme.fontSizes.extraLarge : theme.fontSizes.large,
+      fontWeight: '500',
+      color: theme.colors.text,
+      fontFamily: theme.fonts.header.fontFamily,
+    },
+    cardTitle: {
+      fontSize: isLargeScreen ? theme.fontSizes.largeLarge : theme.fontSizes.large,
+      fontFamily: theme.fonts.header.fontFamily,
+    },
+    cardParagraph: {
+      fontSize: isLargeScreen ? theme.fontSizes.large : theme.fontSizes.medium,
+      fontFamily: theme.fonts.regular.fontFamily,
+    },
+    listItemTitle: {
+      fontSize: isLargeScreen ? theme.fontSizes.large : theme.fontSizes.medium,
+      fontFamily: theme.fonts.regular.fontFamily,
+    },
+    listItemDescription: {
+      fontSize: isLargeScreen ? theme.fontSizes.mediumLarge : theme.fontSizes.smallMedium,
+      fontFamily: theme.fonts.regular.fontFamily,
+    },
+    buttonText: {
+      fontSize: isLargeScreen ? theme.fontSizes.mediumLarge : theme.fontSizes.smallMedium,
+      fontFamily: theme.fonts.regular.fontFamily,
+    },
+  };
 
   // Mock data - replace with actual API calls
   const upcomingBookings = [
@@ -48,20 +63,23 @@ const Dashboard = ({ navigation }) => {
       <View style={styles.cardContainer}>
         <Card style={styles.card}>
           <Card.Content>
-            <Title>Welcome back, {firstName}!</Title>
-            <Paragraph>Here's an overview of your upcoming pet care services.</Paragraph>
+            <Title style={dynamicStyles.cardTitle}>Welcome back, {firstName}!</Title>
+            <Paragraph style={dynamicStyles.cardParagraph}>Here's an overview of your upcoming pet care services.</Paragraph>
           </Card.Content>
         </Card>
 
         <Card style={styles.card}>
           <Card.Content>
-            <Title>Upcoming Bookings</Title>
+            <Title style={dynamicStyles.cardTitle}>Upcoming Bookings</Title>
             {upcomingBookings.map((booking) => (
               <TouchableOpacity
                 key={booking.id}
                 onPress={() => navigation.navigate('BookingDetails', { bookingId: booking.id })}
+                style={styles.bookingItem}
               >
                 <List.Item
+                  titleStyle={dynamicStyles.listItemTitle}
+                  descriptionStyle={dynamicStyles.listItemDescription}
                   title={`${booking.pet} with ${booking.profepsronalsional}`}
                   description={`${booking.date} at ${booking.time}`}
                   left={(props) => <IconComponent {...props} icon="calendar" name="calendar" />}
@@ -71,19 +89,20 @@ const Dashboard = ({ navigation }) => {
             ))}
           </Card.Content>
           <Card.Actions>
-            <Button onPress={() => navigation.navigate('MyBookings')}>View All Bookings</Button>
+            <Button labelStyle={dynamicStyles.buttonText} onPress={() => navigation.navigate('MyBookings')}>View All Bookings</Button>
           </Card.Actions>
         </Card>
 
         <Card style={styles.card}>
           <Card.Content>
-            <Title>Quick Actions</Title>
+            <Title style={dynamicStyles.cardTitle}>Quick Actions</Title>
             <View style={styles.quickActions}>
               <Button 
                 icon={Platform.OS === 'web' ? ({ size, color }) => <MaterialCommunityIcons name="magnify" size={size} color={color} /> : "magnify"}
                 mode="outlined" 
                 onPress={() => navigation.navigate('SearchProfessionalsListing')}
                 style={styles.quickActionButton}
+                labelStyle={dynamicStyles.buttonText}
               >
                 Find a Professional
               </Button>
@@ -92,6 +111,7 @@ const Dashboard = ({ navigation }) => {
                 mode="outlined" 
                 onPress={() => navigation.navigate('MyPets')}
                 style={styles.quickActionButton}
+                labelStyle={dynamicStyles.buttonText}
               >
                 My Pets
               </Button>
@@ -105,7 +125,7 @@ const Dashboard = ({ navigation }) => {
   return (
     <CrossPlatformView fullWidthHeader={true}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Dashboard</Text>
+        <Text style={dynamicStyles.headerTitle}>Dashboard</Text>
       </View>
       <Content />
     </CrossPlatformView>
@@ -155,10 +175,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: Platform.OS === 'web' ? undefined : 'center',
   },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '500',
-    color: theme.colors.text,
+  bookingItem: {
+    padding: 6,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+    marginVertical: 4,
+    borderRadius: 4,
   },
 });
 

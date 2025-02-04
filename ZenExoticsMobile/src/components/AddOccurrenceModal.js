@@ -326,6 +326,17 @@ const AddOccurrenceModal = ({
     setValidationError(null);
   };
 
+  const renderPickerItems = (options) => {
+    return options.map((option) => (
+      <Picker.Item 
+        key={option} 
+        label={option} 
+        value={option}
+        style={styles.pickerItem}
+      />
+    ));
+  };
+
   return (
     <Modal
       visible={visible}
@@ -417,9 +428,7 @@ const AddOccurrenceModal = ({
                         onValueChange={(itemValue) => setTimeUnit(itemValue)}
                         style={styles.picker}
                       >
-                        {TIME_OPTIONS.map((option) => (
-                          <Picker.Item key={option} label={option} value={option} />
-                        ))}
+                        {renderPickerItems(TIME_OPTIONS)}
                       </Picker>
                     </View>
                   </View>
@@ -602,6 +611,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: theme.fontSizes.largeLarge,
     fontWeight: 'bold',
+    fontFamily: theme.fonts.header.fontFamily,
   },
   closeButton: {
     padding: 5,
@@ -609,7 +619,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: theme.fontSizes.large,
     fontWeight: '500',
-    // marginBottom: 15,
+    fontFamily: theme.fonts.header.fontFamily,
   },
   dateTimeSection: {
     // marginBottom: 10,
@@ -640,12 +650,14 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
     borderRadius: 8,
     padding: 12,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   rateAmountContainer: {
     flex: 1,
   },
   rateAmountInput: {
     flex: 1,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   addRateButton: {
     padding: 10,
@@ -653,16 +665,17 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 10,
+    // marginTop: ,
   },
   addRateButtonText: {
     color: theme.colors.primary,
     fontSize: theme.fontSizes.medium,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   label: {
     fontSize: theme.fontSizes.medium,
-    // marginBottom: 8,
     color: theme.colors.text,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   inputContainer: {
     flexDirection: 'row',
@@ -676,6 +689,7 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSizes.medium,
     color: theme.colors.text,
     marginRight: 4,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   input: {
     backgroundColor: theme.colors.surface,
@@ -683,6 +697,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: theme.colors.border,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -707,11 +722,13 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     color: theme.colors.text,
     fontSize: theme.fontSizes.medium,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   addButtonText: {
     fontSize: theme.fontSizes.medium,
     color: theme.colors.surface,
     fontWeight: 'bold',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   rateLabelContainer: {
     flexDirection: 'row',
@@ -722,12 +739,14 @@ const styles = StyleSheet.create({
     flex: 2,
     fontSize: theme.fontSizes.medium,
     color: theme.colors.text,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   rateAmountLabel: {
     flex: 1,
     fontSize: theme.fontSizes.medium,
     color: theme.colors.text,
     marginLeft: 10,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   rateContainer: {
     flexDirection: 'row',
@@ -746,6 +765,7 @@ const styles = StyleSheet.create({
     height: 39,
     borderWidth: 1,
     borderColor: theme.colors.border,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   totalSection: {
     flexDirection: 'row',
@@ -759,17 +779,32 @@ const styles = StyleSheet.create({
   totalLabel: {
     fontSize: theme.fontSizes.medium,
     fontWeight: 'bold',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   totalAmount: {
     fontSize: theme.fontSizes.mediumLarge,
     fontWeight: 'bold',
     color: theme.colors.primary,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   errorText: {
     color: theme.colors.error,
     fontSize: theme.fontSizes.small,
     marginTop: 8,
     marginBottom: 8,
+    fontFamily: theme.fonts.regular.fontFamily,
+  },
+  dropdownText: {
+    color: theme.colors.text,
+    fontFamily: theme.fonts.regular.fontFamily,
+  },
+  selectedDropdownText: {
+    color: theme.colors.primary,
+    fontWeight: 'bold',
+    fontFamily: theme.fonts.regular.fontFamily,
+  },
+  pickerItem: {
+    fontFamily: theme.fonts.regular.fontFamily,
   },
 });
 

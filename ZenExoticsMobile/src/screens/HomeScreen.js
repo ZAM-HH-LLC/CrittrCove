@@ -19,31 +19,31 @@ const { width: windowWidth, height: windowHeight } = Dimensions.get('window');
 // Define a sample reviews array
 const reviews = [
   {
-    image: 'https://via.placeholder.com/80',
+    image: require('../../assets/user1.png'),
     text: "\"CrittrCove has been amazing for finding reliable pet professionals!",
-    author: "Jane Doe"
-  },
-  {
-    image: 'https://via.placeholder.com/80',
-    text: "\"Great experience with pet sitting services!",
     author: "John Smith"
   },
   {
-    image: 'https://via.placeholder.com/80',
-    text: "\"Found the perfect sitter for my exotic pets!",
-    author: "Alice Brown"
+    image: require('../../assets/user2.png'),
+    text: "\"Great experience with pet sitting services!",
+    author: "Jane Doe"
   },
   {
-    image: 'https://via.placeholder.com/80',
+    image: require('../../assets/user3.png'),
+    text: "\"Found the perfect sitter for my exotic pets!",
+    author: "Sudhakar Vuluvala"
+  },
+  {
+    image: require('../../assets/user4.png'),
     text: "\"CrittrCove has been amazing for finding reliable pet professionals!",
-    author: "Murph Atker"
+    author: "Alice Brown"
   }
 ];
 
 // Define the ReviewImage component
 const ReviewImage = ({ source, style }) => {
   if (Platform.OS === 'web') {
-    return <img src={source.uri} style={style} alt="" />;
+    return <img src={source} style={style} alt="" />;
   }
   return <Image source={source} style={style} />;
 };
@@ -62,7 +62,6 @@ export default function HomeScreen({ navigation }) {
 
     return (
       <View style={styles.section}>
-        <Text style={styles.reviewsSubtitle}>TESTIMONIAL</Text>
         <Text style={styles.reviewsTitle}>Kind Words From Users</Text>
         <View style={styles.reviewsContainer}>
           <ScrollView
@@ -77,12 +76,12 @@ export default function HomeScreen({ navigation }) {
                 <Text style={styles.reviewText}>{review.text}</Text>
                 <View style={styles.reviewAuthorContainer}>
                   <ReviewImage
-                    source={{ uri: review.image }}
+                    source={review.image}
                     style={styles.reviewerImage}
                   />
                   <View>
                     <Text style={styles.reviewAuthorName}>{review.author}</Text>
-                    <Text style={styles.reviewAuthorTitle}>Marketing Manager</Text>
+                    <Text style={styles.reviewAuthorTitle}>Client Review</Text>
                     <View style={styles.starsContainer}>
                       {[1, 2, 3, 4, 5].map((_, index) => (
                         <MaterialCommunityIcons 
@@ -183,9 +182,11 @@ export default function HomeScreen({ navigation }) {
                   </View>
                 </View>
               </View>
-              <TouchableOpacity style={styles.actionButton} onPress={() => Linking.openURL('https://your-google-form')}>
-                <Text style={styles.buttonText} onPress={() => navigation.navigate('SignUp')}>Sign up Today!</Text>
-              </TouchableOpacity>
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity style={styles.actionButton} onPress={() => Linking.openURL('https://docs.google.com/forms/d/e/1FAIpQLSesHBn9IydQwf0kvr-pz-RvVW_UMs61Y6mvauVfXvdFewFwRw/viewform?usp=header')}>
+                  <Text style={styles.buttonText}>Sign up Today!</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           )}
           {activeTab === 'sitters' && (
@@ -229,9 +230,11 @@ export default function HomeScreen({ navigation }) {
                   </View>
                 </View>
               </View>
-              <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('BecomeProfessional')}>
-                <Text style={styles.buttonText}>Become a Professional</Text>
-              </TouchableOpacity>
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity style={styles.actionButton} onPress={() => Linking.openURL('https://docs.google.com/forms/d/e/1FAIpQLSesHBn9IydQwf0kvr-pz-RvVW_UMs61Y6mvauVfXvdFewFwRw/viewform?usp=header')}>
+                  <Text style={styles.buttonText}>Become a Professional</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           )}
         </View>
@@ -311,18 +314,20 @@ export default function HomeScreen({ navigation }) {
           />
           <ValidationError prefix="Message" field="message" errors={state.errors} />
           
-          <TouchableOpacity
-            style={[
-              styles.actionButton,
-              state.submitting && styles.disabledButton
-            ]}
-            onPress={handleFormSubmit}
-            disabled={state.submitting}
-          >
-            <Text style={styles.buttonText}>
-              {state.submitting ? 'Sending...' : 'Send'}
-            </Text>
-          </TouchableOpacity>
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity
+              style={[
+                styles.actionButton,
+                state.submitting && styles.disabledButton
+              ]}
+              onPress={handleFormSubmit}
+              disabled={state.submitting}
+            >
+              <Text style={styles.buttonText}>
+                {state.submitting ? 'Sending...' : 'Send'}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     );
@@ -431,6 +436,20 @@ export default function HomeScreen({ navigation }) {
         ))} 
       </View> */}
 
+      {/* Waitlist Section */}
+      <View style={[styles.section, styles.waitlistSection]}>
+        <Text style={styles.sectionTitle}>Join Our Waitlist</Text>
+        <Text style={styles.waitlistDescription}>
+          Get exclusive bonus offers, promotions, and discounts when the app and website launches by signing up on our waitlist today!
+        </Text>
+        <TouchableOpacity 
+          style={[styles.actionButton, styles.waitlistButton]} 
+          onPress={() => Linking.openURL('https://docs.google.com/forms/d/e/1FAIpQLSesHBn9IydQwf0kvr-pz-RvVW_UMs61Y6mvauVfXvdFewFwRw/viewform?usp=header')}
+        >
+          <Text style={styles.buttonText}>Join Waitlist</Text>
+        </TouchableOpacity>
+      </View>
+
       {/* Contact Us Section */}
       <ContactSection />
 
@@ -496,8 +515,9 @@ const styles = StyleSheet.create({
   },
   heroText: {
     fontSize: 32,
-    textAlign: 'center',
     fontWeight: 'bold',
+    fontFamily: theme.fonts.header.fontFamily,
+    textAlign: 'center',
     color: 'white',
     textShadowColor: 'rgba(0, 0, 0, 0.75)',
     textShadowOffset: {width: -1, height: 1},
@@ -512,8 +532,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sectionTitle: {
-    fontSize: 24,
+    fontSize: theme.fontSizes.largeLarge,
     fontWeight: 'bold',
+    fontFamily: theme.fonts.header.fontFamily,
     marginBottom: 10,
     textAlign: 'center',
     color: 'black',
@@ -545,7 +566,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   reviewsSubtitle: {
-    fontSize: 18,
+    fontSize: theme.fontSizes.mediumLarge,
     fontWeight: 'bold',
     color: 'black',
     marginBottom: 10,
@@ -553,7 +574,8 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   reviewsTitle: {
-    fontSize: 24,
+    fontSize: theme.fontSizes.largeLarge,
+    fontFamily: theme.fonts.header.fontFamily,
     fontWeight: 'bold',
     color: 'black',
     marginBottom: 20,
@@ -577,7 +599,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   reviewCard: {
-    width: 280,
+    width: 300,
+    height: 200,
     padding: 20,
     backgroundColor: 'white',
     borderRadius: 10,
@@ -586,7 +609,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-    // marginRight: 10,
+    justifyContent: 'space-between',
   },
   reviewCardMobile: {
     width: '100%',
@@ -599,28 +622,34 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   reviewText: {
-    fontSize: 16,
+    fontSize: 18,
     color: 'black',
+    fontFamily: theme.fonts.regular.fontFamily,
+    marginBottom: 15,
+    flex: 1,
   },
   reviewAuthorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 10,
   },
   reviewerImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 45,
+    height: 60,
+    borderRadius: 8,
     marginRight: 10,
+    objectFit: 'cover',
   },
   reviewAuthorName: {
     fontSize: 16,
     fontWeight: 'bold',
     color: 'black',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   reviewAuthorTitle: {
     fontSize: 14,
-    color: 'black',
+    color: '#666',
+    fontFamily: theme.fonts.regular.fontFamily,
+    marginTop: 2,
   },
   paginationDots: {
     flexDirection: 'row',
@@ -656,11 +685,13 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.primary,
   },
   toggleButtonText: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   toggleButtonTextActive: {
     color: theme.colors.whiteText,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   featuresContainer: {
     flexDirection: 'row',
@@ -685,9 +716,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     color: 'black',
     textAlign: 'center',
+    fontFamily: theme.fonts.header.fontFamily,
   },
   featuresList: {
     width: '100%',
+    fontFamily: theme.fonts.header.fontFamily,
     marginBottom: 20,
   },
   featureItem: {
@@ -708,26 +741,35 @@ const styles = StyleSheet.create({
     fontSize: 40,
   },
   featureTitle: {
-    fontSize: 18,
+    fontSize: theme.fontSizes.mediumLarge,
     fontWeight: 'bold',
     marginBottom: 5,
     color: 'black',
+    fontFamily: theme.fonts.header.fontFamily,
   },
   featureText: {
-    fontSize: 16,
+    fontSize: theme.fontSizes.mediumLarge + 2,
     color: 'black',
     lineHeight: 22,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   actionButton: {
     backgroundColor: '#6A6C51',
+    width: '50%',
     padding: 5,
     borderRadius: 5,
     alignItems: 'center',
   },
+  buttonContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   buttonText: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
     color: 'white',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   blogSection: {
     marginBottom: 20,
@@ -761,6 +803,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 8,
+    fontFamily: theme.fonts.header.fontFamily,
   },
   authorInfo: {
     flexDirection: 'row',
@@ -768,22 +811,25 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   authorName: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '500',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   dot: {
     marginHorizontal: 4,
     color: '#666',
   },
   readTime: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#666',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   preview: {
-    fontSize: 14,
+    fontSize: 16,
     lineHeight: 20,
     marginBottom: 12,
     color: '#444',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   tags: {
     flexDirection: 'row',
@@ -798,8 +844,9 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   tagText: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '500',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   stats: {
     flexDirection: 'row',
@@ -813,8 +860,9 @@ const styles = StyleSheet.create({
   },
   statText: {
     marginLeft: 4,
-    fontSize: 12,
+    fontSize: 14,
     color: '#666',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   roadmapSection: {
     marginBottom: 20,
@@ -881,6 +929,7 @@ const styles = StyleSheet.create({
   },
   footerLink: {
     color: 'white',
+    fontFamily: theme.fonts.regular.fontFamily,
     margin: 5,
     textDecorationLine: 'underline',
   },
@@ -933,10 +982,11 @@ const styles = StyleSheet.create({
     padding: 5,
   },
   successMessage: {
-    fontSize: 16,
+    fontSize: 18,
     textAlign: 'center',
     marginTop: 10,
     color: 'black',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   messageInput: {
     height: 100,
@@ -948,16 +998,37 @@ const styles = StyleSheet.create({
   },
   validationError: {
     color: 'red',
-    fontSize: 14,
+    fontSize: 16,
     marginTop: -5,
     marginBottom: 10,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   starsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 2,
+    marginTop: 4,
   },
   starIcon: {
     marginRight: 2,
+  },
+  waitlistSection: {
+    // backgroundColor: '#f5f5f5',
+    marginVertical: 20,
+    borderRadius: 10,
+  },
+  waitlistDescription: {
+    fontSize: 18,
+    textAlign: 'center',
+    marginBottom: 20,
+    color: 'black',
+    fontFamily: theme.fonts.regular.fontFamily,
+    paddingHorizontal: 20,
+    lineHeight: 24,
+  },
+  waitlistButton: {
+    marginTop: 10,
+    width: '80%',
+    maxWidth: 300,
+    padding: 15,
   },
 });

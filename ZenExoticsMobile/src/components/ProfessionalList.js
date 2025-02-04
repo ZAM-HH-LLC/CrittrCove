@@ -23,7 +23,7 @@ const ProfessionalCard = ({ professional, onPress }) => {
         <View style={styles.header}>
           <Text style={styles.name}>{professional.id}. {professional.name}</Text>
           <View style={styles.starProfessionalBadge}>
-            <Text style={styles.price}>from ${professional.startingRate}/night</Text>
+            <Text style={styles.price}>from ${professional.price}/night</Text>
             {/* <Text style={styles.starProfessionalText}>Star Professional</Text> */}
           </View>
         </View>
@@ -31,8 +31,8 @@ const ProfessionalCard = ({ professional, onPress }) => {
         <View style={styles.stats}>
           <View style={styles.rating}>
             <MaterialCommunityIcons name="star" size={16} color={theme.colors.primary} />
-            <Text>{professional.rating}4.5</Text>
-            <Text style={styles.reviews}>{professional.reviewCount}52 reviews</Text>
+            <Text style={styles.ratingText}>{professional.rating ? professional.rating : '4.5'}</Text>
+            <Text style={styles.reviews}>- {professional.reviewCount ? professional.reviewCount : '52'} reviews</Text>
           </View>
         </View>
         
@@ -102,10 +102,12 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSizes.large,
     fontWeight: 'bold',
     color: theme.colors.text,
+    fontFamily: theme.fonts.header.fontFamily,
   },
   location: {
-    fontSize: theme.fontSizes.medium,
+    fontSize: theme.fontSizes.medium + 2,
     color: theme.colors.text,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   starProfessionalBadge: {
     backgroundColor: theme.colors.primary,
@@ -114,9 +116,10 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   starProfessionalText: {
-    fontSize: theme.fontSizes.small,
+    fontSize: theme.fontSizes.small + 2,
     fontWeight: 'bold',
     color: theme.colors.surface,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   stats: {
     flexDirection: 'row',
@@ -128,9 +131,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
   },
-  reviews: {
-    fontSize: theme.fontSizes.small,
+  ratingText: {
+    fontSize: theme.fontSizes.small + 2,
     color: theme.colors.text,
+    fontFamily: theme.fonts.regular.fontFamily,
+    lineHeight: (theme.fontSizes.small + 2) * 1.5,
+  },
+  reviews: {
+    fontSize: theme.fontSizes.small + 2,
+    color: theme.colors.text,
+    marginLeft: 2,
+    fontFamily: theme.fonts.regular.fontFamily,
+    lineHeight: (theme.fontSizes.small + 2) * 1.5,
   },
   repeats: {
     flexDirection: 'row',
@@ -138,9 +150,10 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   price: {
-    fontSize: theme.fontSizes.medium,
+    fontSize: theme.fontSizes.medium + 2,
     fontWeight: 'bold',
     color: theme.colors.whiteText,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
 });
 

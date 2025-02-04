@@ -353,10 +353,12 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSizes.large,
     fontWeight: 'bold',
     color: theme.colors.text,
+    fontFamily: theme.fonts.header.fontFamily,
   },
   statusText: {
     fontSize: theme.fontSizes.medium,
     marginTop: 4,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   actionButton: {
     width: 60,
@@ -368,6 +370,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
     textAlign: 'center',
     lineHeight: 16,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   content: {
     gap: 24,
@@ -402,10 +405,12 @@ const styles = StyleSheet.create({
   toggleButtonText: {
     color: theme.colors.text,
     fontSize: theme.fontSizes.medium,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   toggleButtonTextActive: {
     color: theme.colors.whiteText,
     fontWeight: 'bold',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   timeSection: {
     flexDirection: 'row',
@@ -418,6 +423,7 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSizes.medium,
     color: theme.colors.text,
     marginBottom: 8,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   serviceSection: {
     position: 'relative',
@@ -435,6 +441,7 @@ const styles = StyleSheet.create({
   },
   serviceSelectorText: {
     color: theme.colors.text,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   dropdownContainer: {
     position: 'absolute',
@@ -463,10 +470,12 @@ const styles = StyleSheet.create({
   },
   dropdownText: {
     color: theme.colors.text,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   selectedOption: {
     color: theme.colors.primary,
     fontWeight: 'bold',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -489,6 +498,7 @@ const styles = StyleSheet.create({
     color: theme.colors.whiteText,
     fontSize: theme.fontSizes.medium,
     fontWeight: 'bold',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   serviceSelectorError: {
     borderColor: theme.colors.error,
@@ -498,6 +508,7 @@ const styles = StyleSheet.create({
     color: theme.colors.error,
     fontSize: theme.fontSizes.small,
     marginTop: 4,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
 });
 

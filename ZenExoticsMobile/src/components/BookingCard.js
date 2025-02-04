@@ -78,19 +78,23 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSizes.medium,
     fontWeight: 'bold',
     color: theme.colors.primary,
+    fontFamily: theme.fonts.header.fontFamily,
   },
   status: {
     fontSize: theme.fontSizes.smallMedium,
     fontWeight: '500',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   name: {
     fontSize: theme.fontSizes.medium,
     marginBottom: 4,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   datetime: {
     fontSize: theme.fontSizes.smallMedium,
     color: theme.colors.placeholder,
     marginBottom: 16,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -114,9 +118,11 @@ const styles = StyleSheet.create({
   buttonText: {
     color: theme.colors.surface,
     fontWeight: '500',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   cancelButtonText: {
     color: theme.colors.error,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
 });
 

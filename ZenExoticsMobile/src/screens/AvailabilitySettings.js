@@ -664,6 +664,7 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSizes.large,
     fontWeight: 'bold',
     color: theme.colors.text,
+    fontFamily: theme.fonts.header.fontFamily,
   },
   addButton: {
     position: 'absolute',
@@ -690,6 +691,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
     fontSize: theme.fontSizes.medium,
     color: theme.colors.text,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   colorKeyContainer: {
     marginTop: 20,
@@ -702,6 +704,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 10,
+    fontFamily: theme.fonts.header.fontFamily,
   },
   colorKeyItem: {
     flexDirection: 'row',
@@ -717,6 +720,7 @@ const styles = StyleSheet.create({
   colorKeyText: {
     fontSize: 14,
     color: 'black',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   loadingContainer: {
     flex: 1,
@@ -727,6 +731,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: theme.fontSizes.medium,
     color: theme.colors.text,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   errorContainer: {
     flex: 1,
@@ -739,6 +744,7 @@ const styles = StyleSheet.create({
     color: theme.colors.error,
     textAlign: 'center',
     marginBottom: 20,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   retryButton: {
     backgroundColor: theme.colors.primary,
@@ -748,6 +754,7 @@ const styles = StyleSheet.create({
   retryButtonText: {
     color: theme.colors.whiteText,
     fontSize: theme.fontSizes.medium,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
 });
 

@@ -193,16 +193,19 @@ const styles = StyleSheet.create({
     borderBottomColor: theme.colors.border,
   },
   itemText: {
-    fontSize: theme.fontSizes.medium,
+    fontSize: theme.fontSizes.medium + 2,
     color: theme.colors.text,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   placeholderText: {
     color: theme.colors.placeholderText,
-    fontSize: theme.fontSizes.medium,
+    fontSize: theme.fontSizes.medium + 2,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   selectedText: {
     color: theme.colors.text,
-    fontSize: theme.fontSizes.medium,
+    fontSize: theme.fontSizes.medium + 2,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   chipsContainer: {
     flexDirection: 'row',
@@ -222,12 +225,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   chipText: {
-    fontSize: theme.fontSizes.small,
+    fontSize: theme.fontSizes.small + 2,
     color: theme.colors.text,
     marginRight: 4,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   chipRemove: {
     padding: 2,
+  },
+  label: {
+    fontSize: theme.fontSizes.medium,
+    color: theme.colors.text,
+    marginBottom: theme.spacing.small,
+    fontFamily: theme.fonts.header.fontFamily,
   },
 });
 

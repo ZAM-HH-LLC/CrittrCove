@@ -47,32 +47,36 @@ const mockReviews = [
   {
     id: 1,
     name: 'Noah M.',
-    service: 'Dog Boarding',
+    service: 'Fish Tank Cleaning',
     date: 'Dec 02, 2024',
+    rating: 5,
     text: 'Dina was fantastic with our dog! Sent lots of photos and clearly made sure she was comfortable. Will definitely use again!',
     photo: 'https://via.placeholder.com/50'
   },
   {
     id: 2,
     name: 'Kaily J.',
-    service: 'Doggy Day Care',
+    service: 'Ferrier',
     date: 'Nov 26, 2024',
+    rating: 4,
     text: 'Dina always takes such good care of Elijah. He was having tummy problems today and she kept me updated all day on how he was doing.',
     photo: 'https://via.placeholder.com/50'
   },
   {
     id: 3,
     name: 'Nadia U.',
-    service: 'Dog Boarding',
+    service: 'Reptile Boarding & Habitat Maintenance',
     date: 'Nov 19, 2024',
+    rating: 5,
     text: 'She took such great care of our puppy! Sent pictures and videos the whole time, her backyard was super nice and clean ❤️ my puppy was definitely in great hands! Bonus her dogs were so sweet with our puppy.',
     photo: 'https://via.placeholder.com/50'
   },
   {
     id: 4,
     name: 'Vanessa G.',
-    service: 'Dog Boarding',
+    service: 'Bird Feeding',
     date: 'Nov 19, 2024',
+    rating: 5,
     text: 'Dina was great! She communicated through the whole stay and sent plenty of videos and photos. 10/10',
     photo: 'https://via.placeholder.com/50'
   }
@@ -217,8 +221,11 @@ const ProfessionalProfile = ({ route, navigation }) => {
     <View style={styles.servicesSection}>
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Services</Text>
-        <TouchableOpacity onPress={() => setServicesModalVisible(true)}>
-          <Text style={styles.seeAllButton}>See All</Text>
+        <TouchableOpacity 
+          style={styles.seeAllButton}
+          onPress={() => setServicesModalVisible(true)}
+        >
+          <Text style={styles.seeAllButtonText}>See All</Text>
         </TouchableOpacity>
       </View>
       <View style={styles.servicesWrapper}>
@@ -343,7 +350,7 @@ const ProfessionalProfile = ({ route, navigation }) => {
             <View style={styles.petPhoto}>
               <MaterialCommunityIcons 
                 name={pet.animal_type.toLowerCase() === 'dog' ? 'dog' : 
-                      pet.animal_type.toLowerCase() === 'cat' ? 'cat' : 'lizard'} 
+                      pet.animal_type.toLowerCase() === 'cat' ? 'cat' : 'snake'} 
                 size={30} 
                 color={theme.colors.primary} 
               />
@@ -410,9 +417,21 @@ const ProfessionalProfile = ({ route, navigation }) => {
         <Image source={{ uri: review.photo }} style={styles.reviewerPhoto} />
         <View style={styles.reviewerInfo}>
           <Text style={styles.reviewerName}>{review.name}</Text>
-          <View style={styles.serviceInfo}>
-            <MaterialCommunityIcons name="home" size={16} color={theme.colors.secondary} />
-            <Text style={styles.serviceText}>{review.service} • {review.date}</Text>
+          <View style={styles.reviewMeta}>
+            <View style={styles.starContainer}>
+              {[...Array(5)].map((_, index) => (
+                <MaterialCommunityIcons
+                  key={index}
+                  name={index < review.rating ? "star" : "star-outline"}
+                  size={16}
+                  color={theme.colors.primary}
+                />
+              ))}
+            </View>
+            <View style={styles.serviceInfo}>
+              <MaterialCommunityIcons name="home" size={16} color={theme.colors.secondary} />
+              <Text style={styles.serviceText}>{review.service} • {review.date}</Text>
+            </View>
           </View>
         </View>
       </View>
@@ -501,9 +520,20 @@ const ProfessionalProfile = ({ route, navigation }) => {
       marginBottom: 16,
     },
     seeAllButton: {
+      borderWidth: 1,
+      borderColor: theme.colors.primary,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 8,
+      alignSelf: 'flex-start',
+      minWidth: 'auto',
+      width: 'auto',
+    },
+    seeAllButtonText: {
       color: theme.colors.primary,
       fontSize: 16,
       fontWeight: '600',
+      textAlign: 'center',
     },
     servicesScroll: {
       marginHorizontal: -24, // To counteract parent padding
@@ -513,6 +543,7 @@ const ProfessionalProfile = ({ route, navigation }) => {
       flexDirection: 'row',
       flexWrap: 'wrap',
       gap: 16,
+      justifyContent: 'center',
       padding: 16,
     },
   });
@@ -700,6 +731,46 @@ const ProfessionalProfile = ({ route, navigation }) => {
           </View>
         </View>
       </Modal>
+
+      {/* Services Modal */}
+      <Modal
+        visible={servicesModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setServicesModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles2.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>All Services</Text>
+              <TouchableOpacity 
+                style={styles.modalCloseIcon}
+                onPress={() => setServicesModalVisible(false)}
+              >
+                <MaterialCommunityIcons name="close" size={24} color={theme.colors.text} />
+              </TouchableOpacity>
+            </View>
+            <ScrollView 
+              style={styles.modalScroll}
+              contentContainerStyle={styles.modalScrollContent}
+            >
+              <View style={styles.modalServicesGrid}>
+                {mockServicesForCards.map(service => (
+                  <ServiceCard 
+                    key={service.id}
+                    service={service}
+                    onHeartPress={toggleFavorite}
+                    isFavorite={favoriteServices.includes(service.id)}
+                    professionalName={professionalData.name}
+                    professionalId={professionalData.id}
+                    navigation={navigation}
+                  />
+                ))}
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </CrossPlatformView>
   );
 };
@@ -708,6 +779,8 @@ const styles = StyleSheet.create({
   scrollViewContent: {
     flexGrow: 1,
     paddingBottom: Platform.OS === 'web' ? 16 : 80,
+    height: Platform.OS === 'web' ? 'calc(100vh - 124px)' : '100%',
+    overflow: 'auto',
   },
   content: {
     alignSelf: 'center',
@@ -772,6 +845,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 12,
+    fontFamily: theme.fonts.header.fontFamily,
   },
   weightRanges: {
     gap: 8,
@@ -779,6 +853,7 @@ const styles = StyleSheet.create({
   weightRange: {
     fontSize: 16,
     color: theme.colors.text,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   galleryPhoto: {
     width: Platform.OS === 'web' ? 100 : 50,
@@ -806,10 +881,12 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 5,
+    fontFamily: theme.fonts.header.fontFamily,
   },
   location: {
     fontSize: 16,
     color: theme.colors.secondary,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   section: {
     padding: 20,
@@ -821,6 +898,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 10,
     color: theme.colors.primary,
+    fontFamily: theme.fonts.header.fontFamily,
   },
   bioInput: {
     backgroundColor: theme.colors.surface,
@@ -847,10 +925,14 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   petPhoto: {
-    width: 100,
-    height: 100,
-    margin: 5,
-    borderRadius: 10,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: theme.colors.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   addPhotoButton: {
     width: 100,
@@ -910,6 +992,7 @@ const styles = StyleSheet.create({
     lineHeight: 28,
     color: theme.colors.text,
     overflow: 'hidden',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   serviceItem: {
     flexDirection: 'row',
@@ -919,10 +1002,12 @@ const styles = StyleSheet.create({
   },
   serviceText: {
     fontSize: 8,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   servicePrice: {
     fontSize: 14,
     color: theme.colors.secondary,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   skillsGrid: {
     flexDirection: 'row',
@@ -936,6 +1021,7 @@ const styles = StyleSheet.create({
   },
   skillText: {
     fontSize: 16,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   photoGallery: {
     flexDirection: 'row',
@@ -943,6 +1029,7 @@ const styles = StyleSheet.create({
   calculatorText: {
     fontSize: 16,
     color: theme.colors.secondary,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   additionalRatesButton: {
     marginTop: 16,
@@ -958,6 +1045,7 @@ const styles = StyleSheet.create({
     color: theme.colors.primary,
     fontSize: 16,
     fontWeight: '600',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   calendarSection: {
     marginTop: 24,
@@ -969,6 +1057,7 @@ const styles = StyleSheet.create({
     color: theme.colors.primary,
     fontSize: 16,
     fontWeight: '600',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   reviewsSection: {
     marginVertical: 32,
@@ -1003,22 +1092,19 @@ const styles = StyleSheet.create({
   },
   petsSection: {
     marginBottom: 24,
+    backgroundColor: theme.colors.surface,
+    padding: 16,
+    borderRadius: 12,
   },
   petItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
-    backgroundColor: theme.colors.surface,
+    marginBottom: 12,
     padding: 12,
     borderRadius: 8,
-  },
-  petPhoto: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
     backgroundColor: theme.colors.background,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   petInfo: {
     marginLeft: 12,
@@ -1028,15 +1114,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 2,
+    fontFamily: theme.fonts.header.fontFamily,
   },
   petBreed: {
     fontSize: 14,
     color: theme.colors.secondary,
     marginBottom: 2,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   petDetails: {
     fontSize: 14,
     color: theme.colors.secondary,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   modalContainer: {
     flex: 1,
@@ -1085,7 +1174,8 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   serviceText: {
-    fontSize: 10,
+    fontSize: 12,
+    fontFamily: theme.fonts.regular.fontFamily,
     fontWeight: '100',
   },
   homeFeaturesGrid: {
@@ -1105,6 +1195,7 @@ const styles = StyleSheet.create({
   featureText: {
     fontSize: 14,
     color: theme.colors.text,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   reviewItem: {
     marginBottom: 24,
@@ -1129,6 +1220,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 4,
+    fontFamily: theme.fonts.header.fontFamily,
   },
   serviceInfo: {
     flexDirection: 'row',
@@ -1138,11 +1230,13 @@ const styles = StyleSheet.create({
   reviewText: {
     fontSize: 14,
     lineHeight: 20,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: '600',
     marginBottom: 16,
+    fontFamily: theme.fonts.header.fontFamily,
   },
   modalScroll: {
     maxHeight: Platform.OS === 'web' ? '70vh' : '80%',
@@ -1158,6 +1252,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -1203,6 +1298,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     color: theme.colors.text,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   modalReviewItem: {
     marginBottom: 16,
@@ -1217,6 +1313,38 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 500, // Limit width on mobile for better readability
     alignSelf: 'center',
+  },
+  seeAllButton: {
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+    minWidth: 'auto',
+    width: 'auto',
+  },
+  seeAllButtonText: {
+    color: theme.colors.primary,
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+    fontFamily: theme.fonts.regular.fontFamily,
+  },
+  modalServicesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+    justifyContent: 'center',
+    padding: 16,
+  },
+  reviewMeta: {
+    gap: 4,
+  },
+  starContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
   },
 });
 

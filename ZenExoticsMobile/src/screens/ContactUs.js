@@ -157,12 +157,6 @@ const ContactUs = () => {
               {isSubmitting || (is_prototype && state.submitting) ? 'Sending...' : 'Send Message'}
             </Text>
           </TouchableOpacity>
-
-          <View style={styles.contactInfo}>
-            <Text style={styles.contactInfoText}>Or reach us directly:</Text>
-            <Text style={styles.contactInfoText}>Email: zam.hh.llc@gmail.com</Text>
-            <Text style={styles.contactInfoText}>Phone: 719-510-6341</Text>
-          </View>
         </View>
       </View>
     </CrossPlatformView>

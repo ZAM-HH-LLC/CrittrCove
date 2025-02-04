@@ -1,12 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal, Platform } from 'react-native';
-import { useTheme } from '@react-navigation/native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
 import { AuthContext } from '../context/AuthContext';
 
 const RoadmapSection = () => {
-  const theme = useTheme();
   const [selectedMilestone, setSelectedMilestone] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const { screenWidth } = useContext(AuthContext);
@@ -19,7 +17,7 @@ const RoadmapSection = () => {
       title: 'Prototype Launch',
       description: 'Initial release of CrittrCove webpage and landing page with no signup or app functionality.',
       icon: 'dog',
-      color: '#515d6c' // Royal Blue
+      color: theme.colors.mainColors.senary // Royal Blue
     },
     {
       id: 2,
@@ -27,7 +25,7 @@ const RoadmapSection = () => {
       title: 'Launch of MVP',
       description: 'This is when users will be able to sign up and use the app fully for the first time! For a full feature list, please check our blog or discord.',
       icon: 'dragon',
-      color: '#516a6c' // Medium Purple
+      color: theme.colors.mainColors.quinary // Medium Purple
     },
     {
       id: 3,
@@ -35,7 +33,7 @@ const RoadmapSection = () => {
       title: 'Launch of App',
       description: 'Mobile app release with real-time messaging, notifications, and payment integration. For a full feature list, please check our blog or discord.',
       icon: 'cat',
-      color: '#516C61' // Royal Blue
+      color: theme.colors.mainColors.quaternary // Royal Blue
     },
     {
       id: 4,
@@ -43,7 +41,7 @@ const RoadmapSection = () => {
       title: 'Community Features',
       description: 'Adding social features, pet communities, and expert advice forums.',
       icon: 'fish',
-      color: '#6A6C51' // Medium Purple
+      color: theme.colors.mainColors.main // Medium Purple
     }
   ];
 
@@ -158,6 +156,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 40,
     color: 'black',
+    fontFamily: theme.fonts.header.fontFamily,
   },
   mobileContainer: {
     width: '100%',
@@ -267,13 +266,15 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     color: 'black',
     textAlign: 'center',
+    fontFamily: theme.fonts.header.fontFamily,
   },
   modalDescription: {
-    fontSize: 16,
+    fontSize: 18,
     textAlign: 'center',
     marginBottom: 20,
     color: 'black',
     lineHeight: 24,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   closeButton: {
     padding: 12,

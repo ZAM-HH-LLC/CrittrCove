@@ -58,28 +58,28 @@ export const TIME_OPTIONS = [
 ];
 
 export const mockAdditionalRates = {
-  'Dog Boarding': [
+  'Fish Tank Cleaning': [
     { title: 'Extended Stay (7+ days)', amount: 15 },
     { title: 'Pickup/Dropoff Service', amount: 25 },
     { title: 'Special Diet Handling', amount: 10 },
     { title: 'Medication Administration', amount: 15 },
   ],
-  'Doggy Day Care': [
+  'Ferrier': [
     { title: 'Extended Hours', amount: 20 },
     { title: 'Training Session', amount: 30 },
     { title: 'Grooming', amount: 25 },
   ],
-  'House Sitting': [
-    { title: 'Plant Watering', amount: 10 },
-    { title: 'Mail Collection', amount: 5 },
-    { title: 'Extended Visit (4+ hrs)', amount: 30 },
-  ],
-  'Drop-In Visits': [
+  'Dog Walking': [
     { title: 'Extra 15 Minutes', amount: 10 },
     { title: 'Plant Watering', amount: 5 },
     { title: 'Photo Updates', amount: 5 },
   ],
-  'Dog Walking': [
+  'Reptile Boarding & Habitat Maintenance': [
+    { title: 'Plant Watering', amount: 10 },
+    { title: 'Mail Collection', amount: 5 },
+    { title: 'Extended Visit (4+ hrs)', amount: 30 },
+  ],
+  'Bird Feeding': [
     { title: 'Extra 15 Minutes', amount: 10 },
     { title: 'Multiple Route Options', amount: 5 },
     { title: 'Training During Walk', amount: 20 },
@@ -89,43 +89,43 @@ export const mockAdditionalRates = {
 export const mockServicesForCards = [
   {
     id: 1,
-    name: 'Dog Boarding',
+    name: 'Fish Tank Cleaning',
     startingPrice: 25,
-    animalTypes: ['Dogs'],
-    icon: 'dog',
-    additionalRates: mockAdditionalRates['Dog Boarding']
+    animalTypes: ['Fish'],
+    icon: 'fish',
+    additionalRates: mockAdditionalRates['Fish Tank Cleaning']
   },
   {
     id: 2,
-    name: 'Doggy Day Care',
+    name: 'Ferrier',
     startingPrice: 30,
     animalTypes: ['Dogs'],
-    icon: 'dog',
-    additionalRates: mockAdditionalRates['Doggy Day Care']
+    icon: 'horse',
+    additionalRates: mockAdditionalRates['Ferrier']
   },
   {
     id: 3,
-    name: 'House Sitting',
+    name: 'Dog Walking',
     startingPrice: 40,
-    animalTypes: ['Dogs', 'Cats', 'Small Pets'],
-    icon: 'home',
-    additionalRates: mockAdditionalRates['House Sitting']
+    animalTypes: ['Dogs'],
+    icon: 'dog',
+    additionalRates: mockAdditionalRates['Dog Walking']
   },
   {
     id: 4,
-    name: 'Drop-In Visits',
+    name: 'Reptile Boarding & Habitat Maintenance',
     startingPrice: 35,
-    animalTypes: ['Cats', 'Small Pets'],
-    icon: 'door',
-    additionalRates: mockAdditionalRates['Drop-In Visits']
+    animalTypes: ['Reptiles'],
+    icon: 'snake',
+    additionalRates: mockAdditionalRates['Reptile Boarding & Habitat Maintenance']
   },
   {
     id: 5,
-    name: 'Dog Walking',
+    name: 'Bird Feeding',
     startingPrice: 45,
-    animalTypes: ['Dogs'],
-    icon: 'walk',
-    additionalRates: mockAdditionalRates['Dog Walking']
+    animalTypes: ['Birds'],
+    icon: 'bird',
+    additionalRates: mockAdditionalRates['Bird Feeding']
   }
 ];
 
@@ -203,7 +203,7 @@ export const mockPets = [
   {
     id: '3',
     name: 'Buddy',
-    animal_type: 'Lizard',
+    animal_type: 'snake',
     breed: 'leopard gecko',
     age: {
       months: 0,
@@ -237,7 +237,7 @@ export const mockProfessionals = [
   {
     id: '1',
     name: 'John Doe',
-    profilePicture: 'https://via.placeholder.com/150',
+    profilePicture: require('../../assets/user1.png'),
     reviews: 4.5,
     price: 25,
     bio: 'Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.',
@@ -249,7 +249,7 @@ export const mockProfessionals = [
   {
     id: '2',
     name: 'Jane Smith',
-    profilePicture: 'https://via.placeholder.com/150',
+    profilePicture: require('../../assets/user2.png'),
     reviews: 4.8,
     price: 30,
     bio: 'Specialized in exotic pets.',
@@ -261,7 +261,7 @@ export const mockProfessionals = [
   {
     id: '3',
     name: 'Mike Wilson',
-    profilePicture: 'https://via.placeholder.com/150',
+    profilePicture: require('../../assets/user3.png'),
     reviews: 4.7,
     price: 28,
     bio: 'Dog trainer with 5 years experience.',
@@ -273,7 +273,7 @@ export const mockProfessionals = [
   {
     id: '4',
     name: 'Sarah Johnson',
-    profilePicture: 'https://via.placeholder.com/150',
+    profilePicture: require('../../assets/user4.png'),
     reviews: 4.9,
     price: 35,
     bio: 'Veterinary technician, great with medical needs.',
@@ -285,7 +285,7 @@ export const mockProfessionals = [
   {
     id: '5',
     name: 'Tom Brown',
-    profilePicture: 'https://via.placeholder.com/150',
+    profilePicture: require('../../assets/user5.png'),
     reviews: 4.6,
     price: 27,
     bio: 'Experienced with large breeds.',
@@ -298,7 +298,7 @@ export const mockProfessionals = [
   {
     id: '6',
     name: 'Lisa Anderson',
-    profilePicture: 'https://via.placeholder.com/150',
+    profilePicture: require('../../assets/user6.png'),
     reviews: 4.4,
     price: 32,
     bio: 'Experienced with birds and small animals.',
@@ -310,7 +310,7 @@ export const mockProfessionals = [
   {
     id: '7',
     name: 'David Clark',
-    profilePicture: 'https://via.placeholder.com/150',
+    profilePicture: require('../../assets/user7.png'),
     reviews: 4.7,
     price: 29,
     bio: 'Specializing in puppy care and training.',
@@ -322,7 +322,7 @@ export const mockProfessionals = [
   {
     id: '8',
     name: 'Emma White',
-    profilePicture: 'https://via.placeholder.com/150',
+    profilePicture: require('../../assets/user8.png'),
     reviews: 4.8,
     price: 33,
     bio: 'Experienced with senior pets.',
@@ -334,7 +334,7 @@ export const mockProfessionals = [
   {
     id: '9',
     name: 'James Miller',
-    profilePicture: 'https://via.placeholder.com/150',
+    profilePicture: require('../../assets/user9.png'),
     reviews: 4.5,
     price: 26,
     bio: 'Great with high-energy dogs.',
@@ -346,7 +346,7 @@ export const mockProfessionals = [
   {
     id: '10',
     name: 'Rachel Green',
-    profilePicture: 'https://via.placeholder.com/150',
+    profilePicture: require('../../assets/user10.png'),
     reviews: 4.9,
     price: 34,
     bio: 'Experienced with reptiles and amphibians.',
@@ -1172,7 +1172,7 @@ export const BLOG_POSTS = [
     author: {
       id: 'author_1',
       name: 'Zoe Neale',
-      profilePicture: 'https://via.placeholder.com/150',
+      profilePicture: require('../../assets/ZEGN_USER.jpeg'),
       bio: 'Professional dog trainer and animal behavior specialist with over 10 years of experience.'
     },
     publishDate: '2024-02-22',
@@ -1272,7 +1272,7 @@ So next time your dog gives you the side-eye, perks their ears, or flops over dr
     author: {
       id: 'author_2',
       name: 'Zoe Neale',
-      profilePicture: 'https://via.placeholder.com/150',
+      profilePicture: require('../../assets/ZEGN_USER.jpeg'),
       bio: 'Feline behavior specialist and veterinarian with a focus on cat-human relationships.'
     },
     publishDate: '2024-02-23',
@@ -1372,7 +1372,7 @@ At the end of the day, cats aren't ignoring us. They're just selectively partici
     author: {
       id: 'author_3',
       name: 'Zoe Neale',
-      profilePicture: 'https://via.placeholder.com/150',
+      profilePicture: require('../../assets/ZEGN_USER.jpeg'),
       bio: 'Avian specialist and researcher focusing on bird behavior and communication.'
     },
     publishDate: '2024-02-24',

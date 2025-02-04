@@ -4,6 +4,7 @@ import { theme } from '../styles/theme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { format, parse } from 'date-fns';
 import { useNavigation } from '@react-navigation/native';
+import { navigateToFrom } from '../components/Navigation';
 
 const UnavailableTimesModal = ({ 
   visible, 
@@ -22,9 +23,9 @@ const UnavailableTimesModal = ({
     return format(date, 'h:mm a');
   };
 
-  const handleBookingPress = (bookingId) => {
+  const handleBookingPress = async (bookingId) => {
     onClose(); // Close the modal first
-    navigation.navigate('BookingDetails', { bookingId });
+    await navigateToFrom(navigation, 'BookingDetails', 'AvailabilitySettings', { bookingId });
   };
 
   const getUnavailableTimes = () => {
@@ -183,6 +184,7 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSizes.large,
     fontWeight: 'bold',
     color: theme.colors.text,
+    fontFamily: theme.fonts.header.fontFamily,
   },
   closeButton: {
     padding: 5,
@@ -200,6 +202,7 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSizes.medium,
     fontWeight: 'bold',
     color: theme.colors.text,
+    fontFamily: theme.fonts.header.fontFamily,
   },
   timeSlotContent: {
     flexDirection: 'row',
@@ -229,10 +232,12 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSizes.medium,
     color: theme.colors.text,
     marginBottom: 4,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   reasonText: {
     fontSize: theme.fontSizes.medium,
     color: theme.colors.textSecondary,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   removeButton: {
     padding: 5,
@@ -261,6 +266,7 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     fontSize: theme.fontSizes.medium,
     marginTop: 20,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
 });
 

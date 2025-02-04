@@ -181,7 +181,8 @@ const styles = StyleSheet.create({
   },
   navButtonText: {
     color: theme.colors.whiteText,
-    fontSize: theme.fontSizes.medium,
+    fontSize: theme.fontSizes.medium + 2,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   containerMobile: {
     flex: 1,
@@ -199,6 +200,7 @@ const styles = StyleSheet.create({
   mobileHeaderText: {
     fontSize: theme.fontSizes.large,
     fontWeight: '500',
+    fontFamily: theme.fonts.header.fontFamily,
   },
   mobileHeaderRight: {
     flexDirection: 'row',
@@ -219,7 +221,8 @@ const styles = StyleSheet.create({
   },
   searchButtonText: {
     color: theme.colors.whiteText,
-    fontSize: theme.fontSizes.medium,
+    fontSize: theme.fontSizes.medium + 2,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
 });
 

@@ -3,8 +3,34 @@ import { DefaultTheme } from 'react-native-paper';
 
 export const theme = {
   ...DefaultTheme,
+  // the regular and header fonts are the fonts used in the app
+  fonts: {
+    ...DefaultTheme.fonts,
+    regular: {
+      fontFamily: 'PlayfairDisplay',
+    },
+    header: {
+      fontFamily: 'Futura',
+    }
+  },
+  typography: {
+    header: {
+      fontFamily: 'Futura',
+    },
+    body: {
+      fontFamily: 'PlayfairDisplay',
+    }
+  },
   colors: {
     ...DefaultTheme.colors,
+    mainColors: {
+      main: '#6A6C51',
+      secondary: '#5D6C51',
+      tertiary: '#516C53',
+      quaternary: '#516C61',
+      quinary: '#516A6C',
+      senary: '#515D6C',
+    },
     primary: '#6A6C51', // Primary color for buttons and header background
     secondary: '#516C61',
     background: '#f6f6f6',

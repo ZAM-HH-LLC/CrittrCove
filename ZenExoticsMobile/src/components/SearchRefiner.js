@@ -11,6 +11,7 @@ import { debounce } from 'lodash';
 import MultiSelect from 'react-native-element-dropdown/src/components/MultiSelect';
 import CustomMultiSelect from '../components/CustomMultiSelect';
 import { SERVICE_TYPES, GENERAL_CATEGORIES } from '../data/mockData';
+import { SCREEN_WIDTH } from '../context/AuthContext';
 
 const generalCategoriesData = GENERAL_CATEGORIES.map(category => ({
   label: category,
@@ -165,7 +166,6 @@ const SearchRefiner = ({ onFiltersChange }) => {
 
   const renderDatePickers = () => (
     <View style={styles.section}>
-      <Text style={styles.label}>Dates</Text>
       <View style={styles.datePickersContainer}>
         <View style={styles.datePickerWrapper}>
           <Text style={styles.dateLabel}>Start Date</Text>
@@ -263,15 +263,17 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: theme.colors.text,
     marginBottom: theme.spacing.large,
+    fontFamily: theme.fonts.header.fontFamily,
   },
   section: {
     marginBottom: theme.spacing.large,
     position: 'relative',
   },
   label: {
-    fontSize: theme.fontSizes.medium,
+    fontSize: theme.fontSizes.medium + 2,
     color: theme.colors.text,
     marginBottom: theme.spacing.small,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   dropdown: {
     height: 50,
@@ -289,9 +291,10 @@ const styles = StyleSheet.create({
     maxWidth: 200,
   },
   dateLabel: {
-    fontSize: theme.fontSizes.small,
+    fontSize: theme.fontSizes.small + 2,
     color: theme.colors.text,
     marginBottom: 4,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   dateInput: {
     flex: 1,
@@ -363,13 +366,15 @@ const styles = StyleSheet.create({
     gap: theme.spacing.small,
   },
   selectedText: {
-    fontSize: theme.fontSizes.large,
+    fontSize: theme.fontSizes.large + 2,
     color: '#000000',
     fontWeight: '1200',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   placeholderText: {
-    fontSize: theme.fontSizes.medium,
+    fontSize: theme.fontSizes.medium + 2,
     color: theme.colors.placeholderText,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   selectedItem: {
     borderRadius: 8,
@@ -387,8 +392,9 @@ const styles = StyleSheet.create({
     borderBottomColor: theme.colors.border,
   },
   itemText: {
-    fontSize: theme.fontSizes.medium,
+    fontSize: theme.fontSizes.medium + 2,
     color: theme.colors.text,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   selectedChip: {
     flexDirection: 'row',
@@ -402,9 +408,10 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.small,
   },
   selectedChipText: {
-    fontSize: theme.fontSizes.medium,
+    fontSize: theme.fontSizes.medium + 2,
     color: '#000000',
     marginRight: theme.spacing.small,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   dropdownItem: {
     padding: theme.spacing.small,
@@ -417,12 +424,14 @@ const styles = StyleSheet.create({
     margin: 2,
   },
   dropdownItemText: {
-    fontSize: theme.fontSizes.medium,
+    fontSize: theme.fontSizes.medium + 2,
     color: theme.colors.text,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   dropdownItemTextSelected: {
     color: theme.colors.text,
     fontWeight: '500',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   dropdownContainer: {
     backgroundColor: theme.colors.background,

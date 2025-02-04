@@ -37,6 +37,7 @@ const createStyles = (screenWidth) => StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: theme.colors.primary,
+    fontFamily: theme.fonts.header.fontFamily,
   },
   filterButton: {
     marginLeft: 'auto',
@@ -72,6 +73,7 @@ const createStyles = (screenWidth) => StyleSheet.create({
   },
   conversationName: {
     fontSize: 16,
+    fontFamily: theme.fonts.header.fontFamily,
   },
   messageSection: {
     flex: 1,
@@ -150,6 +152,7 @@ const createStyles = (screenWidth) => StyleSheet.create({
   messageText: {
     fontSize: 16,
     lineHeight: 20,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   sentMessageContainer: {
     alignItems: 'flex-end',
@@ -163,6 +166,7 @@ const createStyles = (screenWidth) => StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 4,
     fontSize: 12,
+    fontFamily: theme.fonts.header.fontFamily,
   },
   sentSenderName: {
     alignSelf: 'flex-end',
@@ -174,6 +178,7 @@ const createStyles = (screenWidth) => StyleSheet.create({
     fontSize: 12,
     color: theme.colors.placeholder,
     marginTop: 4,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   sentTimestamp: {
     alignSelf: 'flex-end',
@@ -208,7 +213,7 @@ const createStyles = (screenWidth) => StyleSheet.create({
     height: screenWidth <= 600 ? 36 : 40,
     border: '1px solid ' + theme.colors.border,
     borderRadius: 20,
-    fontFamily: 'inherit',
+    fontFamily: theme.fonts.regular.fontFamily,
     fontSize: screenWidth <= 600 ? '14px' : 'inherit',
     appearance: 'none',
     touchAction: 'manipulation',
@@ -233,6 +238,7 @@ const createStyles = (screenWidth) => StyleSheet.create({
     fontSize: 14,
     color: theme.colors.placeholder,
     marginBottom: 8,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   unreadMessage: {
     color: theme.colors.text,
@@ -247,6 +253,7 @@ const createStyles = (screenWidth) => StyleSheet.create({
   bookingStatus: {
     fontSize: 12,
     color: theme.colors.primary,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   requestBookingButton: {
     marginTop: 4,
@@ -330,10 +337,11 @@ const createStyles = (screenWidth) => StyleSheet.create({
     color: theme.colors.text,
     fontSize: 14,
     marginLeft: 8,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   activeConversationText: {
-    // fontWeight: 'bold',
     color: theme.colors.text,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   mobileMessageView: {
     flex: 1,
@@ -353,6 +361,7 @@ const createStyles = (screenWidth) => StyleSheet.create({
     marginLeft: 8,
     color: theme.colors.primary,
     fontSize: 16,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   mobileHeader: {
     width: '100%',
@@ -397,6 +406,7 @@ const createStyles = (screenWidth) => StyleSheet.create({
     fontWeight: 'bold',
     color: theme.colors.text,
     textAlign: 'center',
+    fontFamily: theme.fonts.header.fontFamily,
   },
   mobileHeaderContent: {
     flexDirection: 'row',
@@ -411,6 +421,7 @@ const createStyles = (screenWidth) => StyleSheet.create({
     fontWeight: 'bold',
     color: theme.colors.text,
     textAlign: 'center',
+    fontFamily: theme.fonts.header.fontFamily,
   },
   backArrow: {
     position: 'absolute',
@@ -444,6 +455,7 @@ const createStyles = (screenWidth) => StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: theme.colors.primary,
+    fontFamily: theme.fonts.header.fontFamily,
   },
   bookingRequestDetails: {
     gap: 8,
@@ -452,10 +464,12 @@ const createStyles = (screenWidth) => StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     color: theme.colors.placeholder,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   detailText: {
     fontSize: 16,
     color: theme.colors.text,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   acceptButton: {
     backgroundColor: theme.colors.primary,
@@ -480,6 +494,7 @@ const createStyles = (screenWidth) => StyleSheet.create({
     color: theme.colors.surface,
     fontSize: 16,
     fontWeight: '500',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   statusContainer: {
     backgroundColor: theme.colors.primary + '15',
@@ -491,6 +506,7 @@ const createStyles = (screenWidth) => StyleSheet.create({
     color: theme.colors.primary,
     fontSize: 14,
     fontWeight: '500',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
 });
 

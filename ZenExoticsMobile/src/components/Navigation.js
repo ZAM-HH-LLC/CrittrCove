@@ -250,7 +250,8 @@ export default function Navigation({ navigation }) {
                 <Menu.Item 
                   key={index} 
                   onPress={() => handleNavigation(item.route)} 
-                  title={item.title} 
+                  title={item.title}
+                  titleStyle={{ fontFamily: theme.fonts.regular.fontFamily, fontWeight: '600' }}
                 />
               ))}
             </Menu>
@@ -292,6 +293,7 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSizes.large,
     color: theme.colors.text,
     fontWeight: 'bold',
+    fontFamily: theme.fonts.header.fontFamily,
   },
   desktopNav: {
     flexDirection: 'row',
@@ -303,6 +305,8 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSizes.medium,
     color: theme.colors.text,
     cursor: 'pointer',
+    fontFamily: theme.fonts.regular.fontFamily,
+    fontWeight: '600',
   },
   customNavBar: {
     flexDirection: 'row',
@@ -328,6 +332,8 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSizes.small,
     marginTop: 5,
     textAlign: 'center',
+    fontFamily: theme.fonts.regular.fontFamily,
+    fontWeight: '600',
   },
   webNavItem: {
     marginHorizontal: theme.spacing.medium,
@@ -335,5 +341,7 @@ const styles = StyleSheet.create({
   webNavText: {
     fontSize: theme.fontSizes.medium,
     color: theme.colors.whiteText,
+    fontFamily: theme.fonts.regular.fontFamily,
+    fontWeight: '600',
   },
 });

@@ -437,6 +437,7 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSizes.large,
     fontWeight: 'bold',
     marginBottom: 15,
+    fontFamily: theme.fonts.header.fontFamily,
   },
   settingContainer: {
     flexDirection: 'row',
@@ -450,6 +451,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginTop: 20,
     marginBottom: 10,
+    fontFamily: theme.fonts.header.fontFamily,
   },
   dayContainer: {
     flexDirection: 'row',
@@ -479,6 +481,7 @@ const styles = StyleSheet.create({
   buttonText: {
     color: theme.colors.whiteText,
     fontWeight: 'bold',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   tabContainer: {
     flexDirection: 'row',
@@ -495,9 +498,11 @@ const styles = StyleSheet.create({
   },
   tabText: {
     color: theme.colors.text,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   selectedTabText: {
     color: theme.colors.primary,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   daySettingsContainer: {
     marginBottom: 15,
@@ -529,6 +534,7 @@ const styles = StyleSheet.create({
   inputLabel: {
     marginBottom: 5,
     color: theme.colors.text,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   input: {
     borderWidth: 1,
@@ -569,10 +575,12 @@ const styles = StyleSheet.create({
   },
   dropdownText: {
     color: theme.colors.text,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   selectedOption: {
     color: theme.colors.primary,
     fontWeight: 'bold',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   inputError: {
     borderColor: theme.colors.danger,
@@ -582,9 +590,11 @@ const styles = StyleSheet.create({
   },
   disabledText: {
     color: theme.colors.placeHolderText,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   enabledText: {
     color: theme.colors.text,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
 });
 
