@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/CrittrCove/static/css/main.b7807cd0.css",
-    "main.js": "/CrittrCove/static/js/main.352128de.js",
+    "main.js": "/CrittrCove/static/js/main.25a50e57.js",
     "static/js/210.aaed7a5a.chunk.js": "/CrittrCove/static/js/210.aaed7a5a.chunk.js",
     "static/js/619.5fb6b3aa.js": "/CrittrCove/static/js/619.5fb6b3aa.js",
     "static/media/user10.png": "/CrittrCove/static/media/user10.55bbb564f3b12d6a736e.png",
@@ -34,17 +34,18 @@
     "static/media/marker-icon.png": "/CrittrCove/static/media/marker-icon.2b3e1faf89f94a483539.png",
     "static/media/layers-2x.png": "/CrittrCove/static/media/layers-2x.8f2c4d11474275fbc161.png",
     "favicon-16.png": "/CrittrCove/favicon-16.png",
+    "404.html": "/CrittrCove/404.html",
     "manifest.json": "/CrittrCove/manifest.json",
     "static/media/.env": "/CrittrCove/static/media/.env.d052b2e5e715549f52fe",
     "serve.json": "/CrittrCove/serve.json",
     "main.b7807cd0.css.map": "/CrittrCove/static/css/main.b7807cd0.css.map",
-    "main.352128de.js.map": "/CrittrCove/static/js/main.352128de.js.map",
+    "main.25a50e57.js.map": "/CrittrCove/static/js/main.25a50e57.js.map",
     "210.aaed7a5a.chunk.js.map": "/CrittrCove/static/js/210.aaed7a5a.chunk.js.map",
     "619.5fb6b3aa.js.map": "/CrittrCove/static/js/619.5fb6b3aa.js.map"
   },
   "entrypoints": [
     "static/js/619.5fb6b3aa.js",
     "static/css/main.b7807cd0.css",
-    "static/js/main.352128de.js"
+    "static/js/main.25a50e57.js"
   ]
 }
