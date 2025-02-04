@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/static/css/main.c03fa1c4.css",
-    "main.js": "/static/js/main.73522451.js",
+    "main.js": "/static/js/main.8c82dae7.js",
     "static/js/210.aaed7a5a.chunk.js": "/static/js/210.aaed7a5a.chunk.js",
     "static/js/619.86f267f2.js": "/static/js/619.86f267f2.js",
     "static/media/user10.png": "/static/media/user10.55bbb564f3b12d6a736e.png",
@@ -36,16 +36,17 @@
     "favicon-16.png": "/favicon-16.png",
     "404.html": "/404.html",
     "manifest.json": "/manifest.json",
-    "static/media/.env": "/static/media/.env.d052b2e5e715549f52fe",
     "serve.json": "/serve.json",
+    "static/media/.env": "/static/media/.env.d2c36422c80321f5e7b4",
+    "CNAME": "/CNAME",
     "main.c03fa1c4.css.map": "/static/css/main.c03fa1c4.css.map",
-    "main.73522451.js.map": "/static/js/main.73522451.js.map",
+    "main.8c82dae7.js.map": "/static/js/main.8c82dae7.js.map",
     "210.aaed7a5a.chunk.js.map": "/static/js/210.aaed7a5a.chunk.js.map",
     "619.86f267f2.js.map": "/static/js/619.86f267f2.js.map"
   },
   "entrypoints": [
     "static/js/619.86f267f2.js",
     "static/css/main.c03fa1c4.css",
-    "static/js/main.73522451.js"
+    "static/js/main.8c82dae7.js"
   ]
 }
