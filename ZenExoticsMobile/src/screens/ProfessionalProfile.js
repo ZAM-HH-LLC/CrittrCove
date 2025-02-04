@@ -130,6 +130,28 @@ const ProfessionalProfile = ({ route, navigation }) => {
   const isWideScreen = useResponsiveLayout();
   const { is_prototype } = useContext(AuthContext);
   const dynamicStyles = {
+    profileSection: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 16,
+      alignItems: 'center',
+      width: '100%',
+      display: windowWidth >= 600 ? 'flex' : 'block',
+    },
+    profileSectionMobile: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 16,
+      alignItems: 'center',
+      width: '100%',
+      maxWidth: 500,
+      alignSelf: 'center',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+    },
     servicesBox: {
       backgroundColor: theme.colors.surface,
       padding: 24,
@@ -584,6 +606,42 @@ const ProfessionalProfile = ({ route, navigation }) => {
     }
   };
 
+  // Add this new function to render profile section based on screen size
+  const renderProfileSection = () => {
+    if (windowWidth >= 600) {
+      // Web version - original layout
+      return (
+        <View style={[styles.leftColumn, !isWideScreen && styles.leftColumnMobile]}>
+          <View style={[styles.profileSection, !isWideScreen && styles.profileSectionMobile]}>
+            {renderProfilePhoto()}
+            <Text style={styles.name}>{professionalData.name}</Text>
+            <Text style={styles.location}>{professionalData.location}</Text>
+            {renderRatingStars()}
+            <TouchableOpacity style={styles.contactButton} onPress={handleContactPress}>
+              <Text style={styles.contactButtonText}>Contact {professionalData.name}</Text>
+            </TouchableOpacity>
+          </View>
+          {isWideScreen && renderAvailability()}
+          {isWideScreen && renderMap()}
+          {isWideScreen && mockPets && mockPets.length > 0 && renderPets()}
+        </View>
+      );
+    } else {
+      // Mobile version - fixed layout
+      return (
+        <View style={[dynamicStyles.profileSection, dynamicStyles.profileSectionMobile]}>
+          {renderProfilePhoto()}
+          <Text style={styles.name}>{professionalData.name}</Text>
+          <Text style={styles.location}>{professionalData.location}</Text>
+          {renderRatingStars()}
+          <TouchableOpacity style={styles.contactButton} onPress={handleContactPress}>
+            <Text style={styles.contactButtonText}>Contact {professionalData.name}</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+  };
+
   return (
     <CrossPlatformView fullWidthHeader={true} contentWidth="1200px">
       <BackHeader 
@@ -593,59 +651,14 @@ const ProfessionalProfile = ({ route, navigation }) => {
       <ScrollView contentContainerStyle={styles.scrollViewContent}>
         <View style={[styles.content, { width: getContentWidth() }]}>
           <View style={[styles.twoColumnLayout, !isWideScreen && styles.singleColumnLayout]}>
-            {/* Left Column */}
-            <View style={[
-              styles.leftColumn, 
-              !isWideScreen && styles.leftColumnMobile
-            ]}>
-              {/* Profile Info */}
-              <View style={[
-                styles.profileSection,
-                !isWideScreen && styles.profileSectionMobile
-              ]}>
-                {renderProfilePhoto()}
-                <Text style={styles.name}>{professionalData.name}</Text>
-                <Text style={styles.location}>{professionalData.location}</Text>
-                {renderRatingStars()}
-                <TouchableOpacity 
-                  style={styles.contactButton}
-                  onPress={handleContactPress}
-                >
-                  <Text style={styles.contactButtonText}>Contact {professionalData.name}</Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* Availability Box */}
-              {isWideScreen && renderAvailability()}
-
-              {/* Map */}
-              {isWideScreen && renderMap()}
-
-              {/* Pets Section */}
-              {isWideScreen &&mockPets && mockPets.length > 0 && renderPets()}
-            </View>
-
-            {/* Right Column */}
+            {renderProfileSection()}
             <View style={styles.rightColumn}>
               {renderGallery()}
-
               {renderServices()}
-
               {!isWideScreen && renderAvailability()}
-
-              {/* Specialist Experience */}
               {renderSpecialistExperience()}
-
               {renderReviews()}
-
-              {/* About Section */}
-              {/* {renderAboutSection()} */}
-
-              {/* Home Section */}
               {renderHomeSection()}
-
-              {console.log(isWideScreen)}
-
               {!isWideScreen && renderMap()}
             </View>
           </View>
@@ -791,9 +804,6 @@ const styles = StyleSheet.create({
     gap: 24,
     marginBottom: 24,
   },
-  profileSection: {
-    flex: Platform.OS === 'web' ? 1 : undefined,
-  },
   gallerySection: {
     maxHeight: 400,
     overflow: 'hidden',
@@ -869,7 +879,8 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    marginBottom: 10,
+    marginBottom: 16,
+    alignSelf: 'center',
   },
   profilePhotoPlaceholder: {
     backgroundColor: theme.colors.surface,
@@ -880,12 +891,15 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 5,
+    marginBottom: 4,
+    textAlign: 'center',
     fontFamily: theme.fonts.header.fontFamily,
   },
   location: {
     fontSize: 16,
     color: theme.colors.secondary,
+    marginBottom: 8,
+    textAlign: 'center',
     fontFamily: theme.fonts.regular.fontFamily,
   },
   section: {
@@ -950,7 +964,8 @@ const styles = StyleSheet.create({
   ratingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 5,
+    justifyContent: 'center',
+    marginBottom: 16,
   },
   rating: {
     fontSize: 16,
@@ -960,18 +975,19 @@ const styles = StyleSheet.create({
   reviewCount: {
     fontSize: 14,
     color: theme.colors.secondary,
-    marginLeft: 12,
+    marginLeft: 4,
   },
   contactButton: {
     backgroundColor: theme.colors.primary,
-    padding: 10,
-    borderRadius: 5,
-    marginTop: 10,
+    padding: 12,
+    borderRadius: 8,
+    alignSelf: 'center',
   },
   contactButtonText: {
     fontSize: 16,
     fontWeight: 'bold',
     color: theme.colors.surface,
+    textAlign: 'center',
   },
   statsContainer: {
     flexDirection: 'row',
@@ -1307,12 +1323,6 @@ const styles = StyleSheet.create({
   leftColumnMobile: {
     maxWidth: '100%',
     alignItems: 'center',
-  },
-  profileSectionMobile: {
-    alignItems: 'center',
-    width: '100%',
-    maxWidth: 500, // Limit width on mobile for better readability
-    alignSelf: 'center',
   },
   seeAllButton: {
     borderWidth: 1,

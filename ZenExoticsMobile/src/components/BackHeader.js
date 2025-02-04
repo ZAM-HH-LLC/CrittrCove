@@ -63,6 +63,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: theme.colors.primary,
     flex: 1, // This allows the title to take up remaining space
+    fontFamily: theme.fonts.header.fontFamily,
   },
   rightButton: {
     marginLeft: 16,
