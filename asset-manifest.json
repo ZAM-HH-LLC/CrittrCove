@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/static/css/main.c03fa1c4.css",
-    "main.js": "/static/js/main.bd14e8ea.js",
+    "main.js": "/static/js/main.24d19a0f.js",
     "static/js/210.aaed7a5a.chunk.js": "/static/js/210.aaed7a5a.chunk.js",
     "static/js/619.86f267f2.js": "/static/js/619.86f267f2.js",
     "og-image.jpg": "/og-image.jpg",
@@ -37,17 +37,17 @@
     "favicon-16.png": "/favicon-16.png",
     "404.html": "/404.html",
     "manifest.json": "/manifest.json",
-    "static/media/.env": "/static/media/.env.d052b2e5e715549f52fe",
     "serve.json": "/serve.json",
+    "static/media/.env": "/static/media/.env.574bd0dc5d246bd65b37",
     "CNAME": "/CNAME",
     "main.c03fa1c4.css.map": "/static/css/main.c03fa1c4.css.map",
-    "main.bd14e8ea.js.map": "/static/js/main.bd14e8ea.js.map",
+    "main.24d19a0f.js.map": "/static/js/main.24d19a0f.js.map",
     "210.aaed7a5a.chunk.js.map": "/static/js/210.aaed7a5a.chunk.js.map",
     "619.86f267f2.js.map": "/static/js/619.86f267f2.js.map"
   },
   "entrypoints": [
     "static/js/619.86f267f2.js",
     "static/css/main.c03fa1c4.css",
-    "static/js/main.bd14e8ea.js"
+    "static/js/main.24d19a0f.js"
   ]
 }
