@@ -9,19 +9,20 @@ import { API_BASE_URL } from '../config/config';
 import { AuthContext } from '../context/AuthContext';
 import { useForm, ValidationError } from '@formspree/react';
 
-const { width } = Dimensions.get('window');
-const inputWidth = Platform.OS === 'web' ? 600 : '90%';
-const contentMaxWidth = Platform.OS === 'web' ? '800px' : '100%';
-
 const ContactUs = () => {
   const navigation = useNavigation();
-  const { is_prototype } = useContext(AuthContext);
+  const { is_prototype, screenWidth } = useContext(AuthContext);
   const [state, handleFormspreeSubmit] = useForm("mkgobpro");
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+
+  // Calculate responsive widths
+  const isMobile = screenWidth < 768;
+  const contentWidth = isMobile ? '90%' : '600px';
+  const maxContentWidth = isMobile ? '100%' : '800px';
 
   const handleSubmit = async () => {
     if (!name || !email || !message) {
@@ -82,10 +83,10 @@ const ContactUs = () => {
   // Show success message from either Formspree or backend
   if (is_prototype && state.succeeded) {
     return (
-      <CrossPlatformView fullWidthHeader={true} contentWidth={contentMaxWidth}>
+      <CrossPlatformView fullWidthHeader={true} contentWidth={maxContentWidth}>
         <BackHeader title="Contact Us" onBackPress={() => navigation.navigate('More')} />
         <View style={styles.container}>
-          <View style={styles.contentWrapper}>
+          <View style={[styles.contentWrapper, { width: contentWidth }]}>
             <Text style={[styles.title, { color: theme.colors.primary }]}>
               Thanks for reaching out!
             </Text>
@@ -101,19 +102,19 @@ const ContactUs = () => {
   return (
     <CrossPlatformView 
       fullWidthHeader={true}
-      contentWidth={contentMaxWidth}
+      contentWidth={maxContentWidth}
     >
       <BackHeader 
         title="Contact Us" 
         onBackPress={() => navigation.navigate('More')} 
       />
       <View style={styles.container}>
-        <View style={styles.contentWrapper}>
+        <View style={[styles.contentWrapper, { width: contentWidth }]}>
           <Text style={styles.title}>Contact Us</Text>
           <Text style={styles.subtitle}>Get in touch with our support team</Text>
           
           <TextInput
-            style={[styles.input, { width: inputWidth }]}
+            style={styles.input}
             placeholder="Your Name"
             value={name}
             onChangeText={setName}
@@ -122,7 +123,7 @@ const ContactUs = () => {
           {is_prototype && <ValidationError prefix="Name" field="name" errors={state.errors} />}
           
           <TextInput
-            style={[styles.input, { width: inputWidth }]}
+            style={styles.input}
             placeholder="Your Email"
             value={email}
             onChangeText={setEmail}
@@ -133,7 +134,7 @@ const ContactUs = () => {
           {is_prototype && <ValidationError prefix="Email" field="email" errors={state.errors} />}
           
           <TextInput
-            style={[styles.input, styles.messageInput, { width: inputWidth }]}
+            style={[styles.input, styles.messageInput]}
             placeholder="Your Message"
             value={message}
             onChangeText={setMessage}
@@ -143,13 +144,13 @@ const ContactUs = () => {
           {is_prototype && <ValidationError prefix="Message" field="message" errors={state.errors} />}
           
           {successMessage ? (
-            <Text style={[styles.successMessage, { width: inputWidth }]}>
+            <Text style={styles.successMessage}>
               {successMessage}
             </Text>
           ) : null}
           
           <TouchableOpacity 
-            style={[styles.button, { width: inputWidth }]} 
+            style={[styles.button, isSubmitting && styles.disabledButton]} 
             onPress={handleSubmit}
             disabled={isSubmitting || (is_prototype && state.submitting)}
           >
@@ -168,35 +169,45 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     alignItems: 'center',
-    justifyContent: 'center',
-    // marginBottom: 20,
+    justifyContent: 'flex-start',
+    paddingVertical: 20,
   },
   contentWrapper: {
-    width: '100%',
     padding: 20,
     alignItems: 'center',
-    justifyContent: 'center',
-    maxWidth: Platform.OS === 'web' ? 600 : '100%',
+    backgroundColor: 'white',
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   title: {
     fontSize: theme.fontSizes.largeLarge,
     fontWeight: 'bold',
     marginBottom: 10,
     color: theme.colors.primary,
+    fontFamily: theme.fonts.header.fontFamily,
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: theme.fontSizes.medium,
     marginBottom: 20,
     color: theme.colors.text,
+    fontFamily: theme.fonts.regular.fontFamily,
+    textAlign: 'center',
   },
   input: {
     backgroundColor: theme.colors.surface,
     borderRadius: 5,
     borderColor: theme.colors.border,
     borderWidth: 1,
-    padding: 10,
+    padding: 15,
     marginBottom: 15,
     fontSize: theme.fontSizes.medium,
+    width: '100%',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   messageInput: {
     height: 120,
@@ -207,26 +218,25 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 5,
     alignItems: 'center',
+    width: '100%',
+    marginTop: 10,
   },
   buttonText: {
     color: theme.colors.whiteText,
     fontSize: theme.fontSizes.mediumLarge,
     fontWeight: 'bold',
-  },
-  contactInfo: {
-    marginTop: 30,
-    alignItems: 'center',
-  },
-  contactInfoText: {
-    fontSize: theme.fontSizes.medium,
-    marginBottom: 5,
-    color: theme.colors.text,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   successMessage: {
     color: theme.colors.success,
     textAlign: 'center',
     marginBottom: 10,
     fontSize: theme.fontSizes.medium,
+    fontFamily: theme.fonts.regular.fontFamily,
+    width: '100%',
+  },
+  disabledButton: {
+    opacity: 0.7,
   },
 });
 

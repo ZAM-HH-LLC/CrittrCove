@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, ScrollView, Image, StyleSheet, Linking, Dimensions, Platform, TouchableOpacity, TextInput } from 'react-native';
 import { Button, Text, Card, Title, Paragraph, useTheme } from 'react-native-paper';
 import { ImageBackground } from 'react-native';
@@ -57,50 +57,221 @@ export default function HomeScreen({ navigation }) {
 
   // Add state for social media popup visibility
   const [showSocialMedia, setShowSocialMedia] = useState(false);
+  const [isUserScrolling, setIsUserScrolling] = useState(false);
 
-  const ReviewsSection = () => {
+  const AutoScrollSection = ({ data, renderItem, title, cardWidth = 320 }) => {
     const scrollViewRef = React.useRef(null);
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [userScrolling, setUserScrolling] = useState(false);
+    const autoScrollTimerRef = React.useRef(null);
+
+    // Auto-scroll effect
+    useEffect(() => {
+      if (!userScrolling) {
+        autoScrollTimerRef.current = setInterval(() => {
+          if (scrollViewRef.current) {
+            const nextIndex = (currentIndex + 1) % data.length;
+            scrollToIndex(nextIndex);
+          }
+        }, 3000);
+      }
+
+      return () => {
+        if (autoScrollTimerRef.current) {
+          clearInterval(autoScrollTimerRef.current);
+        }
+      };
+    }, [currentIndex, userScrolling, data.length]);
+
+    const scrollToIndex = (index) => {
+      if (scrollViewRef.current) {
+        scrollViewRef.current.scrollTo({
+          x: index * cardWidth,
+          animated: true
+        });
+        setCurrentIndex(index);
+      }
+    };
+
+    const handleScroll = (event) => {
+      const contentOffset = event.nativeEvent.contentOffset.x;
+      const index = Math.round(contentOffset / cardWidth);
+      setCurrentIndex(index);
+    };
+
+    const handleScrollBegin = () => {
+      setUserScrolling(true);
+      if (autoScrollTimerRef.current) {
+        clearInterval(autoScrollTimerRef.current);
+      }
+    };
+
+    const handleScrollEnd = () => {
+      // Reset after a short delay to prevent immediate auto-scroll
+      setTimeout(() => {
+        setUserScrolling(false);
+      }, 1000);
+    };
+
+    const handleDotPress = (index) => {
+      setUserScrolling(true);
+      scrollToIndex(index);
+      // Reset auto-scroll after a delay
+      setTimeout(() => {
+        setUserScrolling(false);
+      }, 1000);
+    };
 
     return (
       <View style={styles.section}>
-        <Text style={styles.reviewsTitle}>Kind Words From Users</Text>
-        <View style={styles.reviewsContainer}>
+        <Text style={styles.sectionTitle}>{title}</Text>
+        <View style={styles.scrollContainer}>
           <ScrollView
             ref={scrollViewRef}
             horizontal
             showsHorizontalScrollIndicator={true}
-            style={[styles.reviewsContainer, { WebkitOverflowScrolling: 'touch' }]}
-            contentContainerStyle={styles.reviewsContent}
+            style={[styles.scrollContainer, { WebkitOverflowScrolling: 'touch' }]}
+            contentContainerStyle={styles.scrollContent}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
+            pagingEnabled={Platform.OS !== 'web'}
+            onScrollBeginDrag={handleScrollBegin}
+            onScrollEndDrag={handleScrollEnd}
+            onMomentumScrollEnd={handleScrollEnd}
           >
-            {reviews.map((review, index) => (
-              <View key={index} style={styles.reviewCard}>
-                <Text style={styles.reviewText}>{review.text}</Text>
-                <View style={styles.reviewAuthorContainer}>
-                  <ReviewImage
-                    source={review.image}
-                    style={styles.reviewerImage}
-                  />
-                  <View>
-                    <Text style={styles.reviewAuthorName}>{review.author}</Text>
-                    <Text style={styles.reviewAuthorTitle}>Client Review</Text>
-                    <View style={styles.starsContainer}>
-                      {[1, 2, 3, 4, 5].map((_, index) => (
-                        <MaterialCommunityIcons 
-                          key={index}
-                          name="star"
-                          size={16}
-                          color={theme.colors.primary}
-                          style={styles.starIcon}
-                        />
-                      ))}
-                    </View>
-                  </View>
-                </View>
-              </View>
-            ))}
+            {data.map((item, index) => renderItem(item, index))}
           </ScrollView>
+          {/* Clickable scroll indicators */}
+          <View style={styles.scrollIndicators}>
+            {data.map((_, index) => (
+              <TouchableOpacity
+                key={index}
+                onPress={() => handleDotPress(index)}
+                style={styles.scrollIndicatorButton}
+              >
+                <View
+                  style={[
+                    styles.scrollIndicator,
+                    currentIndex === index && styles.scrollIndicatorActive
+                  ]}
+                />
+              </TouchableOpacity>
+            ))}
+          </View>
+          {/* Scroll hint for mobile */}
+          {Platform.OS !== 'web' && (
+            <View style={styles.scrollHint}>
+              <Text style={styles.scrollHintText}>Swipe for more</Text>
+              <MaterialCommunityIcons name="gesture-swipe-horizontal" size={24} color={theme.colors.primary} />
+            </View>
+          )}
         </View>
       </View>
+    );
+  };
+
+  const ReviewsSection = () => {
+    const renderReview = (review, index) => (
+      <View key={index} style={styles.reviewCard}>
+        <Text style={styles.reviewText}>{review.text}</Text>
+        <View style={styles.reviewAuthorContainer}>
+          <ReviewImage
+            source={review.image}
+            style={styles.reviewerImage}
+          />
+          <View>
+            <Text style={styles.reviewAuthorName}>{review.author}</Text>
+            <Text style={styles.reviewAuthorTitle}>Client Review</Text>
+            <View style={styles.starsContainer}>
+              {[1, 2, 3, 4, 5].map((_, index) => (
+                <MaterialCommunityIcons 
+                  key={index}
+                  name="star"
+                  size={16}
+                  color={theme.colors.primary}
+                  style={styles.starIcon}
+                />
+              ))}
+            </View>
+          </View>
+        </View>
+      </View>
+    );
+
+    return (
+      <AutoScrollSection
+        data={reviews}
+        renderItem={renderReview}
+        title="Kind Words From Users"
+      />
+    );
+  };
+
+  const BlogSection = () => {
+    const renderBlogPost = (post, index) => (
+      <TouchableOpacity 
+        key={post.id} 
+        style={[
+          styles.blogCard,
+          { marginRight: index === BLOG_POSTS.length - 1 ? 0 : 10 }
+        ]} 
+        onPress={() => navigation.navigate('BlogPost', { post })}
+      >
+        <View style={styles.authorContainer}>
+          <Image
+            source={{ uri: post.author.profilePicture }}
+            style={styles.authorImage}
+          />
+          <View style={styles.blogContent}>
+            <Text style={[styles.title, { color: theme.colors.primary }]} numberOfLines={2}>
+              {post.title}
+            </Text>
+            <View style={styles.authorInfo}>
+              <Text style={[styles.authorName, { color: theme.colors.secondary }]}>
+                {post.author.name}
+              </Text>
+              <Text style={styles.dot}> • </Text>
+              <Text style={styles.readTime}>{post.readTime}</Text>
+            </View>
+            <Text style={styles.preview} numberOfLines={3}>
+              {post.content.slice(0, 100)}...
+            </Text>
+            <View style={styles.tags}>
+              {post.tags.slice(0, 2).map((tag, tagIndex) => (
+                <View 
+                  key={tagIndex} 
+                  style={[styles.tag, { backgroundColor: theme.colors.primary + '20' }]}
+                >
+                  <Text style={[styles.tagText, { color: theme.colors.primary }]}>{tag}</Text>
+                </View>
+              ))}
+            </View>
+            <View style={styles.stats}>
+              <View style={styles.stat}>
+                <MaterialCommunityIcons name="heart-outline" size={16} color={theme.colors.secondary} />
+                <Text style={styles.statText}>{post.likes}</Text>
+              </View>
+              <View style={styles.stat}>
+                <MaterialCommunityIcons name="comment-outline" size={16} color={theme.colors.secondary} />
+                <Text style={styles.statText}>{post.comments}</Text>
+              </View>
+              <View style={styles.stat}>
+                <MaterialCommunityIcons name="share-outline" size={16} color={theme.colors.secondary} />
+                <Text style={styles.statText}>{post.shares}</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+
+    return (
+      <AutoScrollSection
+        data={BLOG_POSTS}
+        renderItem={renderBlogPost}
+        title="Blog"
+        cardWidth={320}
+      />
     );
   };
 
@@ -120,7 +291,7 @@ export default function HomeScreen({ navigation }) {
 
     const featureContentStyle = {
       flex: 1,
-      marginLeft: 15,
+      marginLeft: 5,
     };
 
     return (
@@ -347,73 +518,10 @@ export default function HomeScreen({ navigation }) {
 
       <Features />
       <ReviewsSection />
+      <BlogSection />
 
-      {/* Blog Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Our Blog</Text>
-        <View style={styles.blogContainer}>
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={true}
-            style={[styles.blogContainer, { WebkitOverflowScrolling: 'touch' }]}
-            contentContainerStyle={styles.blogScrollContainer}
-          >
-            {BLOG_POSTS.map((post, index) => (
-              <TouchableOpacity 
-                key={post.id} 
-                style={styles.blogCard} 
-                onPress={() => navigation.navigate('BlogPost', { post })}
-              >
-                <View style={styles.authorContainer}>
-                  <Image
-                    source={{ uri: post.author.profilePicture }}
-                    style={styles.authorImage}
-                  />
-                  <View style={styles.blogContent}>
-                    <Text style={[styles.title, { color: theme.colors.primary }]} numberOfLines={2}>
-                      {post.title}
-                    </Text>
-                    <View style={styles.authorInfo}>
-                      <Text style={[styles.authorName, { color: theme.colors.secondary }]}>
-                        {post.author.name}
-                      </Text>
-                      <Text style={styles.dot}> • </Text>
-                      <Text style={styles.readTime}>{post.readTime}</Text>
-                    </View>
-                    <Text style={styles.preview} numberOfLines={3}>
-                      {post.content.slice(0, 100)}...
-                    </Text>
-                    <View style={styles.tags}>
-                      {post.tags.slice(0, 2).map((tag, tagIndex) => (
-                        <View 
-                          key={tagIndex} 
-                          style={[styles.tag, { backgroundColor: theme.colors.primary + '20' }]}
-                        >
-                          <Text style={[styles.tagText, { color: theme.colors.primary }]}>{tag}</Text>
-                        </View>
-                      ))}
-                    </View>
-                    <View style={styles.stats}>
-                      <View style={styles.stat}>
-                        <MaterialCommunityIcons name="heart-outline" size={16} color={theme.colors.secondary} />
-                        <Text style={styles.statText}>{post.likes}</Text>
-                      </View>
-                      <View style={styles.stat}>
-                        <MaterialCommunityIcons name="comment-outline" size={16} color={theme.colors.secondary} />
-                        <Text style={styles.statText}>{post.comments}</Text>
-                      </View>
-                      <View style={styles.stat}>
-                        <MaterialCommunityIcons name="share-outline" size={16} color={theme.colors.secondary} />
-                        <Text style={styles.statText}>{post.shares}</Text>
-                      </View>
-                    </View>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-      </View>
+      {/* Roadmap Section */}
+
 
       {/* Roadmap Section */}
       <RoadmapSection />
@@ -590,12 +698,16 @@ const styles = StyleSheet.create({
     marginRight: 'auto',
     overflowX: 'auto',
     WebkitOverflowScrolling: 'touch',
+    msOverflowStyle: 'auto',
+    scrollbarWidth: 'auto',
+    scrollbarColor: `${theme.colors.primary} transparent`,
   },
   reviewsContent: {
     flexDirection: 'row',
     minWidth: 'min-content',
-    gap: 20,
+    gap: 10,
     padding: 20,
+    paddingBottom: 40, // Add space for indicators
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -610,7 +722,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-    justifyContent: 'space-between',
+    marginRight: 10,
   },
   reviewCardMobile: {
     width: '100%',
@@ -786,7 +898,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
     padding: 15,
-    marginRight: 15,
+    marginRight: 10,
   },
   authorContainer: {
     flexDirection: 'column',
@@ -960,11 +1072,14 @@ const styles = StyleSheet.create({
     marginRight: 'auto',
     overflowX: 'auto',
     WebkitOverflowScrolling: 'touch',
+    msOverflowStyle: 'auto',
+    scrollbarWidth: 'auto',
+    scrollbarColor: `${theme.colors.primary} transparent`,
   },
   blogScrollContainer: {
     flexDirection: 'row',
     minWidth: 'min-content',
-    gap: 20,
+    gap: 10,
     padding: 20,
     justifyContent: 'center',
     alignItems: 'center',
@@ -1031,5 +1146,59 @@ const styles = StyleSheet.create({
     width: '80%',
     maxWidth: 300,
     padding: 15,
+  },
+  scrollIndicators: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 10,
+    marginBottom: 20,
+  },
+  scrollIndicatorButton: {
+    padding: 10, // Increase touch target
+    marginHorizontal: -6, // Compensate for padding while maintaining visual spacing
+  },
+  scrollIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: theme.colors.border,
+    marginHorizontal: 4,
+  },
+  scrollIndicatorActive: {
+    backgroundColor: theme.colors.primary,
+    width: 24,
+  },
+  scrollHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+  },
+  scrollHintText: {
+    color: theme.colors.primary,
+    marginRight: 5,
+    fontSize: theme.fontSizes.medium,
+    fontFamily: theme.fonts.regular.fontFamily,
+  },
+  scrollContainer: {
+    width: '100%',
+    maxWidth: 1200,
+    marginLeft: 'auto',
+    marginRight: 'auto',
+    overflowX: 'auto',
+    WebkitOverflowScrolling: 'touch',
+    msOverflowStyle: 'auto',
+    scrollbarWidth: 'auto',
+    scrollbarColor: `${theme.colors.primary} transparent`,
+  },
+  scrollContent: {
+    flexDirection: 'row',
+    minWidth: 'min-content',
+    gap: 10,
+    padding: 20,
+    paddingBottom: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

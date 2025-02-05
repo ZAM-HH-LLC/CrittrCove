@@ -52,7 +52,7 @@ const RoadmapSection = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Our Roadmap</Text>
+      <Text style={styles.title}>Roadmap</Text>
       
       {isMobile ? (
         // Mobile Layout
