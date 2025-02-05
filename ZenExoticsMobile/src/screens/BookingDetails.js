@@ -7,12 +7,8 @@ import BackHeader from '../components/BackHeader';
 import { fetchBookingDetails, createBooking, updateBookingStatus, mockMessages, mockConversations, CURRENT_USER_ID, BOOKING_STATES } from '../data/mockData';
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import DatePicker from '../components/DatePicker';
-import { TIME_OPTIONS } from '../data/mockData';
 import AddRateModal from '../components/AddRateModal';
 import { format } from 'date-fns';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import TimePicker from '../components/TimePicker';
 import AddOccurrenceModal from '../components/AddOccurrenceModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { AuthContext } from '../context/AuthContext';
@@ -199,6 +195,8 @@ const BookingDetails = () => {
   });
   const [availablePets, setAvailablePets] = useState([]);
   const [isLoadingPets, setIsLoadingPets] = useState(false);
+  const [availableServices, setAvailableServices] = useState([]);
+  const [isLoadingServices, setIsLoadingServices] = useState(false);
 
   useEffect(() => {
     const fetchBooking = async () => {
@@ -209,6 +207,14 @@ const BookingDetails = () => {
         let initialData = route.params?.initialData;
         let isProfessional = route.params?.isProfessional;
         setIsProfessionalView(isProfessional);
+
+        if (is_DEBUG) {
+          console.log('BookingDetails: Fetching booking with params:', {
+            bookingId,
+            initialData,
+            isProfessional
+          });
+        }
 
         if (is_prototype) {
           if (!bookingId && initialData) {
@@ -229,12 +235,12 @@ const BookingDetails = () => {
           }
 
           if (is_DEBUG) {
-            console.log('Fetching booking with ID:', bookingId);
+            console.log('BookingDetails: Fetching booking with ID:', bookingId);
           }
           await AsyncStorage.setItem(LAST_VIEWED_BOOKING_ID, bookingId);
           const bookingData = await fetchBookingDetails(bookingId);
           if (is_DEBUG) {
-            console.log('Fetched booking data:', bookingData);
+            console.log('BookingDetails: Fetched booking data:', bookingData);
           }
           setBooking(bookingData);
         } else {
@@ -244,7 +250,10 @@ const BookingDetails = () => {
             return;
           }
 
-          let token = await AsyncStorage.getItem('userToken');
+          let token = Platform.OS === 'web' ? sessionStorage.getItem('userToken') : await AsyncStorage.getItem('userToken');
+          if (!token) {
+            throw new Error('No authentication token found');
+          }
           const response = await axios.get(
             `${API_BASE_URL}/api/bookings/v1/${bookingId}/?is_prorated=true`,
             { headers: { Authorization: `Bearer ${token}` }}
@@ -264,7 +273,7 @@ const BookingDetails = () => {
           };
 
           if (is_DEBUG) {
-            console.log('Fetched and transformed booking data:', transformedBooking);
+            console.log('BookingDetails: Fetched and transformed booking data:', transformedBooking);
           }
           setBooking(transformedBooking);
         }
@@ -300,6 +309,9 @@ const BookingDetails = () => {
   // Add this useEffect to properly initialize editedBooking
   useEffect(() => {
     if (booking) {
+      if (is_DEBUG) {
+        console.log('BookingDetails: Booking updated, current value:', booking);
+      }
       setEditedBooking({
         ...booking,
         serviceDetails: {
@@ -317,13 +329,41 @@ const BookingDetails = () => {
     }
   }, [booking]);
 
+  const canEdit = () => {
+    if (is_DEBUG) {
+      console.log('BookingDetails: canEdit called with:', {
+        booking: booking,
+        isProfessionalView: isProfessionalView,
+        currentUser: currentUser,
+        isPrototype: is_prototype
+      });
+    }
+
+    if (!booking) {
+      console.log('BookingDetails: Booking is undefined');
+      return false;
+    }
+
+    // In prototype mode, use the existing logic
+    if (is_prototype) {
+      return true;
+    }
+
+    if (is_DEBUG) {
+      console.log('Booking edit ability:', booking.can_edit);
+    }
+
+    // For real API mode, use the backend's can_edit field
+    return booking.can_edit;
+  };
+
   // Add function to fetch available pets
   const fetchAvailablePets = async () => {
     if (is_DEBUG) {
       console.log('fetching available pets with booking id:', booking.booking_id);
     }
     try {
-      const token = await AsyncStorage.getItem('userToken');
+      const token = Platform.OS === 'web' ? sessionStorage.getItem('userToken') : await AsyncStorage.getItem('userToken');
       if (!token) {
         throw new Error('No authentication token found');
       }
@@ -350,7 +390,7 @@ const BookingDetails = () => {
       try {
         setIsPetsSaving(true);
         if (!is_prototype) {
-          const token = await AsyncStorage.getItem('userToken');
+          const token = Platform.OS === 'web' ? sessionStorage.getItem('userToken') : await AsyncStorage.getItem('userToken');
           if (!token) {
             throw new Error('No authentication token found');
           }
@@ -476,29 +516,67 @@ const BookingDetails = () => {
     );
   };
 
+  // Add function to fetch available services
+  const fetchAvailableServices = async () => {
+    if (is_DEBUG) {
+      console.log('fetching available services with booking id:', booking.booking_id);
+    }
+    try {
+      const token = Platform.OS === 'web' ? sessionStorage.getItem('userToken') : await AsyncStorage.getItem('userToken');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      setIsLoadingServices(true);
+      const response = await axios.get(
+        `${API_BASE_URL}/api/bookings/v1/${booking.booking_id}/available_services/`,
+        { headers: { Authorization: `Bearer ${token}` }}
+      );
+      setAvailableServices(response.data);
+      if (is_DEBUG) {
+        console.log('available services:', response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching available services:', error);
+      Alert.alert('Error', 'Failed to fetch available services');
+    } finally {
+      setIsLoadingServices(false);
+    }
+  };
+
   const toggleServiceEditMode = async () => {
     if (isServiceEditMode) {
+      // Save changes
       try {
         setIsServiceSaving(true);
-        const response = await mockUpdateBookingService(booking.id, editedBooking);
-        if (response.success) {
-          // Check if actual changes were made before updating status
-          const serviceDetailsChanged = 
-            booking.serviceType !== editedBooking.serviceDetails?.type ||
-            booking.animalType !== editedBooking.serviceDetails?.animalType ||
-            booking.numberOfPets !== editedBooking.serviceDetails?.numberOfPets;
-
-          if (serviceDetailsChanged) {
-            setBooking(prev => ({
-              ...prev,
-              serviceType: editedBooking.serviceDetails?.type || prev.serviceType,
-              animalType: editedBooking.serviceDetails?.animalType || prev.animalType,
-              numberOfPets: editedBooking.serviceDetails?.numberOfPets || prev.numberOfPets
-            }));
-            handleStatusUpdateAfterEdit(); // Only call this if changes were made
+        if (!is_prototype) {
+          const token = Platform.OS === 'web' ? sessionStorage.getItem('userToken') : await AsyncStorage.getItem('userToken');
+          if (!token) {
+            throw new Error('No authentication token found');
           }
-          setIsServiceEditMode(false);
+
+          // Only send update if service has changed
+          if (editedBooking.service_details.service_id !== booking.service_details.service_id) {
+            const response = await axios.patch(
+              `${API_BASE_URL}/api/booking-drafts/v1/${booking.booking_id}/update/`,
+              { service_id: editedBooking.service_details.service_id },
+              { headers: { Authorization: `Bearer ${token}` }}
+            );
+            // Update booking status and service from response
+            if (response.data.booking_status) {
+              setBooking(prevBooking => ({
+                ...prevBooking,
+                status: response.data.booking_status,
+                service_details: editedBooking.service_details
+              }));
+            }
+          }
+        } else {
+          setBooking(prev => ({
+            ...prev,
+            service_details: editedBooking.service_details
+          }));
         }
+        setIsServiceEditMode(false);
       } catch (error) {
         console.error('Error updating service:', error);
         Alert.alert('Error', 'Failed to update service details');
@@ -506,15 +584,15 @@ const BookingDetails = () => {
         setIsServiceSaving(false);
       }
     } else {
-      // Initialize editedBooking with current values when entering edit mode
       setEditedBooking(prev => ({
         ...prev,
-        serviceDetails: {
-          type: booking.serviceType || '',
-          animalType: booking.animalType || '',
-          numberOfPets: booking.numberOfPets || 0  // Make sure to use the current numberOfPets
+        service_details: {
+          ...booking.service_details
         }
       }));
+      if (!is_prototype) {
+        await fetchAvailableServices();
+      }
       setIsServiceEditMode(true);
     }
   };
@@ -551,25 +629,6 @@ const BookingDetails = () => {
     if (is_DEBUG) {
       console.log('Removing service at index:', index);
     }
-  };
-
-  const canEdit = () => {
-    if (!booking) return false;
-
-    // In prototype mode, always allow editing
-    if (is_prototype) {
-      return true;
-    }
-
-    // If not a professional view, can't edit
-    if (!isProfessionalView) return false;
-
-    // Check if the current user is the professional for this booking
-    const isBookingProfessional = booking.professional?.user?.id === currentUser?.id;
-    if (!isBookingProfessional) return false;
-
-    // Check if status allows professional edits
-    return BOOKING_STATES.PROFESSIONAL_EDITABLE_STATES.includes(booking.status);
   };
 
   const renderEditButton = () => (
@@ -1244,7 +1303,7 @@ const BookingDetails = () => {
         style={styles.dropdownInput}
         onPress={() => setShowServiceDropdown(!showServiceDropdown)}
       >
-        <Text>{editedBooking?.serviceDetails?.type || 'Select Service Type'}</Text>
+        <Text>{editedBooking?.service_details?.service_type || 'Select Service Type'}</Text>
         <MaterialCommunityIcons 
           name={showServiceDropdown ? "chevron-up" : "chevron-down"} 
           size={24} 
@@ -1255,30 +1314,37 @@ const BookingDetails = () => {
       {showServiceDropdown && (
         <View style={styles.dropdownList}>
           <ScrollView nestedScrollEnabled={true}>
-            {SERVICE_OPTIONS.map((service) => (
-              <TouchableOpacity
-                key={service}
-                style={styles.dropdownItem}
-                onPress={() => {
-                  setEditedBooking(prev => ({
-                    ...prev,
-                    serviceDetails: {
-                      ...(prev.serviceDetails || {}),
-                      type: service
-                    }
-                  }));
-                  setShowServiceDropdown(false);
-                  handleStatusUpdateAfterEdit();
-                }}
-              >
-                <Text style={[
-                  styles.dropdownText,
-                  editedBooking?.serviceDetails?.type === service && styles.selectedOption
-                ]}>
-                  {service}
-                </Text>
-              </TouchableOpacity>
-            ))}
+            {isLoadingServices ? (
+              <ActivityIndicator style={{ padding: 10 }} />
+            ) : (
+              (is_prototype ? SERVICE_OPTIONS : availableServices).map((service) => (
+                <TouchableOpacity
+                  key={is_prototype ? service : service.service_id}
+                  style={styles.dropdownItem}
+                  onPress={() => {
+                    setEditedBooking(prev => ({
+                      ...prev,
+                      service_details: {
+                        ...prev.service_details,
+                        service_type: is_prototype ? service : service.service_name,
+                        service_id: is_prototype ? null : service.service_id
+                      }
+                    }));
+                    setShowServiceDropdown(false);
+                  }}
+                >
+                  <Text style={[
+                    styles.dropdownText,
+                    editedBooking?.service_details?.service_type === (is_prototype ? service : service.service_name) && styles.selectedOption
+                  ]}>
+                    {is_prototype ? service : service.service_name}
+                  </Text>
+                </TouchableOpacity>
+              ))
+            )}
+            {!isLoadingServices && !is_prototype && availableServices.length === 0 && (
+              <Text style={styles.noContentText}>No services available</Text>
+            )}
           </ScrollView>
         </View>
       )}
@@ -1493,15 +1559,19 @@ const BookingDetails = () => {
               {canEdit() && (
                 <TouchableOpacity 
                   onPress={toggleServiceEditMode}
-                  style={styles.sectionEditButton}
+                  style={[styles.sectionEditButton, isServiceEditMode && styles.saveButton]}
                   disabled={isServiceSaving}
                   testID="edit-button"
                 >
-                  {isServiceSaving ? (
-                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                  {isServiceEditMode ? (
+                    isServiceSaving ? (
+                      <ActivityIndicator size="small" color={theme.colors.surface} />
+                    ) : (
+                      <Text style={styles.saveButtonText}>Save Service Details</Text>
+                    )
                   ) : (
                     <MaterialCommunityIcons 
-                      name={isServiceEditMode ? "check" : "pencil"} 
+                      name="pencil"
                       size={24} 
                       color={theme.colors.primary} 
                     />
@@ -2104,10 +2174,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
+    minWidth: 140,  // Ensure enough width for the text
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   saveButtonText: {
-    color: 'white',
+    color: theme.colors.surface,
     fontWeight: '600',
+    fontSize: 14,
     fontFamily: theme.fonts.regular.fontFamily,
   },
   actionButtons: {

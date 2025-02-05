@@ -152,6 +152,45 @@ def create_draft_data(booking, request_pets, occurrences, cost_summary):
         ('original_status', booking.status)
     ])
 
+def pets_are_different(current_pets, new_pets):
+    """Compare current booking pets with new pets to determine if there are changes"""
+    if len(current_pets) != len(new_pets):
+        return True
+        
+    # Convert lists to sets of tuples for comparison
+    current_set = {(pet['pet_id'], pet['name'], pet['species'], pet['breed']) for pet in current_pets}
+    new_set = {(pet['pet_id'], pet['name'], pet['species'], pet['breed']) for pet in new_pets}
+    
+    return current_set != new_set
+
+def has_changes_from_original(booking, draft_data):
+    """Compare all fields between booking and draft data to determine if there are any changes"""
+    try:
+        # Compare service details
+        if booking.service_id and 'service_details' in draft_data:
+            if booking.service_id.service_name != draft_data['service_details']['service_type']:
+                return True
+
+        # Compare pets
+        current_pets = set([
+            (bp.pet.pet_id, bp.pet.name, bp.pet.species, bp.pet.breed)
+            for bp in booking.booking_pets.select_related('pet').all()
+        ])
+        draft_pets = set([
+            (pet['pet_id'], pet['name'], pet['species'], pet['breed'])
+            for pet in draft_data.get('pets', [])
+        ])
+        if current_pets != draft_pets:
+            return True
+
+        # Compare occurrences (if needed)
+        # Add occurrence comparison logic here if needed
+
+        return False
+    except Exception as e:
+        logger.error(f"Error comparing booking with draft: {e}")
+        return True  # Default to True if comparison fails
+
 # Views for booking_drafts app will be added here
 
 class BookingDraftUpdateView(APIView):
@@ -168,14 +207,14 @@ class BookingDraftUpdateView(APIView):
         try:
             # Check what type of update we're dealing with
             has_pets = 'pets' in request.data
-            has_service = 'service_id' in request.data
+            has_service = 'service_id' in request.data and request.data['service_id'] is not None
             has_occurrences = 'occurrences' in request.data
 
             # Validate that only one type of update is being made
             update_types = sum([has_pets, has_service, has_occurrences])
-            if update_types != 1:
+            if update_types > 1:  # Changed from != 1 to > 1 to allow empty updates
                 return Response(
-                    {"error": "Request must include exactly one of: pets, service_id, or occurrences"},
+                    {"error": "Request must include at most one of: pets, service_id, or occurrences"},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
@@ -269,17 +308,20 @@ class BookingDraftUpdateView(APIView):
                 # Use new pets from request
                 pets_data = request.data.get('pets', [])
             else:
-                # Use existing pets from booking
-                live_pets = list(BookingPets.objects.filter(booking=booking).values('pet__pet_id', 'pet__name', 'pet__species', 'pet__breed'))
-                pets_data = [
-                    OrderedDict([
-                        ('name', pet['pet__name']),
-                        ('breed', pet['pet__breed']),
-                        ('pet_id', pet['pet__pet_id']),
-                        ('species', pet['pet__species'])
-                    ])
-                    for pet in live_pets
-                ]
+                # Use existing pets from draft or booking
+                if 'pets' in current_draft_data:
+                    pets_data = current_draft_data['pets']
+                else:
+                    live_pets = list(BookingPets.objects.filter(booking=booking).values('pet__pet_id', 'pet__name', 'pet__species', 'pet__breed'))
+                    pets_data = [
+                        OrderedDict([
+                            ('name', pet['pet__name']),
+                            ('breed', pet['pet__breed']),
+                            ('pet_id', pet['pet__pet_id']),
+                            ('species', pet['pet__species'])
+                        ])
+                        for pet in live_pets
+                    ]
 
             # Create new draft data
             draft_data = create_draft_data(
@@ -300,11 +342,17 @@ class BookingDraftUpdateView(APIView):
                 draft_data['service_details'] = OrderedDict([
                     ('service_type', service.service_name)
                 ])
+            elif 'service_details' in current_draft_data:
+                draft_data['service_details'] = current_draft_data['service_details']
 
-            # Update draft status if booking is confirmed
+            # Only update status if there are actual changes from the original booking
             if booking.status == BookingStates.CONFIRMED:
-                draft_data['status'] = BookingStates.CONFIRMED_PENDING_PROFESSIONAL_CHANGES
-                draft_data['original_status'] = booking.status
+                if has_changes_from_original(booking, draft_data):
+                    draft_data['status'] = BookingStates.CONFIRMED_PENDING_PROFESSIONAL_CHANGES
+                    draft_data['original_status'] = booking.status
+                else:
+                    draft_data['status'] = booking.status
+                    draft_data['original_status'] = booking.status
 
             # Convert to JSON string maintaining order
             draft_json = json.dumps(draft_data, cls=OrderedDictJSONEncoder)

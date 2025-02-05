@@ -15,6 +15,7 @@ from pets.models import Pet
 from ..constants import BookingStates
 import logging
 from booking_drafts.models import BookingDraft
+from services.models import Service
 
 logger = logging.getLogger(__name__)
 
@@ -266,5 +267,34 @@ class BookingUpdatePetsView(APIView):
                 {"error": "Failed to update pets"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+class AvailableServicesView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, booking_id):
+        # Get the booking and verify professional access
+        booking = get_object_or_404(Booking, booking_id=booking_id)
+        professional = get_object_or_404(Professional, user=request.user)
+        if booking.professional != professional:
+            return Response({"error": "Not authorized"}, status=status.HTTP_403_FORBIDDEN)
+
+        # Get all approved services for the professional
+        services = Service.objects.filter(
+            professional=professional,
+            moderation_status='APPROVED'
+        )
+
+        # Format the response
+        services_data = [
+            {
+                'service_id': service.service_id,
+                'service_name': service.service_name,
+                'description': service.description,
+                'unit_of_time': service.unit_of_time
+            }
+            for service in services
+        ]
+
+        return Response(services_data)
 
 # Placeholder: Ready for views to be added

@@ -14,6 +14,7 @@ import { BLOG_POSTS } from '../data/mockData';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import BackHeader from '../components/BackHeader';
 import { theme } from '../styles/theme';
+import { navigateToFrom } from '../components/Navigation';
 
 const BlogScreen = ({ navigation }) => {
   const theme = useTheme();
@@ -21,11 +22,7 @@ const BlogScreen = ({ navigation }) => {
   const [filteredPosts, setFilteredPosts] = useState(BLOG_POSTS);
 
   const handleBack = () => {
-    if (navigation.canGoBack()) {
-      navigation.goBack();
-    } else {
-      navigation.navigate('Home');
-    }
+    navigation.navigate('More');
   };
 
   const handleSearch = useCallback((query) => {
@@ -46,7 +43,7 @@ const BlogScreen = ({ navigation }) => {
       <TouchableOpacity
         key={post.id}
         style={[styles.blogCard, { backgroundColor: theme.colors.surface }]}
-        onPress={() => navigation.navigate('BlogPost', { post })}
+        onPress={() => navigateToFrom(navigation, 'Blog', 'BlogPost', { post })}
       >
         <View style={styles.authorContainer}>
           <Image

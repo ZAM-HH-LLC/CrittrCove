@@ -80,6 +80,7 @@ class BookingDetailSerializer(serializers.ModelSerializer):
     occurrences = serializers.SerializerMethodField()
     cost_summary = serializers.SerializerMethodField()
     original_status = serializers.CharField(required=False, read_only=True)
+    can_edit = serializers.SerializerMethodField()
 
     class Meta:
         model = Booking
@@ -93,7 +94,24 @@ class BookingDetailSerializer(serializers.ModelSerializer):
             'occurrences',
             'cost_summary',
             'original_status',
+            'can_edit'
         ]
+
+    def get_can_edit(self, obj):
+        context = self.context
+        is_professional = context.get('is_professional', False)
+        professional = context.get('professional', None)
+        
+        # If not a professional view, can't edit
+        if not is_professional:
+            return False
+            
+        # Check if the current professional is the booking's professional
+        if not professional or professional != obj.professional:
+            return False
+            
+        # Check if status allows professional edits
+        return BookingStates.can_professional_edit(obj.status)
 
     def to_representation(self, instance):
         """Override to conditionally include original_status"""

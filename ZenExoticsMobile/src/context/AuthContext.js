@@ -20,10 +20,10 @@ export const AuthProvider = ({ children }) => {
   const [firstName, setFirstName] = useState('');
 
   // SET TO "true" FOR NO API CALLS
-  const [is_prototype, setIsPrototype] = useState(true);
+  const [is_prototype, setIsPrototype] = useState(false);
 
   // Set is_DEBUG to true by default in prototype mode
-  const [is_DEBUG, setIsDebug] = useState(false);
+  const [is_DEBUG, setIsDebug] = useState(true);
 
   // Preload Stripe modules when user signs in
   useEffect(() => {
@@ -389,13 +389,23 @@ export const AuthProvider = ({ children }) => {
         }
       }
 
+      // Get current route/path
+      let currentPath = '';
+      if (Platform.OS === 'web') {
+        currentPath = window.location.pathname.slice(1);
+      } else {
+        currentPath = await AsyncStorage.getItem('currentRoute');
+      }
+
+      // Check if we're on the home page or root URL
+      const isHomePage = !currentPath || currentPath === '' || currentPath.toLowerCase() === 'home';
+
       if (is_prototype) {
         const token = Platform.OS === "web" ? sessionStorage.getItem('userToken') : await AsyncStorage.getItem('userToken');
         if (!token) {
           if (is_DEBUG) {
             console.log('Prototype mode: No token found, signing out');
           }
-          // await signOut();
           return { isSignedIn: false, userRole: null, isApprovedProfessional: false };
         }
 
@@ -439,15 +449,25 @@ export const AuthProvider = ({ children }) => {
         console.log("MBA storedRole:", storedRole);
         console.log("MBA isApprovedProfessional:", isApprovedProfessional);
         console.log("MBA storedApproval:", storedApproval);
+        console.log("Current path:", currentPath);
+        console.log("Is home page:", isHomePage);
       }
 
+      // Handle no tokens scenario
       if (!token || !refreshToken) {
-        console.log('No tokens found - signing out');
+        console.log('No tokens found - handling based on current route');
+        
+        // If we're on the home page or root URL, just return unauthenticated state
+        if (isHomePage) {
+          return { isSignedIn: false, userRole: null, isApprovedProfessional: false };
+        }
+        
+        // For any other page, sign out and redirect
         await signOut();
         return { isSignedIn: false, userRole: null, isApprovedProfessional: false };
       }
 
-      // First try to validate current token
+      // Rest of the existing token validation logic
       let currentToken = token;
       let isValid = false;
 
@@ -455,7 +475,6 @@ export const AuthProvider = ({ children }) => {
         isValid = await validateToken(currentToken);
       }
 
-      // If current token is invalid but we have refresh token, try to refresh
       if (!isValid && refreshToken) {
         const newToken = await refreshUserToken(refreshToken);
         if (newToken) {
@@ -465,7 +484,11 @@ export const AuthProvider = ({ children }) => {
       }
 
       if (!isValid) {
-        console.log('No valid token available - signing out');
+        console.log('No valid token available - handling based on current route');
+        if (isHomePage) {
+          navigate('Home');
+          return { isSignedIn: false, userRole: null, isApprovedProfessional: false };
+        }
         await signOut();
         return { isSignedIn: false, userRole: null, isApprovedProfessional: false };
       }
@@ -478,17 +501,8 @@ export const AuthProvider = ({ children }) => {
       setIsSignedIn(true);
       setIsApprovedProfessional(status.isApprovedProfessional);
 
-      // Check if we're on the SearchProfessionalsListing screen
-      let currentPath = '';
-      if (Platform.OS === 'web') {
-        currentPath = window.location.pathname.slice(1);
-      } else {
-        currentPath = await AsyncStorage.getItem('currentRoute');
-      }
-
       // If on SearchProfessionalsListing, force petOwner role but don't store it
       if (currentPath === 'SearchProfessionalsListing') {
-
         setUserRole('petOwner');
         return {
           isSignedIn: true,
