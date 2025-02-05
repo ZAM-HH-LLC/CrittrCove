@@ -231,8 +231,8 @@ export default function Navigation({ navigation }) {
       {Platform.OS === 'web' ? (
         <Appbar.Header style={[styles.header, { backgroundColor: colors.primary }]}>
           <View style={styles.titleContainer}>
-            <TouchableOpacity onPress={() => handleNavigation('Home')}>
-              <Text style={[styles.title, { color: colors.whiteText }]}>CrittrCove</Text>
+            <TouchableOpacity onPress={() => handleNavigation('Home')} style={{ width: 150 }}>
+              <Text style={[styles.title, { color: colors.whiteText, width: 110 }]}>CrittrCove</Text>
             </TouchableOpacity>
           </View>
           {isMobile ? (

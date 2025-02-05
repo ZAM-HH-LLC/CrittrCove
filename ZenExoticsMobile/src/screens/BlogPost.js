@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,24 +6,93 @@ import {
   StyleSheet,
   Image,
   TouchableOpacity,
-  Linking
+  Linking,
+  Platform
 } from 'react-native';
 import { useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import BackHeader from '../components/BackHeader';
 import { theme } from '../styles/theme';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BLOG_POSTS } from '../data/mockData';
+import { handleBack, navigateToFrom } from '../components/Navigation';
 
 const BlogPost = ({ route, navigation }) => {
-  const post = route?.params?.post;
+  const [post, setPost] = useState(null);
   const theme = useTheme();
 
+  // Validate post data structure
+  const isValidPost = (postData) => {
+    return postData && 
+           typeof postData === 'object' && 
+           postData.author && 
+           typeof postData.author === 'object' &&
+           postData.author.name &&
+           postData.author.profilePicture &&
+           postData.author.bio &&
+           postData.title &&
+           postData.content &&
+           Array.isArray(postData.tags);
+  };
+
+  useEffect(() => {
+    const loadPost = async () => {
+      try {
+        // Try to get post from route params first
+        if (route?.params?.post && isValidPost(route.params.post)) {
+          setPost(route.params.post);
+          // Store the post data
+          if (Platform.OS === 'web') {
+            sessionStorage.setItem('currentBlogPost', JSON.stringify(route.params.post));
+          } else {
+            await AsyncStorage.setItem('currentBlogPost', JSON.stringify(route.params.post));
+          }
+          return;
+        }
+
+        // If no route params or invalid post, try to load from storage
+        let storedPost;
+        if (Platform.OS === 'web') {
+          storedPost = sessionStorage.getItem('currentBlogPost');
+        } else {
+          storedPost = await AsyncStorage.getItem('currentBlogPost');
+        }
+
+        if (storedPost) {
+          const parsedPost = JSON.parse(storedPost);
+          if (isValidPost(parsedPost)) {
+            setPost(parsedPost);
+            return;
+          }
+        }
+
+        // If no valid post found in storage, try to find it in BLOG_POSTS
+        if (route?.params?.postId) {
+          const foundPost = BLOG_POSTS.find(p => p.id === route.params.postId);
+          if (foundPost && isValidPost(foundPost)) {
+            setPost(foundPost);
+            return;
+          }
+        }
+
+        // If still no valid post, redirect to blog list
+        navigateToFrom(navigation, 'Blog', 'BlogPost');
+      } catch (error) {
+        console.error('Error loading blog post:', error);
+        navigateToFrom(navigation, 'Blog', 'BlogPost');
+      }
+    };
+
+    loadPost();
+  }, [route?.params]);
+
   // If no post data is available, show an error state
-  if (!post) {
+  if (!post || !isValidPost(post)) {
     return (
       <View style={[styles.mainContainer, { backgroundColor: theme.colors.background }]}>
         <BackHeader 
           title="Blog Post"
-          onBackPress={() => navigation.goBack()}
+          onBackPress={() => handleBack(navigation)}
         />
         <View style={styles.errorContainer}>
           <MaterialCommunityIcons 
@@ -32,11 +101,11 @@ const BlogPost = ({ route, navigation }) => {
             color={theme.colors.error} 
           />
           <Text style={[styles.errorText, { color: theme.colors.error }]}>
-            Blog post not found
+            Blog post not found or invalid
           </Text>
           <TouchableOpacity
             style={[styles.errorButton, { backgroundColor: theme.colors.primary }]}
-            onPress={() => navigation.navigate('Blog')}
+            onPress={() => navigateToFrom(navigation, 'Blog', 'BlogPost')}
           >
             <Text style={[styles.errorButtonText, { color: theme.colors.surface }]}>
               Go to Blog List
@@ -59,7 +128,7 @@ const BlogPost = ({ route, navigation }) => {
     <View style={[styles.mainContainer, { backgroundColor: theme.colors.background }]}>
       <BackHeader 
         title={post.title}
-        onBackPress={() => navigation.goBack()}
+        onBackPress={() => handleBack(navigation)}
       />
       <ScrollView style={styles.container}>
         <View style={styles.header}>

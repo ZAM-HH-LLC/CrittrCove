@@ -32,9 +32,19 @@ const CrossPlatformView = ({
     const mainContent = fullWidthHeader ? children.slice(1) : children;
 
     return (
-      <div style={{ backgroundColor, width: '100%' }}>
+      <div style={{ 
+        backgroundColor, 
+        width: '100%',
+        maxWidth: '100vw',
+        overflowX: 'hidden'
+      }}>
         {fullWidthHeader && (
-          <div style={{ width: '100%', backgroundColor }}>
+          <div style={{ 
+            width: '100%', 
+            backgroundColor,
+            maxWidth: '100vw',
+            overflowX: 'hidden'
+          }}>
             {headerContent}
           </div>
         )}
@@ -43,6 +53,8 @@ const CrossPlatformView = ({
           ...style,
           maxWidth: contentWidth,
           margin: '0 auto',
+          width: '100%',
+          overflowX: 'hidden'
         }}>
           {mainContent}
         </div>
@@ -80,12 +92,15 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
     width: '100%',
+    maxWidth: '100%',
+    overflow: 'hidden',
   },
   webContainer: {
     display: 'flex',
     flexDirection: 'column',
     minHeight: '85vh',
     width: '100%',
+    maxWidth: '100%',
     overflowX: 'hidden',
   },
 });

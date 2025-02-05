@@ -815,10 +815,13 @@ const PaymentMethods = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    width: '100%',
+    overflow: 'hidden',
   },
   contentContainer: {
     padding: 16,
     alignItems: 'center',
+    width: '100%',
   },
   sectionContainer: {
     width: '100%',
@@ -828,6 +831,7 @@ const styles = StyleSheet.create({
   card: {
     marginBottom: 16,
     width: '100%',
+    alignSelf: 'center',
   },
   addButton: {
     marginTop: 16,
@@ -878,9 +882,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   dialog: {
-    width: '90%',
+    width: Platform.OS === 'web' ? '90%' : '100%',
     alignSelf: 'center',
     maxWidth: 500,
+    marginHorizontal: Platform.OS === 'web' ? 'auto' : 16,
   },
   input: {
     marginBottom: 16,
@@ -945,15 +950,13 @@ const styles = StyleSheet.create({
   addIconButton: {
     margin: 0,
   },
-  headerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
+  webContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: '85vh',
     width: '100%',
-  },
-  addIconButton: {
-    margin: 0,
+    maxWidth: '100%',
+    overflowX: 'hidden',
   },
 });
 

@@ -215,7 +215,7 @@ export default function HomeScreen({ navigation }) {
           styles.blogCard,
           { marginRight: index === BLOG_POSTS.length - 1 ? 0 : 10 }
         ]} 
-        onPress={() => navigation.navigate('BlogPost', { post })}
+        onPress={() => navigateToFrom(navigation, 'BlogPost', 'Home', { post })}
       >
         <View style={styles.authorContainer}>
           <Image
