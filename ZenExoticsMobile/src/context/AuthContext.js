@@ -233,7 +233,11 @@ export const AuthProvider = ({ children }) => {
       
       // Set and store the role
       setUserRole(initialRole);
-      await AsyncStorage.setItem('userRole', initialRole);
+      if (Platform.OS === 'web') {
+        sessionStorage.setItem('userRole', initialRole);
+      } else {
+        await AsyncStorage.setItem('userRole', initialRole);
+      }
       
       // Add logging to track access and refresh tokens during signIn
       if (is_DEBUG) {
@@ -267,11 +271,17 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Error clearing storage:', error);
     }
+
+    // Set state updates
     setIsSignedIn(false);
     setIsApprovedProfessional(false);
     setUserRole(null);
+
     // Ensure state updates are processed before navigation
     setTimeout(() => {
+      if (Platform.OS === 'web') {
+        sessionStorage.setItem('explicitSignOut', 'true');
+      }
       navigate('SignIn');
     }, 0);
   };
@@ -369,13 +379,23 @@ export const AuthProvider = ({ children }) => {
 
   const checkAuthStatus = async () => {
     try {
+      // Check for explicit sign out flag first
+      if (Platform.OS === 'web') {
+        const wasExplicitSignOut = sessionStorage.getItem('explicitSignOut') === 'true';
+        if (wasExplicitSignOut) {
+          // Clear the flag
+          sessionStorage.removeItem('explicitSignOut');
+          return { isSignedIn: false, userRole: null, isApprovedProfessional: false };
+        }
+      }
+
       if (is_prototype) {
         const token = Platform.OS === "web" ? sessionStorage.getItem('userToken') : await AsyncStorage.getItem('userToken');
         if (!token) {
           if (is_DEBUG) {
             console.log('Prototype mode: No token found, signing out');
           }
-          await signOut();
+          // await signOut();
           return { isSignedIn: false, userRole: null, isApprovedProfessional: false };
         }
 

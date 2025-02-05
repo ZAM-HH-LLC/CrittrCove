@@ -50,6 +50,13 @@ const Settings = ({ navigation }) => {
         title="Settings" 
         onBackPress={() => navigation.navigate('More')} 
       />
+      {is_prototype && (
+        <View style={styles.warningContainer}>
+          <Text style={styles.warningText}>
+            Prototype Mode: Only "Change Password" is currently functional
+          </Text>
+        </View>
+      )}
       <View style={Platform.OS === 'web' ? styles.webContent : styles.content}>
         {renderContent()}
       </View>
@@ -78,7 +85,18 @@ const styles = StyleSheet.create({
   webListItem: {
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
-  }
+  },
+  warningContainer: {
+    backgroundColor: '#FFF3CD',
+    padding: theme.spacing.small,
+    marginHorizontal: theme.spacing.small,
+    marginTop: theme.spacing.small,
+    borderRadius: 4,
+  },
+  warningText: {
+    color: '#856404',
+    textAlign: 'center',
+  },
 });
 
 export default Settings;

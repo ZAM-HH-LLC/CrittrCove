@@ -5,6 +5,7 @@ import BackHeader from '../components/BackHeader';
 import CrossPlatformView from '../components/CrossPlatformView';
 import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../context/AuthContext';
+import { handleBack } from '../components/Navigation';
 
 const appName = 'Zen Exotics';
 
@@ -36,7 +37,7 @@ const PrivacyPolicy = () => {
     <CrossPlatformView fullWidthHeader={true}>
       <BackHeader 
         title="Privacy Policy" 
-        onBackPress={() => navigation.navigate('More')} 
+        onBackPress={() => handleBack(navigation)} 
       />
       <Text>Privacy Policy coming soon. We collect no data right now other than your email address and name from a contact form.</Text>
       {is_prototype ? null : (

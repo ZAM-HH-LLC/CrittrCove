@@ -108,6 +108,11 @@ export default function SignIn() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Sign In</Text>
+      {is_prototype && (
+        <Text style={styles.prototypeWarning}>
+          Prototype Mode: You can sign in with anything for email and password
+        </Text>
+      )}
       <TextInput
         style={[styles.input, !isEmailValid && styles.invalidInput]}
         placeholder="Email"
@@ -177,5 +182,15 @@ const styles = StyleSheet.create({
     marginTop: theme.spacing.small,
     color: theme.colors.primary,
     fontSize: theme.fontSizes.medium,
+  },
+  prototypeWarning: {
+    backgroundColor: '#FFF3CD',
+    color: '#856404',
+    padding: theme.spacing.small,
+    marginBottom: theme.spacing.medium,
+    borderRadius: 4,
+    textAlign: 'center',
+    width: screenWidth > 600 ? 600 : '100%',
+    maxWidth: 600,
   },
 });

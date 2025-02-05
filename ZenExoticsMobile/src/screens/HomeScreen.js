@@ -5,6 +5,7 @@ import { ImageBackground } from 'react-native';
 import { theme } from '../styles/theme';
 import { SCREEN_WIDTH } from '../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
+import { navigateToFrom } from '../components/Navigation';
 import { FontAwesome } from '@expo/vector-icons';
 import { FontAwesome5 } from '@expo/vector-icons';
 import RoadmapSection from '../components/RoadmapSection';
@@ -455,8 +456,8 @@ export default function HomeScreen({ navigation }) {
 
       {/* Footer */}
       <View style={styles.footer}>
-        <Text style={styles.footerLink} onPress={() => Linking.openURL('https://your-privacy-policy-url')}>Privacy Policy</Text>
-        <Text style={styles.footerLink} onPress={() => Linking.openURL('https://your-terms-of-service-url')}>Terms of Service</Text>
+        <Text style={styles.footerLink} onPress={() => navigateToFrom(navigation, 'PrivacyPolicy', 'Home')}>Privacy Policy</Text>
+        <Text style={styles.footerLink} onPress={() => navigateToFrom(navigation, 'TermsOfService', 'Home')}>Terms of Service</Text>
         <Text style={styles.footerLink} onPress={() => setShowSocialMedia(true)}>Follow us on Social Media</Text>
       </View>
 

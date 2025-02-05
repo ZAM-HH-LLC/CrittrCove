@@ -4,7 +4,7 @@ import { theme } from '../styles/theme';
 import BackHeader from '../components/BackHeader';
 import CrossPlatformView from '../components/CrossPlatformView';
 import { useNavigation } from '@react-navigation/native';
-import { navigateToFrom } from '../components/Navigation';
+import { handleBack } from '../components/Navigation';
 import { AuthContext } from '../context/AuthContext';
 
 const appName = 'Zen Exotics';
@@ -17,7 +17,7 @@ const TermsOfService = () => {
     <CrossPlatformView fullWidthHeader={true}>
       <BackHeader 
         title="Terms of Service" 
-        onBackPress={() => navigateToFrom(navigation, 'More', 'TermsOfService')} 
+        onBackPress={() => handleBack(navigation)} 
       />
       <Text>Terms of Service coming soon. Right now we are in prototype mode, so no data is saved except for email/name if you choose to contact us through this platform, then it is saved for marketing purposes.</Text>
       {is_prototype ? null : (

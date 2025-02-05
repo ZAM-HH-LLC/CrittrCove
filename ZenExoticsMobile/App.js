@@ -93,62 +93,65 @@ const screens = [
 ];
 
 const linking = {
-  prefixes: [`${API_BASE_URL}`],
+  enabled: true,
+  prefixes: [
+    'https://crittrcove.com',
+    'http://crittrcove.com',
+    `${API_BASE_URL}`
+  ],
   config: {
-    initialRouteName: 'Home',
     screens: {
-      Home: 'Home',
-      About: 'About',
-      ClientProfile: 'ClientProfile',
-      MyProfile: 'MyProfile',
-      SignIn: 'SignIn',
-      SignUp: 'SignUp',
-      ResetPassword: 'ResetPassword',
+      Home: '*',  // This will catch all unmatched routes
+      About: 'about',
+      ClientProfile: 'client-profile',
+      MyProfile: 'my-profile',
+      SignIn: 'signin',
+      SignUp: 'signup',
+      ResetPassword: 'reset-password',
       ResetPasswordConfirm: 'reset-password/:uid/:token',
-      Dashboard: 'Dashboard',
-      SearchProfessionals: 'SearchProfessionals',
-      SearchProfessionalsListing: 'SearchProfessionalsListing',
-      ClientHistory: 'ClientHistory',
+      Dashboard: 'dashboard',
+      SearchProfessionals: 'search-professionals',
+      SearchProfessionalsListing: 'search-professionals-listing',
+      ClientHistory: 'client-history',
       MessageHistory: {
-        path: 'MessageHistory',
+        path: 'message-history',
         parse: {
           messageId: (messageId) => messageId || null,
           senderName: (senderName) => senderName || 'Unknown User'
         }
       },
-      ProfessionalDashboard: 'ProfessionalDashboard',
-      BecomeProfessional: 'BecomeProfessional',
-      More: 'More',
-      Clients: 'Clients',
-      AvailabilitySettings: 'AvailabilitySettings',
-      MyPets: 'MyPets',
-      PaymentMethods: 'PaymentMethods',
-      Settings: 'Settings',
-      PrivacyPolicy: 'PrivacyPolicy',
-      ProfessionalSettings: 'ProfessionalSettings',
-      TermsOfService: 'TermsOfService',
-      HelpFAQ: 'HelpFAQ',
-      ContactUs: 'ContactUs',
+      ProfessionalDashboard: 'professional-dashboard',
+      BecomeProfessional: 'become-professional',
+      More: 'more',
+      Clients: 'clients',
+      AvailabilitySettings: 'availability-settings',
+      MyPets: 'my-pets',
+      PaymentMethods: 'payment-methods',
+      Settings: 'settings',
+      PrivacyPolicy: 'privacy-policy',
+      ProfessionalSettings: 'professional-settings',
+      TermsOfService: 'terms-of-service',
+      HelpFAQ: 'help-faq',
+      ContactUs: 'contact-us',
       ProfessionalProfile: {
-        path: 'ProfessionalProfile',
+        path: 'professional-profile',
         parse: {
           professional: (professional) => undefined
         }
       },
-      MyContracts: 'MyContracts',
-      ChangePassword: 'ChangePassword',
+      MyContracts: 'my-contracts',
+      ChangePassword: 'change-password',
       AddPet: {
-        path: 'AddPet',
+        path: 'add-pet',
         parse: {
           pet: () => undefined
         }
       },
-      MyBookings: 'MyBookings',
-      BookingDetails: 'BookingDetails',
-      ServiceManager: 'ServiceManager',
-      Blog: 'Blog',
-      BlogPost: 'BlogPost',
-      '*': '*'
+      MyBookings: 'my-bookings',
+      BookingDetails: 'booking-details',
+      ServiceManager: 'service-manager',
+      Blog: 'blog',
+      BlogPost: 'blog-post'
     }
   }
 };
@@ -236,14 +239,13 @@ function AppContent() {
   const [initialRoute, setInitialRoute] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Run this effect only once on mount
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // First check auth status
         const authStatus = await checkAuthStatus();
-        let route = 'Home'; // Default route
+        let route = 'Home';
 
+        // Only change route if user is authenticated
         if (authStatus.isSignedIn) {
           if (is_DEBUG) {
             console.log('Auth status on init:', authStatus);
@@ -251,34 +253,32 @@ function AppContent() {
           route = authStatus.userRole === 'professional' && authStatus.isApprovedProfessional
             ? 'ProfessionalDashboard'
             : 'Dashboard';
+        } else {
+          route = 'Home';
         }
 
-        // Check stored route based on platform
+        // For web platform
         if (Platform.OS === 'web') {
-          const storedRoute = sessionStorage.getItem('lastRoute');
-          // Only use stored route if user is authenticated and it's not the home page
-          if (authStatus.isSignedIn && storedRoute && storedRoute !== 'Home') {
-            route = storedRoute;
+          const path = window.location.pathname;
+          
+          // If we're at the root path, use the route based on auth status
+          if (path === '/' || path === '') {
+            // route is already set based on auth status above
+          } else {
+            // Extract the route from the path
+            const routePath = path.slice(1).split('/')[0].toLowerCase();
+            if (routePath === 'home') {
+              // Use the route based on auth status
+            } else {
+              // Find the matching screen for the current path
+              const matchingScreen = screens.find(screen => 
+                screen.name.toLowerCase() === routePath
+              );
+              if (matchingScreen) {
+                route = matchingScreen.name;
+              }
+            }
           }
-
-          // Set up route storage for next reload
-          window.onbeforeunload = () => {
-            const currentPath = window.location.pathname.slice(1) || route;
-            sessionStorage.setItem('lastRoute', currentPath);
-          };
-
-          // Clean URL if needed
-          if (window.location.search) {
-            window.history.replaceState({}, '', `/${route}`);
-          }
-        } else {
-          // For mobile platforms, use AsyncStorage
-          const storedRoute = await AsyncStorage.getItem('lastRoute');
-          if (authStatus.isSignedIn && storedRoute && storedRoute !== 'Home') {
-            route = storedRoute;
-          }
-          // Store the new route
-          await AsyncStorage.setItem('lastRoute', route);
         }
 
         setInitialRoute(route);
@@ -291,7 +291,7 @@ function AppContent() {
     };
 
     initializeApp();
-  }, []); // Only run on mount, remove checkAuthStatus from dependencies
+  }, []);
 
   // Handle route changes without triggering auth checks
   useEffect(() => {
