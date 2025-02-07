@@ -330,14 +330,14 @@ const BookingDetails = () => {
   }, [booking]);
 
   const canEdit = () => {
-    if (is_DEBUG) {
-      console.log('BookingDetails: canEdit called with:', {
-        booking: booking,
-        isProfessionalView: isProfessionalView,
-        currentUser: currentUser,
-        isPrototype: is_prototype
-      });
-    }
+    // if (is_DEBUG) {
+    //   console.log('BookingDetails: canEdit called with:', {
+    //     booking: booking,
+    //     isProfessionalView: isProfessionalView,
+    //     currentUser: currentUser,
+    //     isPrototype: is_prototype
+    //   });
+    // }
 
     if (!booking) {
       console.log('BookingDetails: Booking is undefined');
