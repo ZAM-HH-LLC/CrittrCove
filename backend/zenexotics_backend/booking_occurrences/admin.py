@@ -52,10 +52,10 @@ class BookingOccurrenceRateInline(admin.StackedInline):
 
 @admin.register(BookingOccurrence)
 class BookingOccurrenceAdmin(admin.ModelAdmin):
-    list_display = ('occurrence_id', 'booking', 'start_date', 'end_date', 'start_time', 'end_time', 'status', 'get_calculated_cost')
+    list_display = ('occurrence_id', 'booking', 'start_date', 'end_date', 'start_time', 'end_time', 'status', 'display_calculated_cost')
     list_filter = ('status', 'start_date', 'created_by')
     search_fields = ('booking__client__user__email', 'booking__professional__user__email')
-    readonly_fields = ('created_at', 'updated_at', 'get_calculated_cost')
+    readonly_fields = ('created_at', 'updated_at', 'calculated_cost')
     inlines = [BookingOccurrenceRateInline]
     fieldsets = (
         ('Basic Information', {
@@ -65,7 +65,7 @@ class BookingOccurrenceAdmin(admin.ModelAdmin):
             'fields': ('start_date', 'end_date', 'start_time', 'end_time')
         }),
         ('Financial', {
-            'fields': ('get_calculated_cost',)
+            'fields': ('calculated_cost',)
         }),
         ('Tracking', {
             'fields': ('created_by', 'last_modified_by')
@@ -76,14 +76,10 @@ class BookingOccurrenceAdmin(admin.ModelAdmin):
         }),
     )
 
-    def get_calculated_cost(self, obj):
-        try:
-            rates = obj.rates.rates
-            total = sum(float(rate['amount'].replace('$', '')) for rate in rates)
-            return f"${total:.2f}"
-        except (BookingOccurrenceRate.DoesNotExist, AttributeError):
-            return "$0.00"
-    get_calculated_cost.short_description = 'Calculated Cost'
+    def display_calculated_cost(self, obj):
+        cost = obj.calculated_cost()
+        return f"${float(cost):.2f}"
+    display_calculated_cost.short_description = 'Calculated Cost'
 
     class Media:
         css = {

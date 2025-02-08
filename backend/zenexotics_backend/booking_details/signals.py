@@ -3,42 +3,33 @@ from django.dispatch import receiver
 from booking_pets.models import BookingPets
 from .models import BookingDetails
 from decimal import Decimal
+import logging
+
+logger = logging.getLogger(__name__)
 
 @receiver([post_save], sender=BookingDetails)
 def update_occurrence_rates(sender, instance, created, **kwargs):
     """
-    Signal handler to update the BookingOccurrence rates when BookingDetails changes
+    Signal handler to update the BookingOccurrence calculated cost when BookingDetails changes
     """
     occurrence = instance.booking_occurrence
     
-    # Calculate the cost using the BookingDetails logic
+    # Get the calculated cost from booking details
     booking_details_cost = instance.calculate_occurrence_cost(is_prorated=True)
     
-    # Get existing rates or create new ones
+    # Get the total from occurrence rates
+    occurrence_rates_total = Decimal('0.00')
     if hasattr(occurrence, 'rates'):
-        rates = occurrence.rates.rates or []
-    else:
-        from booking_occurrence_rates.models import BookingOccurrenceRates
-        rates_obj = BookingOccurrenceRates.objects.create(
-            booking_occurrence=occurrence,
-            rates=[]
-        )
-        rates = []
-
-    # Update or add the booking details cost as a rate
-    booking_details_rate = {
-        'title': 'Booking Details Cost',
-        'description': 'Prorated cost including base rate, additional animal rate, and holiday rate if applicable',
-        'amount': str(booking_details_cost)
-    }
-
-    # Remove old booking details cost if it exists
-    rates = [r for r in rates if r.get('title') != 'Booking Details Cost']
-    rates.append(booking_details_rate)
-
-    # Save the updated rates
-    occurrence.rates.rates = rates
-    occurrence.rates.save()
+        occurrence_rates_total = occurrence.rates.get_total()
+    
+    # Log the values
+    logger.info(f"Updating occurrence {occurrence.occurrence_id} calculated cost:")
+    logger.info(f"Booking details cost: ${booking_details_cost}")
+    logger.info(f"Occurrence rates total: ${occurrence_rates_total}")
+    logger.info(f"Total: ${booking_details_cost + occurrence_rates_total}")
+    
+    # Update the occurrence's calculated cost
+    occurrence.update_calculated_cost()
 
 @receiver([post_save, post_delete], sender=BookingPets)
 def update_booking_num_pets(sender, instance, **kwargs):

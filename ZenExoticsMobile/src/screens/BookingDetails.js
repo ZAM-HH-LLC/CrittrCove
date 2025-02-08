@@ -330,14 +330,6 @@ const BookingDetails = () => {
   }, [booking]);
 
   const canEdit = () => {
-    // if (is_DEBUG) {
-    //   console.log('BookingDetails: canEdit called with:', {
-    //     booking: booking,
-    //     isProfessionalView: isProfessionalView,
-    //     currentUser: currentUser,
-    //     isPrototype: is_prototype
-    //   });
-    // }
 
     if (!booking) {
       console.log('BookingDetails: Booking is undefined');
@@ -742,77 +734,192 @@ const BookingDetails = () => {
     };
   };
 
-  const handleSaveOccurrence = (updatedOccurrence) => {
-    const transformedOccurrence = {
-      occurrence_id: updatedOccurrence.id,
-      start_date: updatedOccurrence.startDate,
-      end_date: updatedOccurrence.endDate,
-      start_time: updatedOccurrence.startTime,
-      end_time: updatedOccurrence.endTime,
-      rates: {
-        base_rate: parseFloat(updatedOccurrence.rates.baseRate),
-        additional_animal_rate: parseFloat(updatedOccurrence.rates.additionalAnimalRate),
-        applies_after: updatedOccurrence.rates.appliesAfterAnimals,
-        holiday_rate: parseFloat(updatedOccurrence.rates.holidayRate),
-        unit_of_time: updatedOccurrence.rates.timeUnit.toUpperCase().replace(' ', '_'),
-        additional_rates: updatedOccurrence.rates.additionalRates.map(rate => ({
-          title: rate.name,
-          description: rate.description || '',
-          amount: `$${parseFloat(rate.amount).toFixed(2)}`
-        }))
-      },
-      calculated_cost: parseFloat(updatedOccurrence.totalCost),
-      base_total: `$${parseFloat(updatedOccurrence.baseTotal).toFixed(2)}`
-    };
-    
-    const updatedOccurrences = booking.occurrences.map(occ => 
-      occ.occurrence_id === transformedOccurrence.occurrence_id ? transformedOccurrence : occ
-    );
-    
-    // Update booking with new occurrences and recalculate costs
-    setBooking(prev => ({
-      ...prev,
-      occurrences: updatedOccurrences,
-      cost_summary: calculateTotalCosts(updatedOccurrences)
-    }));
-    
-    handleStatusUpdateAfterEdit();
-    setShowAddOccurrenceModal(false);
+  const handleSaveOccurrence = async (updatedOccurrence) => {
+    if (is_DEBUG) {
+      console.log('Saving occurrence:', updatedOccurrence);
+    }
+
+    try {
+      let token = Platform.OS === 'web' ? sessionStorage.getItem('userToken') : await AsyncStorage.getItem('userToken');
+
+      // Transform the occurrence data for the backend
+      const occurrenceData = {
+        occurrence_id: updatedOccurrence.id || updatedOccurrence.occurrence_id,  // Try both id and occurrence_id
+        start_date: updatedOccurrence.startDate,
+        end_date: updatedOccurrence.endDate,
+        start_time: updatedOccurrence.startTime,
+        end_time: updatedOccurrence.endTime,
+        rates: {
+          base_rate: updatedOccurrence.rates.baseRate,
+          additional_animal_rate: updatedOccurrence.rates.additionalAnimalRate,
+          applies_after: updatedOccurrence.rates.appliesAfterAnimals,
+          unit_of_time: updatedOccurrence.rates.timeUnit.toUpperCase().replace(/ /g, '_'),
+          holiday_rate: updatedOccurrence.rates.holidayRate,
+          holiday_days: 0,
+          additional_rates: updatedOccurrence.rates.additionalRates.map(rate => ({
+            title: rate.name,
+            description: rate.description || '',
+            amount: `$${rate.amount}`
+          }))
+        }
+      };
+
+      if (is_DEBUG) {
+        console.log('Sending occurrence data to backend:', occurrenceData);
+      }
+
+      // Real API mode
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      // First update the occurrence
+      const updateResponse = await axios.patch(
+        `${API_BASE_URL}/api/booking-drafts/v1/${booking.booking_id}/update/`,
+        { occurrences: [occurrenceData] },
+        { headers: { Authorization: `Bearer ${token}` }}
+      );
+
+      if (is_DEBUG) {
+        console.log('Backend update response:', updateResponse.data);
+      }
+
+      // Then fetch the latest booking data to ensure we have the most up-to-date state
+      const bookingResponse = await axios.get(
+        `${API_BASE_URL}/api/bookings/v1/${booking.booking_id}/?is_prorated=true`,
+        { headers: { Authorization: `Bearer ${token}` }}
+      );
+
+      if (is_DEBUG) {
+        console.log('Fetched updated booking data:', bookingResponse.data);
+      }
+
+      // Transform API response to match the expected format
+      const transformedBooking = {
+        ...bookingResponse.data,
+        id: bookingResponse.data.booking_id,
+        clientName: bookingResponse.data.client_name,
+        professionalName: bookingResponse.data.professional_name,
+        serviceType: bookingResponse.data.service_details.service_type,
+        animalType: bookingResponse.data.service_details.animal_type,
+        numberOfPets: bookingResponse.data.service_details.num_pets,
+        costs: bookingResponse.data.cost_summary,
+        status: bookingResponse.data.status
+      };
+
+      // Update the booking state with the fresh data
+      setBooking(transformedBooking);
+
+      setShowAddOccurrenceModal(false);
+    } catch (error) {
+      console.error('Error saving occurrence:', error);
+      if (is_DEBUG) {
+        console.log('Error details:', error.response?.data || error.message);
+      }
+      Alert.alert('Error', 'Failed to save occurrence details');
+    }
   };
 
-  const handleAddOccurrence = (newOccurrence) => {
-    const transformedOccurrence = {
-      occurrence_id: `occ${booking.occurrences.length + 1}`,
-      start_date: newOccurrence.startDate,
-      end_date: newOccurrence.endDate,
-      start_time: newOccurrence.startTime,
-      end_time: newOccurrence.endTime,
-      rates: {
-        base_rate: parseFloat(newOccurrence.rates.baseRate),
-        additional_animal_rate: parseFloat(newOccurrence.rates.additionalAnimalRate),
-        applies_after: newOccurrence.rates.appliesAfterAnimals,
-        holiday_rate: parseFloat(newOccurrence.rates.holidayRate),
-        unit_of_time: newOccurrence.rates.timeUnit.toUpperCase().replace(' ', '_'),
-        additional_rates: newOccurrence.rates.additionalRates.map(rate => ({
-          title: rate.name,
-          description: rate.description || '',
-          amount: `$${parseFloat(rate.amount).toFixed(2)}`
-        }))
-      },
-      calculated_cost: parseFloat(newOccurrence.totalCost),
-      base_total: `$${parseFloat(newOccurrence.baseTotal || newOccurrence.rates.baseRate).toFixed(2)}`
-    };
-    
-    const updatedOccurrences = [...booking.occurrences, transformedOccurrence];
-    
-    setBooking(prev => ({
-      ...prev,
-      occurrences: updatedOccurrences,
-      cost_summary: calculateTotalCosts(updatedOccurrences)
-    }));
-    
-    handleStatusUpdateAfterEdit();
-    setShowAddOccurrenceModal(false);
+  const handleAddOccurrence = async (newOccurrence) => {
+    try {
+      if (!booking) return;
+
+      if (is_DEBUG) {
+        console.log('Adding new occurrence:', newOccurrence);
+      }
+
+      if (is_prototype) {
+        const transformedOccurrence = {
+          occurrence_id: `occ${booking.occurrences.length + 1}`,
+          start_date: newOccurrence.startDate,
+          end_date: newOccurrence.endDate,
+          start_time: newOccurrence.startTime,
+          end_time: newOccurrence.endTime,
+          rates: {
+            base_rate: newOccurrence.rates.baseRate,
+            additional_animal_rate: newOccurrence.rates.additionalAnimalRate,
+            applies_after: newOccurrence.rates.appliesAfterAnimals,
+            holiday_rate: newOccurrence.rates.holidayRate,
+            unit_of_time: newOccurrence.rates.timeUnit.toUpperCase().replace(' ', '_'),
+            additional_rates: newOccurrence.rates.additionalRates.map(rate => ({
+              title: rate.name,
+              description: rate.description || '',
+              amount: `$${parseFloat(rate.amount).toFixed(2)}`
+            }))
+          },
+          calculated_cost: newOccurrence.totalCost,
+          base_total: `$${parseFloat(newOccurrence.baseTotal || newOccurrence.rates.baseRate).toFixed(2)}`
+        };
+
+        const updatedOccurrences = [...booking.occurrences, transformedOccurrence];
+
+        setBooking(prev => ({
+          ...prev,
+          occurrences: updatedOccurrences,
+          cost_summary: calculateTotalCosts(updatedOccurrences)
+        }));
+
+        handleStatusUpdateAfterEdit();
+        setShowAddOccurrenceModal(false);
+        return;
+      }
+
+      // Real API mode
+      const token = Platform.OS === 'web' ? sessionStorage.getItem('userToken') : await AsyncStorage.getItem('userToken');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      // Transform the occurrence data to match backend expectations
+      const occurrenceData = {
+        start_date: newOccurrence.startDate,
+        end_date: newOccurrence.endDate,
+        start_time: newOccurrence.startTime,
+        end_time: newOccurrence.endTime,
+        rates: {
+          base_rate: newOccurrence.rates.baseRate,
+          additional_animal_rate: newOccurrence.rates.additionalAnimalRate,
+          applies_after: newOccurrence.rates.appliesAfterAnimals,
+          holiday_rate: newOccurrence.rates.holidayRate,
+          unit_of_time: newOccurrence.rates.timeUnit.toUpperCase().replace(' ', '_'),
+          additional_rates: newOccurrence.rates.additionalRates.map(rate => ({
+            title: rate.name,
+            description: rate.description || '',
+            amount: `$${parseFloat(rate.amount).toFixed(2)}`
+          }))
+        }
+      };
+
+      if (is_DEBUG) {
+        console.log('Sending new occurrence data to backend:', occurrenceData);
+      }
+
+      const response = await axios.patch(
+        `${API_BASE_URL}/api/booking-drafts/v1/${booking.booking_id}/update/`,
+        { occurrences: [occurrenceData] },
+        { headers: { Authorization: `Bearer ${token}` }}
+      );
+
+      if (is_DEBUG) {
+        console.log('Backend response:', response.data);
+      }
+
+      // Update booking status and data from response
+      if (response.data.booking_status) {
+        setBooking(prevBooking => ({
+          ...prevBooking,
+          status: response.data.booking_status
+        }));
+      }
+
+      setShowAddOccurrenceModal(false);
+    } catch (error) {
+      console.error('Error adding occurrence:', error);
+      if (is_DEBUG) {
+        console.log('Error details:', error.response?.data || error.message);
+      }
+      Alert.alert('Error', 'Failed to add occurrence');
+    }
   };
 
   const handleStatusUpdateAfterEdit = async () => {
@@ -847,6 +954,7 @@ const BookingDetails = () => {
       // In prototype mode, use the same data structure as API
       const transformedOccurrence = {
         id: occurrence.occurrence_id,
+        occurrence_id: occurrence.occurrence_id,  // Make sure we set both id and occurrence_id
         startDate: occurrence.start_date,
         endDate: occurrence.end_date,
         startTime: occurrence.start_time,
@@ -881,6 +989,7 @@ const BookingDetails = () => {
     // Non-prototype mode - original transformation logic
     const transformedOccurrence = {
       id: occurrence.occurrence_id,
+      occurrence_id: occurrence.occurrence_id,  // Make sure we set both id and occurrence_id
       startDate: occurrence.start_date,
       endDate: occurrence.end_date,
       startTime: occurrence.start_time,
@@ -1002,7 +1111,7 @@ const BookingDetails = () => {
           </View>
         )}
         <View style={styles.summaryRow}>
-          <Text style={styles.summaryText}>Taxes (9%):</Text>
+          <Text style={styles.summaryText}>Taxes (8%):</Text>
           <Text style={styles.summaryText}>${(booking?.cost_summary?.taxes || 0).toFixed(2)}</Text>
         </View>
         <View style={[styles.summaryRow, styles.totalRow]}>
@@ -1646,7 +1755,9 @@ const BookingDetails = () => {
             setSelectedOccurrence(null);
           }, 300);
         }}
-        onAdd={selectedOccurrence ? handleSaveOccurrence : handleAddOccurrence}
+        onAdd={selectedOccurrence ? 
+          (updatedData) => handleSaveOccurrence({...updatedData, occurrence_id: selectedOccurrence.occurrence_id}) : 
+          handleAddOccurrence}
         defaultRates={booking?.rates}
         initialOccurrence={selectedOccurrence}
         isEditing={!!selectedOccurrence}

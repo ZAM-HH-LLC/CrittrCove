@@ -1,6 +1,11 @@
 from django.db import models
 from django.core.serializers.json import DjangoJSONEncoder
 from decimal import Decimal
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+import logging
+
+logger = logging.getLogger(__name__)
 
 class BookingOccurrenceRate(models.Model):
     """Model for storing multiple rates as JSON for each booking occurrence"""
@@ -27,13 +32,13 @@ class BookingOccurrenceRate(models.Model):
         return f"Rates for {self.occurrence}"
 
     def get_total(self):
-        """Calculate total from all rates"""
+        """Get the total of all rates"""
         total = Decimal('0.00')
-        for rate in self.rates:
-            # Remove '$' and convert to Decimal
-            amount = Decimal(rate['amount'].replace('$', '').strip())
-            total += amount
-        return total
+        if self.rates:
+            for rate in self.rates:
+                amount = Decimal(rate['amount'].replace('$', '').strip())
+                total += amount
+        return total.quantize(Decimal('0.01'))
 
     def clean(self):
         """Validate the rates JSON structure"""
@@ -72,3 +77,28 @@ class BookingOccurrenceRate(models.Model):
                 raise ValidationError({
                     'rates': f'Invalid amount format: {amount}'
                 })
+
+@receiver([post_save], sender=BookingOccurrenceRate)
+def update_occurrence_calculated_cost(sender, instance, created, **kwargs):
+    """
+    Signal handler to update the BookingOccurrence calculated cost when rates change
+    """
+    occurrence = instance.occurrence
+    
+    # Get the total from occurrence rates
+    occurrence_rates_total = instance.get_total()
+    
+    # Get the calculated cost from booking details
+    booking_details_cost = Decimal('0.00')
+    booking_details = occurrence.booking_details.first()
+    if booking_details:
+        booking_details_cost = booking_details.calculate_occurrence_cost(is_prorated=True)
+    
+    # Log the values
+    logger.info(f"Updating occurrence {occurrence.occurrence_id} calculated cost:")
+    logger.info(f"Booking details cost: ${booking_details_cost}")
+    logger.info(f"Occurrence rates total: ${occurrence_rates_total}")
+    logger.info(f"Total: ${booking_details_cost + occurrence_rates_total}")
+    
+    # Update the occurrence's calculated cost
+    occurrence.update_calculated_cost()

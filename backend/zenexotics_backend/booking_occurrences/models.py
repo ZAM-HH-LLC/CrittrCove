@@ -1,6 +1,9 @@
 from django.db import models
 from decimal import Decimal
 from datetime import datetime
+import logging
+
+logger = logging.getLogger(__name__)
 
 class BookingOccurrence(models.Model):
     STATUS_CHOICES = [
@@ -26,6 +29,7 @@ class BookingOccurrence(models.Model):
     last_modified_by = models.CharField(max_length=50, choices=CREATOR_CHOICES)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    calculated_cost = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
 
     class Meta:
         db_table = 'booking_occurrences'
@@ -84,22 +88,46 @@ class BookingOccurrence(models.Model):
         return Decimal('0.00')
 
     def calculated_cost(self, is_prorated=True):
-        """Calculate total cost from all rates in the JSON array, accounting for duration"""
+        """Return the total cost from booking details and occurrence rates"""
         try:
-            if hasattr(self, 'rates') and self.rates.rates:
-                total = Decimal('0.00')
-                
-                # Calculate base rate cost with time units
-                base_rate_cost = self.calculate_base_rate_cost(is_prorated)
-                total += base_rate_cost
-                
-                # Add other rates as-is
-                for rate in self.rates.rates:
-                    if rate['title'] != 'Base Rate':
-                        amount = Decimal(rate['amount'].replace('$', '').strip())
-                        total += amount
-                
-                return total.quantize(Decimal('0.01'))
-        except (AttributeError, KeyError):
-            pass
-        return Decimal('0.00')
+            total = Decimal('0.00')
+            
+            # Get the calculated cost from booking details
+            booking_details = self.booking_details.first()
+            if booking_details:
+                total += booking_details.calculate_occurrence_cost(is_prorated)
+            
+            # Add the total from occurrence rates
+            if hasattr(self, 'rates'):
+                total += self.rates.get_total()
+            
+            return total.quantize(Decimal('0.01'))
+        except (AttributeError, KeyError) as e:
+            logger.error(f"Error calculating cost for occurrence {self.occurrence_id}: {str(e)}")
+            return Decimal('0.00')
+
+    def update_calculated_cost(self):
+        """Update the calculated cost field with the sum of booking details cost and occurrence rates total"""
+        try:
+            total = Decimal('0.00')
+            
+            # Get the calculated cost from booking details
+            booking_details = self.booking_details.first()
+            if booking_details:
+                total += booking_details.calculate_occurrence_cost(is_prorated=True)
+            
+            # Add the total from occurrence rates
+            if hasattr(self, 'rates'):
+                total += self.rates.get_total()
+            
+            # Update and save the field
+            self.calculated_cost = total.quantize(Decimal('0.01'))
+            self.save(update_fields=['calculated_cost'])
+            
+            logger.info(f"Updated occurrence {self.occurrence_id} calculated cost to: ${self.calculated_cost}")
+        except Exception as e:
+            logger.error(f"Error updating calculated cost for occurrence {self.occurrence_id}: {str(e)}")
+
+    def get_calculated_cost(self):
+        """Return the stored calculated cost"""
+        return self.calculated_cost
