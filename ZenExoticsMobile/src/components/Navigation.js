@@ -166,7 +166,7 @@ export default function Navigation({ navigation }) {
         { title: 'Home', icon: 'home', route: 'Home' },
         { title: 'Sign In', icon: 'login', route: 'SignIn' },
         { title: 'Sign Up', icon: 'account-plus', route: 'SignUp' },
-        { title: 'Become Pro', icon: 'clipboard-text-outline', route: 'BecomeProfessional' },
+        { title: 'Become Pro', icon: 'clipboard-text-outline', route: 'Waitlist' },
         { title: 'More', icon: 'dots-horizontal', route: 'More' },
       ];
     } else if (userRole === 'professional') {

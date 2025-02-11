@@ -20,10 +20,10 @@ export const AuthProvider = ({ children }) => {
   const [firstName, setFirstName] = useState('');
 
   // SET TO "true" FOR NO API CALLS
-  const [is_prototype, setIsPrototype] = useState(false);
+  const [is_prototype, setIsPrototype] = useState(true);
 
   // Set is_DEBUG to true by default in prototype mode
-  const [is_DEBUG, setIsDebug] = useState(true);
+  const [is_DEBUG, setIsDebug] = useState(false);
 
   // Preload Stripe modules when user signs in
   useEffect(() => {

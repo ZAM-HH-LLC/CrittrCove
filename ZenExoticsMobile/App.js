@@ -11,6 +11,8 @@ import { API_BASE_URL } from './src/config/config';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createNavigationContainerRef } from '@react-navigation/native';
 import { Linking } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { navigateToFrom } from './src/components/Navigation';
 
 // Import all your screen components
 import HomeScreen from './src/screens/HomeScreen';
@@ -49,6 +51,7 @@ import BookingDetails from './src/screens/BookingDetails';
 import ServiceManagerScreen from './src/screens/ServiceManagerScreen';
 import BlogScreen from './src/screens/BlogScreen';
 import BlogPost from './src/screens/BlogPost';
+import Waitlist from './src/screens/Waitlist';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -90,6 +93,7 @@ const screens = [
   { name: 'ServiceManager', component: ServiceManagerScreen },
   { name: 'Blog', component: BlogScreen },
   { name: 'BlogPost', component: BlogPost },
+  { name: 'Waitlist', component: Waitlist },
 ];
 
 const linking = {
@@ -151,7 +155,8 @@ const linking = {
       BookingDetails: 'booking-details',
       ServiceManager: 'service-manager',
       Blog: 'blog',
-      BlogPost: 'blog-post'
+      BlogPost: 'blog-post',
+      Waitlist: 'waitlist'
     }
   }
 };
@@ -182,6 +187,7 @@ function TabNavigator() {
 
 const PrototypeWarning = () => {
   const [isVisible, setIsVisible] = useState(true);
+  const navigation = useNavigation();
 
   useEffect(() => {
     const checkBannerStatus = async () => {
@@ -225,7 +231,7 @@ const PrototypeWarning = () => {
         </Text>
         <TouchableOpacity 
           style={styles.waitlistButton}
-          onPress={() => Linking.openURL('https://docs.google.com/forms/d/e/1FAIpQLSesHBn9IydQwf0kvr-pz-RvVW_UMs61Y6mvauVfXvdFewFwRw/viewform?usp=header')}
+          onPress={() => navigateToFrom(navigation, 'Waitlist', 'Home')}
         >
           <Text style={styles.waitlistButtonText}>Join Waitlist</Text>
         </TouchableOpacity>

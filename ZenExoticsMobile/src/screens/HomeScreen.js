@@ -355,7 +355,7 @@ export default function HomeScreen({ navigation }) {
                 </View>
               </View>
               <View style={styles.buttonContainer}>
-                <TouchableOpacity style={styles.actionButton} onPress={() => Linking.openURL('https://docs.google.com/forms/d/e/1FAIpQLSesHBn9IydQwf0kvr-pz-RvVW_UMs61Y6mvauVfXvdFewFwRw/viewform?usp=header')}>
+                <TouchableOpacity style={styles.actionButton} onPress={() => navigateToFrom(navigation, 'Waitlist', 'Home')}>
                   <Text style={styles.buttonText}>Sign up Today!</Text>
                 </TouchableOpacity>
               </View>
@@ -403,7 +403,7 @@ export default function HomeScreen({ navigation }) {
                 </View>
               </View>
               <View style={styles.buttonContainer}>
-                <TouchableOpacity style={styles.actionButton} onPress={() => Linking.openURL('https://docs.google.com/forms/d/e/1FAIpQLSesHBn9IydQwf0kvr-pz-RvVW_UMs61Y6mvauVfXvdFewFwRw/viewform?usp=header')}>
+                <TouchableOpacity style={styles.actionButton} onPress={() => navigateToFrom(navigation, 'Waitlist', 'Home')}>
                   <Text style={styles.buttonText}>Become a Professional</Text>
                 </TouchableOpacity>
               </View>
@@ -553,7 +553,7 @@ export default function HomeScreen({ navigation }) {
         </Text>
         <TouchableOpacity 
           style={[styles.actionButton, styles.waitlistButton]} 
-          onPress={() => Linking.openURL('https://docs.google.com/forms/d/e/1FAIpQLSesHBn9IydQwf0kvr-pz-RvVW_UMs61Y6mvauVfXvdFewFwRw/viewform?usp=header')}
+          onPress={() => navigateToFrom(navigation, 'Waitlist', 'Home')}
         >
           <Text style={styles.buttonText}>Join Waitlist</Text>
         </TouchableOpacity>
