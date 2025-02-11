@@ -6,8 +6,8 @@ class Conversation(models.Model):
     participant1 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='conversations_as_participant1')
     participant2 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='conversations_as_participant2')
     role_map = models.JSONField()
-    last_message = models.TextField()
-    last_message_time = models.DateTimeField()
+    last_message = models.TextField(null=True, blank=True)
+    last_message_time = models.DateTimeField(null=True, blank=True)
     unread_count = models.IntegerField(default=0)
     metadata = models.JSONField(null=True, blank=True)
 

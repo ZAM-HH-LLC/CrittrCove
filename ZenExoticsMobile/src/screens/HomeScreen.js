@@ -36,7 +36,7 @@ const reviews = [
   },
   {
     image: require('../../assets/user4.png'),
-    text: "\"CrittrCove has been amazing for finding reliable pet professionals!",
+    text: "\"I've had a fantastic experience with CrittrCove's pet grooming services!",
     author: "Alice Brown"
   }
 ];
@@ -56,7 +56,6 @@ export default function HomeScreen({ navigation }) {
   };
 
   // Add state for social media popup visibility
-  const [showSocialMedia, setShowSocialMedia] = useState(false);
   const [isUserScrolling, setIsUserScrolling] = useState(false);
 
   const AutoScrollSection = ({ data, renderItem, title, cardWidth = 320 }) => {
@@ -521,9 +520,6 @@ export default function HomeScreen({ navigation }) {
       <BlogSection />
 
       {/* Roadmap Section */}
-
-
-      {/* Roadmap Section */}
       <RoadmapSection />
 
       {/* FAQ Section */}
@@ -564,42 +560,25 @@ export default function HomeScreen({ navigation }) {
 
       {/* Footer */}
       <View style={styles.footer}>
-        <Text style={styles.footerLink} onPress={() => navigateToFrom(navigation, 'PrivacyPolicy', 'Home')}>Privacy Policy</Text>
-        <Text style={styles.footerLink} onPress={() => navigateToFrom(navigation, 'TermsOfService', 'Home')}>Terms of Service</Text>
-        <Text style={styles.footerLink} onPress={() => setShowSocialMedia(true)}>Follow us on Social Media</Text>
-      </View>
-
-      {/* Social Media Popup */}
-      {showSocialMedia && (
-        <View style={styles.socialMediaPopup}>
-          <View style={styles.socialIconsContainer}>
-            <TouchableOpacity 
-              style={styles.socialIcon} 
-              onPress={() => Linking.openURL('https://instagram.com/your-profile')}
-            >
-              <FontAwesome name="instagram" size={24} color={theme.colors.primary} />
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={styles.socialIcon} 
-              onPress={() => Linking.openURL('https://discord.com/your-profile')}
-            >
-              <FontAwesome5 name="discord" size={24} color={theme.colors.primary} />
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={styles.socialIcon} 
-              onPress={() => Linking.openURL('https://facebook.com/your-profile')}
-            >
-              <FontAwesome name="facebook" size={24} color={theme.colors.primary} />
-            </TouchableOpacity>
-          </View>
+        <View style={styles.socialIconsRow}>
           <TouchableOpacity 
-            style={styles.closeButton} 
-            onPress={() => setShowSocialMedia(false)}
+            style={styles.socialIcon} 
+            onPress={() => Linking.openURL('https://instagram.com/thezensitter')}
           >
-            <FontAwesome name="times" size={20} color={theme.colors.primary} />
+            <FontAwesome name="instagram" size={24} color="white" />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.socialIcon} 
+            onPress={() => Linking.openURL('https://discord.com/your-profile')}
+          >
+            <FontAwesome5 name="discord" size={24} color="white" />
           </TouchableOpacity>
         </View>
-      )}
+        <View style={styles.footerLinksRow}>
+          <Text style={styles.footerLink} onPress={() => navigateToFrom(navigation, 'PrivacyPolicy', 'Home')}>Privacy Policy</Text>
+          <Text style={styles.footerLink} onPress={() => navigateToFrom(navigation, 'TermsOfService', 'Home')}>Terms of Service</Text>
+        </View>
+      </View>
     </ScrollView>
   );
 }
@@ -1040,62 +1019,25 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.primary,
     alignItems: 'center',
   },
+  socialIconsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 15,
+  },
+  socialIcon: {
+    marginHorizontal: 15,
+    padding: 5,
+  },
+  footerLinksRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+  },
   footerLink: {
     color: 'white',
     fontFamily: theme.fonts.regular.fontFamily,
-    margin: 5,
+    marginHorizontal: 15,
     textDecorationLine: 'underline',
-  },
-  socialMediaPopup: {
-    position: 'absolute',
-    bottom: 60,
-    left: '50%',
-    transform: [{ translateX: -100 }],
-    width: 200,
-    backgroundColor: 'white',
-    padding: 10,
-    borderRadius: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    alignItems: 'center',
-  },
-  seeAllButton: {
-    marginTop: 10,
-  },
-  blogContainer: {
-    width: '100%',
-    maxWidth: 1200,
-    marginLeft: 'auto',
-    marginRight: 'auto',
-    overflowX: 'auto',
-    WebkitOverflowScrolling: 'touch',
-    msOverflowStyle: 'auto',
-    scrollbarWidth: 'auto',
-    scrollbarColor: `${theme.colors.primary} transparent`,
-  },
-  blogScrollContainer: {
-    flexDirection: 'row',
-    minWidth: 'min-content',
-    gap: 10,
-    padding: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  socialIconsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-    marginBottom: 10,
-  },
-  socialIcon: {
-    padding: 10,
-  },
-  closeButton: {
-    marginTop: 5,
-    padding: 5,
   },
   successMessage: {
     fontSize: 18,

@@ -23,7 +23,7 @@ const RoadmapSection = () => {
       id: 2,
     //   number: '02',
       title: 'Launch of MVP',
-      description: 'This is when users will be able to sign up and use the app fully for the first time! For a full feature list, please check our blog or discord.',
+      description: 'This is when users will be able to sign up and use the app fully for the first time on the website! For a full feature list, please check our blog or discord.',
       icon: 'dragon',
       color: theme.colors.mainColors.quinary // Medium Purple
     },

@@ -3,8 +3,8 @@ from .models import UserMessage
 
 @admin.register(UserMessage)
 class UserMessageAdmin(admin.ModelAdmin):
-    list_display = ('message_id', 'sender', 'conversation', 'timestamp', 'status', 'is_booking_request')
-    list_filter = ('status', 'is_booking_request', 'timestamp')
+    list_display = ('message_id', 'sender', 'conversation', 'timestamp', 'status', 'type_of_message', 'is_clickable')
+    list_filter = ('status', 'type_of_message', 'is_clickable', 'timestamp')
     search_fields = ('content', 'sender__email', 'conversation__conversation_id')
     
     fieldsets = (
@@ -19,9 +19,10 @@ class UserMessageAdmin(admin.ModelAdmin):
         ('Booking Details', {
             'fields': (
                 'booking',
-                'is_booking_request',
+                'type_of_message',
+                'is_clickable',
             ),
-            'description': 'Information related to bookings'
+            'description': 'Information related to bookings and message behavior'
         }),
         ('Status & Metadata', {
             'fields': (
