@@ -511,6 +511,7 @@ const createStyles = (screenWidth) => StyleSheet.create({
 });
 
 const MessageHistory = ({ navigation, route }) => {
+  console.log("TESTING MVP PUSH TO MVP AND gh-pages-test being deployed")
   const { colors } = useTheme();
   const [screenWidth, setScreenWidth] = useState(Dimensions.get('window').width);
   const styles = createStyles(screenWidth); // Initialize styles here
