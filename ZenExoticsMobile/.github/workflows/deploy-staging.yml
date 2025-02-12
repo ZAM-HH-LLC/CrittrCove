@@ -1,0 +1,30 @@
+name: Deploy Staging (MVP → gh-pages-test)
+
+on:
+  push:
+    branches:
+      - mvp   # Triggers on push to the mvp branch
+  workflow_dispatch: # Allows manual deployment
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Install Dependencies and Build
+        run: |
+          npm install
+          npm run build:staging  # Runs the build script from package.json
+
+      - name: Create CNAME for Staging
+        run: echo "staging.crittrcove.com" > web/CNAME  # Correct path to match build directory
+
+      - name: Deploy to GitHub Pages (Staging)
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./web  # Matches package.json build script
+          publish_branch: gh-pages-test  # Staging environment
