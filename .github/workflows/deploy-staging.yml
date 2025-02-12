@@ -25,5 +25,9 @@ jobs:
         run: echo "staging.crittrcove.com" > CNAME
 
       - name: Deploy to GitHub Pages (Staging)
-        working-directory: ZenExoticsMobile  # ✅ Run deployment from the correct folder
-        run: npm run deploy:staging
+        working-directory: ZenExoticsMobile
+        run: |
+          git config --global user.email "github-actions@github.com"
+          git config --global user.name "github-actions"
+          npx gh-pages -d web-build -b gh-pages-test --repo "https://${{ secrets.GITHUB_TOKEN }}@github.com/ZAM-HH-LLC/CrittrCove.git"
+      
