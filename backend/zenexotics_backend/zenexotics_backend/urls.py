@@ -65,7 +65,8 @@ urlpatterns = [
         path('professional-reviews/', include('professional_reviews.urls')),
         
         # Communication
-        path('user-messages/', include('user_messages.urls')),
+        path('messages/', include('user_messages.urls')),
+        path('conversations/', include('conversations.urls')),
         
         # Payment Management
         path('payment-methods/', include('payment_methods.urls')),

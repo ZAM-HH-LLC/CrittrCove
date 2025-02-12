@@ -10,10 +10,11 @@ class UserMessage(models.Model):
     ]
 
     MESSAGE_TYPE_CHOICES = [
-        ('initial_booking_request', 'Initial Booking Request'),
-        ('normal_message', 'Normal Message'),
-        ('approval_request', 'Approval Request'),
-        ('request_changes', 'Request Changes'),
+        ('initial_booking_request', 'Initial Booking Request'), # This is the first message sent by the client to the professional
+        ('normal_message', 'Normal Message'), # This is a normal message sent by the client/pro to the pro/client
+        ('approval_request', 'Approval Request'), # This is a request for approval from the professional to client
+        ('request_changes', 'Request Changes'), # This is a request for changes from the professional
+        ('send_approved_message', 'Send Approved Message'), # This is a message sent by the client to the pro after the booking is approved
     ]
 
     message_id = models.AutoField(primary_key=True)

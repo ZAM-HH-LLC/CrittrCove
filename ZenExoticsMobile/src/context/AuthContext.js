@@ -11,6 +11,20 @@ export const SCREEN_HEIGHT = Dimensions.get('window').height;
 
 export const AuthContext = createContext();
 
+// Add getStorage function
+export const getStorage = async (key) => {
+  try {
+    if (Platform.OS === 'web') {
+      return sessionStorage.getItem(key);
+    } else {
+      return await AsyncStorage.getItem(key);
+    }
+  } catch (error) {
+    console.error('Error getting from storage:', error);
+    return null;
+  }
+};
+
 export const AuthProvider = ({ children }) => {
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [userRole, setUserRole] = useState(null);
@@ -22,7 +36,7 @@ export const AuthProvider = ({ children }) => {
   // SET TO "true" FOR NO API CALLS
   const [is_prototype, setIsPrototype] = useState(true);
 
-  // Set is_DEBUG to true by default in prototype mode
+  // Set is_DEBUG to false by default in prototype mode
   const [is_DEBUG, setIsDebug] = useState(false);
 
   // Preload Stripe modules when user signs in

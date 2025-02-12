@@ -5,6 +5,7 @@ from .models import User
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
     list_display = (
+        'user_id',
         'email', 
         'name', 
         'is_active',
