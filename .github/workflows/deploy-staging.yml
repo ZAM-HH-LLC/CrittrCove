@@ -18,16 +18,15 @@ jobs:
         working-directory: ZenExoticsMobile  # ✅ Set correct directory for npm
         run: |
           npm install --legacy-peer-deps
-          npm run build:staging
+          npm run build:staging  # ✅ This builds the `web-build` directory
 
       - name: Create CNAME for Staging
-        working-directory: ZenExoticsMobile/web-build  # ✅ Set correct directory for CNAME
+        working-directory: ZenExoticsMobile/web-build  # ✅ Ensure correct path
         run: echo "staging.crittrcove.com" > CNAME
 
       - name: Deploy to GitHub Pages (Staging)
-        working-directory: ZenExoticsMobile
-        run: |
-          git config --global user.email "github-actions@github.com"
-          git config --global user.name "github-actions"
-          npx gh-pages -d web-build -b gh-pages-test --repo "https://${{ secrets.GITHUB_TOKEN }}@github.com/ZAM-HH-LLC/CrittrCove.git"
-      
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ZenExoticsMobile/web-build  # ✅ Ensure this is correct
+          publish_branch: gh-pages-test  # ✅ This is where staging should deploy
