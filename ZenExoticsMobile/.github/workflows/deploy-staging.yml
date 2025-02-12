@@ -17,14 +17,14 @@ jobs:
       - name: Install Dependencies and Build
         run: |
           npm install
-          npm run build  # Runs the build script from package.json
+          npm run build:staging  # Runs the build script from package.json
 
       - name: Create CNAME for Staging
-        run: echo "staging.crittrcove.com" > web-build/CNAME  # Change domain if needed
+        run: echo "staging.crittrcove.com" > web/CNAME  # Correct path to match build directory
 
       - name: Deploy to GitHub Pages (Staging)
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./web-build  # Ensure this is where your build goes
+          publish_dir: ./web  # Matches package.json build script
           publish_branch: gh-pages-test  # Staging environment
