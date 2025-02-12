@@ -9,9 +9,9 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "build:staging": "npx expo export:web",
-    "deploy:staging": "gh-pages -d web -b gh-pages-test",
+    "deploy:staging": "gh-pages -d web-build -b gh-pages-test",
     "build": "npx expo export:web",
-    "deploy": "gh-pages -d web",
+    "deploy": "gh-pages -d web-build",
     "deploy:full": "npm run build && npm run deploy"
   },
   "dependencies": {

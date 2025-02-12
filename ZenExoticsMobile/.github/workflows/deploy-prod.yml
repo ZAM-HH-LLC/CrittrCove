@@ -19,9 +19,12 @@ jobs:
           npm install
           npm run build  # Runs the build script from package.json
 
+      - name: Create CNAME for Production
+        run: echo "crittrcove.com" > web-build/CNAME  # Ensure production domain is set
+
       - name: Deploy to GitHub Pages (Production)
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./web  # Matches package.json build output
-          publish_branch: gh-pages  # Final production deployment
+          publish_dir: ./web-build  # Production output
+          publish_branch: gh-pages  # Production branch
