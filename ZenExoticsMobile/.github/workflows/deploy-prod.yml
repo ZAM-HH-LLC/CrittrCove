@@ -1,0 +1,27 @@
+name: Deploy Production (Main → gh-pages)
+
+on:
+  push:
+    branches:
+      - main  # Once MVP is stable, main will be the production trigger
+  workflow_dispatch: # Allows manual deployment
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Install Dependencies and Build
+        run: |
+          npm install
+          npm run build:full  # Runs the build script from package.json
+
+      - name: Deploy to GitHub Pages (Production)
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./web-build  # Ensure this is where your build goes
+          publish_branch: gh-pages  # Final production deployment
