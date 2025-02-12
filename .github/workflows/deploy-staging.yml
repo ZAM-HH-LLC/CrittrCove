@@ -24,8 +24,4 @@ jobs:
         run: echo "staging.crittrcove.com" > ZenExoticsMobile/web-build/CNAME  # ✅ Correct path
 
       - name: Deploy to GitHub Pages (Staging)
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ZenExoticsMobile/web-build  # ✅ Matches actual directory
-          publish_branch: gh-pages-test  # Staging branch
+        run: npm run deploy:staging
