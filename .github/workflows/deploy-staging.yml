@@ -24,9 +24,15 @@ jobs:
         working-directory: ZenExoticsMobile/web-build  # ✅ Ensure correct path
         run: echo "staging.crittrcove.com" > CNAME
 
+      - name: "Debug: Check if web-build exists"
+        run: |
+          ls -al ZenExoticsMobile/web-build || echo "web-build directory is missing!"
+
       - name: Deploy to GitHub Pages (Staging)
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ZenExoticsMobile/web-build  # ✅ Ensure this is correct
-          publish_branch: gh-pages-test  # ✅ This is where staging should deploy
+          publish_dir: ZenExoticsMobile/web-build
+          publish_branch: gh-pages-test
+          force_orphan: true  # ✅ Forces a fresh commit every time
+
