@@ -15,16 +15,17 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Install Dependencies and Build
+        working-directory: frontend  # ✅ Add this if package.json is in 'frontend/'
         run: |
           npm install
-          npm run build:staging  # Runs the build script from package.json
+          npm run build:staging
 
       - name: Create CNAME for Staging
-        run: echo "staging.crittrcove.com" > web-build/CNAME  # Ensure staging domain is set
+        run: echo "staging.crittrcove.com" > ZenExoticsMobile/web-build/CNAME  # ✅ Adjusted for correct path
 
       - name: Deploy to GitHub Pages (Staging)
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./web-build  # Staging output
+          publish_dir: frontend/web-build  # ✅ Ensure correct build directory
           publish_branch: gh-pages-test  # Staging branch
