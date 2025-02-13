@@ -11,8 +11,8 @@
     "build:staging": "npx expo export:web",
     "deploy:staging": "gh-pages -d web-build -b gh-pages-test",
     "build": "npx expo export:web",
-    "deploy": "gh-pages -d web-build",
-    "deploy:full": "npm run build && npm run deploy"
+    "deploy": "gh-pages --dist web-build --dotfiles --message 'Deploy to GitHub Pages [skip ci]' --no-history",
+    "deploy:full": "rm -rf node_modules/.cache/gh-pages && npm run build && npm run deploy"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.0",

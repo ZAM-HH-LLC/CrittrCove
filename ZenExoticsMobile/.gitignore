@@ -9,6 +9,9 @@ stuffleft to do.txt
 # Expo
 .expo/
 dist/
+web-build/
+web/
+web-build/*
 
 # Native
 *.orig.*
