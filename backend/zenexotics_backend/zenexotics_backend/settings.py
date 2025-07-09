@@ -85,15 +85,15 @@ DOMAIN_MAP = {
     'production': ['beta.crittrcove.com', 'crittrcove.com']
 }
 
-# # Allow override via environment variable
+# Allow override via environment variable
 # TODO CRITICAL: This is a security risk. We need to uncomment this.
-# ALLOWED_HOSTS_ENV = os.environ.get('ALLOWED_HOSTS')
-# if ALLOWED_HOSTS_ENV:
-#     ALLOWED_HOSTS = [h.strip() for h in ALLOWED_HOSTS_ENV.split(',')]
-# else:
-#     ALLOWED_HOSTS = DOMAIN_MAP.get(ENVIRONMENT, DOMAIN_MAP['development'])
+ALLOWED_HOSTS_ENV = os.environ.get('ALLOWED_HOSTS')
+if ALLOWED_HOSTS_ENV:
+    ALLOWED_HOSTS = [h.strip() for h in ALLOWED_HOSTS_ENV.split(',')]
+else:
+    ALLOWED_HOSTS = DOMAIN_MAP.get(ENVIRONMENT, DOMAIN_MAP['development'])
 
-ALLOWED_HOSTS = ['*']
+# ALLOWED_HOSTS = ['*']
 
 # Always disable DEBUG in staging/production
 DEBUG = IS_DEVELOPMENT
