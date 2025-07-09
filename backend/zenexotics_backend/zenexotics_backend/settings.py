@@ -18,21 +18,47 @@ import dj_database_url
 # Load environment variables
 load_dotenv()
 
+# Environment configuration - default development
+ENVIRONMENT = os.environ.get('DJANGO_ENVIRONMENT', 'development')
+IS_PRODUCTION = ENVIRONMENT == 'production'
+IS_STAGING = ENVIRONMENT == 'staging'
+IS_DEVELOPMENT = ENVIRONMENT == 'development'
+# HTTPS toggle for staging
+HTTPS_ENABLED_FOR_STAGING = True
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Media files configuration
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+if not IS_DEVELOPMENT:
+    # AWS S3 settings
+    AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
+    AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
+    AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME')
+    AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME', 'us-east-1')
+    AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
+    AWS_DEFAULT_ACL = 'public-read'
+    AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
+    AWS_LOCATION = 'media'
+    AWS_S3_FILE_OVERWRITE = True
+    
+    # S3 as default storage
+    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_LOCATION}/'
+else:
+    # Local storage settings
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 
-# Storage configuration
-DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
-FILE_UPLOAD_PERMISSIONS = 0o644  # Set appropriate file permissions
+# File upload permissions
+FILE_UPLOAD_PERMISSIONS = 0o644
 
 # Storage paths for different apps
 USER_PROFILE_PHOTOS_DIR = 'users/profile_photos'
 PET_PROFILE_PHOTOS_DIR = 'pets/profile_photos'
 PET_GALLERY_PHOTOS_DIR = 'pets/gallery_photos'
+MESSAGE_IMAGES_DIR = 'message_images'
 
 # Maximum upload size (5MB)
 MAX_UPLOAD_SIZE = 5242880
@@ -50,18 +76,27 @@ ALLOWED_IMAGE_TYPES = [
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-01_-+_6(0#!lg5z^7(y!a-1rf!3bemc!4$+zcuz73p^=!bf@^x"
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# Domain configuration
+DOMAIN_MAP = {
+    'development': ['localhost', '127.0.0.1', '10.0.2.2', '0.0.0.0'],
+    'staging': ['staging-ec2.crittrcove.com', '52.15.198.223'],
+    'production': ['beta.crittrcove.com', 'crittrcove.com']
+}
 
-ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
-    '10.0.2.2',  # Add this line
-    # Add other hosts as needed
-]
+# # Allow override via environment variable
+# TODO CRITICAL: This is a security risk. We need to uncomment this.
+# ALLOWED_HOSTS_ENV = os.environ.get('ALLOWED_HOSTS')
+# if ALLOWED_HOSTS_ENV:
+#     ALLOWED_HOSTS = [h.strip() for h in ALLOWED_HOSTS_ENV.split(',')]
+# else:
+#     ALLOWED_HOSTS = DOMAIN_MAP.get(ENVIRONMENT, DOMAIN_MAP['development'])
 
+ALLOWED_HOSTS = ['*']
+
+# Always disable DEBUG in staging/production
+DEBUG = IS_DEVELOPMENT
 
 # Application definition
 
@@ -75,6 +110,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
+    'channels',  # Add Django Channels
     
     # Core apps
     'users',
@@ -108,6 +144,7 @@ INSTALLED_APPS = [
     'review_moderation',
     'client_reviews',
     'professional_reviews',
+    'reviews',  # New consolidated reviews app
     
     # Communication apps
     'user_messages',
@@ -123,10 +160,13 @@ INSTALLED_APPS = [
     'interaction_logs',
     'error_logs',
     'engagement_logs',
+    'locations',  # New app for managing city-by-city rollout
 ]
 
 MIDDLEWARE = [
+    'zenexotics_backend.middleware_skip_ssl_redirect_for_health.SkipSSLRedirectForHealthCheckMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'core.middleware.AuthenticationLoggingMiddleware',
     'django.middleware.security.SecurityMiddleware',
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -134,6 +174,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 ROOT_URLCONF = "zenexotics_backend.urls"
@@ -202,7 +243,9 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -233,23 +276,98 @@ SIMPLE_JWT = {
 
 AUTH_USER_MODEL = 'users.User'  # Replace 'users' with your app name if different
 
-# Define the base URL for the frontend
-FRONTEND_BASE_URL = "http://localhost:19006"
+# Frontend base URL by environment
+FRONTEND_URL_MAP = {
+    'development': 'http://localhost:19006',
+    'staging': 'https://staging.crittrcove.com',
+    'production': 'https://crittrcove.com'
+}
 
-CORS_ALLOWED_ORIGINS = [
-    FRONTEND_BASE_URL,  # Use the FRONTEND_BASE_URL variable
+FRONTEND_BASE_URL = os.environ.get('FRONTEND_BASE_URL', FRONTEND_URL_MAP.get(ENVIRONMENT))
+
+# CORS settings by environment
+CORS_ALLOWED_ORIGINS = [FRONTEND_BASE_URL]
+if IS_DEVELOPMENT:
+    # Add Android emulator URLs
+    CORS_ALLOWED_ORIGINS.extend([
+        'http://10.0.2.2:19006',
+        'http://localhost:19006',
+        'http://10.0.0.169:19006',
+        'http://10.0.0.137:19006',  # Current LAN IP
+        'http://127.0.0.1:19006'
+    ])
+if IS_STAGING:
+    # Always allow both the deployed staging frontend and localhost for testing
+    CORS_ALLOWED_ORIGINS.append('https://staging.crittrcove.com')
+    CORS_ALLOWED_ORIGINS.append('https://staging-eb.crittrcove.com')
+    CORS_ALLOWED_ORIGINS.append('https://staging-ec2.crittrcove.com')
+    CORS_ALLOWED_ORIGINS.append('http://localhost:19006')
+if IS_PRODUCTION:
+    CORS_ALLOWED_ORIGINS.extend([
+        'https://ec2.crittrcove.com',
+        'https://crittrcove.com'
+    ])
+
+# CORS/CSRF trusted origins for all environments
+CSRF_TRUSTED_ORIGINS = []
+if IS_DEVELOPMENT:
+    CSRF_TRUSTED_ORIGINS.extend([
+        'http://10.0.2.2:19006',
+        'http://localhost:19006',
+        'http://10.0.0.169:19006',
+        'http://10.0.0.137:19006',  # Current LAN IP
+        'http://127.0.0.1:19006'
+    ])
+if IS_STAGING:
+    CSRF_TRUSTED_ORIGINS = [
+        'https://staging.crittrcove.com',
+        'https://staging-eb.crittrcove.com',
+        'https://staging-ec2.crittrcove.com',
+        'https://CrittrCoveStagingApp-env.eba-um5ew2ck.us-east-2.elasticbeanstalk.com',
+        'http://CrittrCoveStagingApp-env.eba-um5ew2ck.us-east-2.elasticbeanstalk.com'
+    ]
+    # If you want to allow local dev to POST to staging, add:
+    CSRF_TRUSTED_ORIGINS.append('http://localhost:19006')
+if IS_PRODUCTION:
+    CSRF_TRUSTED_ORIGINS = [
+        'https://crittrcove.com',
+        'https://beta.crittrcove.com'
+    ]
+
+CORS_ALLOW_CREDENTIALS = True
+CORS_EXPOSE_HEADERS = ['Content-Type', 'X-CSRFToken']
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
 ]
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'zam.hh.llc@gmail.com'
-EMAIL_HOST_PASSWORD = 'tnrz nsbl uhiu dmxb' # TODO: This is an app password for gmail, must change before deployment
-EMAIL_USE_SSL = False
+# Email configuration
+if IS_DEVELOPMENT:
+    EMAIL_BACKEND = 'core.email_backend.DevelopmentEmailBackend'
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
-CONTACT_EMAIL = 'zam.hh.llc@gmail.com'
-DEFAULT_FROM_EMAIL = 'zam.hh.llc@gmail.com'
+EMAIL_HOST = os.environ.get('EMAIL_HOST')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT'))
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS') == 'True'
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL') == 'True'
+
+# Contact and sender emails
+CONTACT_EMAIL = EMAIL_HOST_USER
+DEFAULT_FROM_EMAIL = f'CrittrCove <{EMAIL_HOST_USER}>'
+
+# Email deliverability settings
+EMAIL_TIMEOUT = 30  # Timeout in seconds
+EMAIL_SUBJECT_PREFIX = ''  # No prefix for cleaner subjects
 
 # Add this near your other logging configurations
 LOGGING = {
@@ -300,20 +418,66 @@ LOGGING = {
 # Add these settings for better session handling
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 SESSION_COOKIE_AGE = 86400 * 7  # 7 days
-SESSION_COOKIE_SECURE = False  # Set to True in production
+
+
+# Session and CSRF cookie security
+SESSION_COOKIE_SECURE = IS_PRODUCTION or (IS_STAGING and HTTPS_ENABLED_FOR_STAGING)
+CSRF_COOKIE_SECURE = IS_PRODUCTION or (IS_STAGING and HTTPS_ENABLED_FOR_STAGING)
+# The below field causes a race condition when adding a load balancer.
+# the workaround is to set the target group health check to be HTTPS once it is created.
+SECURE_SSL_REDIRECT = IS_PRODUCTION or (IS_STAGING and HTTPS_ENABLED_FOR_STAGING)
 SESSION_COOKIE_HTTPONLY = True
 SESSION_SAVE_EVERY_REQUEST = True
 
-CORS_ALLOW_CREDENTIALS = True
-CORS_EXPOSE_HEADERS = ['Content-Type', 'X-CSRFToken']
-CORS_ALLOW_HEADERS = [
-    'accept',
-    'accept-encoding',
-    'authorization',
-    'content-type',
-    'dnt',
-    'origin',
-    'user-agent',
-    'x-csrftoken',
-    'x-requested-with',
-]
+# NOTE: To redirect all HTTP traffic to HTTPS, set up a redirect rule in your AWS load balancer for port 80 to 443.
+# This is best practice for staging/production. It ensures all users use HTTPS and protects credentials in transit.
+# You do NOT need to do this for local development.
+
+# Django Channels
+ASGI_APPLICATION = "zenexotics_backend.asgi.application"
+
+# Channel Layers
+CHANNEL_LAYERS = {}
+if IS_PRODUCTION or IS_STAGING:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [os.environ.get("REDIS_URL", "redis://localhost:6379/0")],
+            },
+        },
+    }
+else:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer",
+        },
+    }
+
+# Security settings
+SECURE_HSTS_SECONDS = 31536000 if (not IS_DEVELOPMENT) else 0
+SECURE_HSTS_INCLUDE_SUBDOMAINS = not IS_DEVELOPMENT
+SECURE_HSTS_PRELOAD = not IS_DEVELOPMENT
+
+if IS_PRODUCTION or IS_STAGING:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+print("MBA IS_DEVELOPMENT: ", IS_DEVELOPMENT)
+# printing settings for debugging:
+if not IS_DEVELOPMENT:
+    print("MBA Settings for production:")
+    print(f"MBA CSRF_COOKIE_SECURE: {CSRF_COOKIE_SECURE}")
+    print(f"MBA SECURE_SSL_REDIRECT: {SECURE_SSL_REDIRECT}")
+    print(f"MBA SECURE_HSTS_SECONDS: {SECURE_HSTS_SECONDS}")
+    print(f"MBA SECURE_HSTS_INCLUDE_SUBDOMAINS: {SECURE_HSTS_INCLUDE_SUBDOMAINS}")
+    print(f"MBA SECURE_HSTS_PRELOAD: {SECURE_HSTS_PRELOAD}")
+    print(f"MBA SESSION_COOKIE_SECURE: {SESSION_COOKIE_SECURE}")
+    print(f"MBA SESSION_COOKIE_HTTPONLY: {SESSION_COOKIE_HTTPONLY}")
+    print(f"MBA SESSION_SAVE_EVERY_REQUEST: {SESSION_SAVE_EVERY_REQUEST}")
+    print(f"MBA CORS_ALLOW_CREDENTIALS: {CORS_ALLOW_CREDENTIALS}")
+    print(f"MBA CORS_EXPOSE_HEADERS: {CORS_EXPOSE_HEADERS}")
+    print(f"MBA CORS_ALLOW_HEADERS: {CORS_ALLOW_HEADERS}")
+    print(f"MBA ALLOWED_HOSTS: {ALLOWED_HOSTS}")
+    print(f"MBA DEBUG: {DEBUG}")
+    print(f"MBA ENVIRONMENT: {ENVIRONMENT}")
+    print(f"MBA FRONTEND_BASE_URL: {FRONTEND_BASE_URL}")

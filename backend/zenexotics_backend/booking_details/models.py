@@ -14,6 +14,9 @@ class BookingDetails(models.Model):
     applies_after = models.PositiveIntegerField(default=1, help_text="Additional pet rate applies after this many pets")
     holiday_rate = models.DecimalField(max_digits=10, decimal_places=2)
     calculated_rate = models.DecimalField(max_digits=10, decimal_places=2)
+    unit_of_time = models.CharField(max_length=20, default='Per Visit')
+    multiple = models.DecimalField(max_digits=10, decimal_places=5, default=1.00000)
+    nights = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         return f"Details for Occurrence {self.booking_occurrence.occurrence_id}"
@@ -27,29 +30,37 @@ class BookingDetails(models.Model):
         duration_hours = (end_datetime - start_datetime).total_seconds() / 3600
         
         unit_mapping = {
-            '15_MIN': 0.25,
-            '30_MIN': 0.5,
-            '45_MIN': 0.75,
-            '1_HOUR': 1,
-            '2_HOUR': 2,
-            '3_HOUR': 3,
-            '4_HOUR': 4,
-            '5_HOUR': 5,
-            '6_HOUR': 6,
-            '7_HOUR': 7,
-            '8_HOUR': 8,
-            '24_HOUR': 24,
-            'PER_DAY': 24,
-            'PER_VISIT': None,  # Special case - no proration
-            'WEEK': 168  # 24 * 7
+            '15 Min': 0.25,
+            '30 Min': 0.5,
+            '45 Min': 0.75,
+            '1 Hour': 1,
+            '2 Hour': 2,
+            '3 Hour': 3,
+            '4 Hour': 4,
+            '5 Hour': 5,
+            '6 Hour': 6,
+            '7 Hour': 7,
+            '8 Hour': 8,
+            '24 Hour': 24,
+            'Per Day': 24,
+            'Per Visit': None,  # Special case - no proration
+            'Per Night': 'Per Night',
+            'Week': 168  # 24 * 7
         }
 
-        unit_of_time = self.booking_occurrence.booking.service_id.unit_of_time
-        unit_hours = unit_mapping.get(unit_of_time)
+        # Debug logging for unit_of_time matching
+        logger.info(f"MBA1234 Exact unit_of_time from request: {self.unit_of_time}")
+        logger.info(f"MBA1234 Available mappings: {list(unit_mapping.keys())}")
+        
+        # Use exact case matching
+        unit_hours = unit_mapping.get(self.unit_of_time)
+
+        if self.unit_of_time == 'Per Night':
+            return Decimal(str(self.nights))
         
         logger.info(f"Calculating prorated multiplier for occurrence {self.booking_occurrence.occurrence_id}:")
         logger.info(f"  Duration: {duration_hours} hours")
-        logger.info(f"  Unit of time: {unit_of_time}")
+        logger.info(f"  Unit of time: {self.unit_of_time}")
         logger.info(f"  Unit hours: {unit_hours}")
 
         if unit_hours is None:  # PER_VISIT case
@@ -102,6 +113,13 @@ class BookingDetails(models.Model):
 
     def save(self, *args, **kwargs):
         """Override save to automatically calculate and set calculated_rate"""
+        # Get start and end datetime for multiple calculation
+        start_datetime = datetime.combine(self.booking_occurrence.start_date, self.booking_occurrence.start_time)
+        end_datetime = datetime.combine(self.booking_occurrence.end_date, self.booking_occurrence.end_time)
+        
+        # Calculate and store the multiple
+        self.multiple = self.calculate_prorated_multiplier(start_datetime, end_datetime)
+        
         # Calculate the rate before saving
         self.calculated_rate = self.calculate_occurrence_cost(is_prorated=True)
         super().save(*args, **kwargs)

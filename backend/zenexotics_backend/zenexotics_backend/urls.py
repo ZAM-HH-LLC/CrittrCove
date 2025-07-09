@@ -23,19 +23,30 @@ from rest_framework_simplejwt.views import (
 )
 from django.conf import settings
 from django.conf.urls.static import static
+from django.http import HttpResponse
+
+def root_ok(request):
+    return HttpResponse("OK", status=200)
 
 urlpatterns = [
+    path("", root_ok),
     path("admin/", admin.site.urls),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
     path('api/', include([
+        # Core utilities
+        path('core/', include('core.urls')),
+        
         # User Management
         path('users/', include('users.urls')),
         path('professional-status/', include('professional_status.urls')),
         path('clients/', include('clients.urls')),
         path('professionals/', include('professionals.urls')),
         path('professional-facilities/', include('professional_facilities.urls')),
+        
+        # Location Management
+        path('locations/', include('locations.urls')),
         
         # Pet Management
         path('pets/', include('pets.urls')),
@@ -57,9 +68,10 @@ urlpatterns = [
         path('booking-occurrence-rates/', include('booking_occurrence_rates.urls')),
         path('booking-details/', include('booking_details.urls')),
         path('booking-pets/', include('booking_pets.urls')),
-        path('booking-drafts/', include('booking_drafts.urls')),
+        path('booking_drafts/', include('booking_drafts.urls')),
         
         # Review Management
+        path('reviews/', include('reviews.urls')),
         path('review-moderation/', include('review_moderation.urls')),
         path('client-reviews/', include('client_reviews.urls')),
         path('professional-reviews/', include('professional_reviews.urls')),
@@ -86,3 +98,6 @@ urlpatterns = [
 # Serve media files in development
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# Always serve static files
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

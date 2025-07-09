@@ -20,6 +20,8 @@ from ..serializers import ClientProfileEditSerializer
 from pets.models import Pet
 from booking_pets.models import BookingPets
 from ..serializers import PetSerializer
+from payment_methods.models import PaymentMethod
+from conversations.models import Conversation
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +51,23 @@ class ClientListView(generics.ListAPIView):
         logger.info(f"Response data count: {len(response.data)}")
         return response
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def mark_noreply_as_not_spam(request):
+    # Get client profile from logged-in user
+    try:
+        client = request.user.client_profile
+    except Client.DoesNotExist:
+        return Response(
+            {'error': 'User is not registered as a client'},
+                status=status.HTTP_403_FORBIDDEN
+        )
+    # Update marked_noreply_as_not_spam field
+    client.marked_noreply_as_not_spam = True
+    client.save()
+    # Return success response
+    return Response({'message': 'Noreply marked as not spam'}, status=status.HTTP_200_OK)
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_client_dashboard(request):
@@ -68,9 +87,8 @@ def get_client_dashboard(request):
         # Get upcoming confirmed bookings with at least one upcoming occurrence
         confirmed_bookings = Booking.objects.filter(
             client=client,
-            status=BookingStates.CONFIRMED,
-            occurrences__start_date__gte=today,
-            occurrences__status='FINAL'
+            status__in=[BookingStates.CONFIRMED, BookingStates.CONFIRMED_PENDING_PROFESSIONAL_CHANGES],
+            occurrences__start_date__gte=today
         ).select_related('professional__user', 'service_id').distinct()
 
         # Serialize the bookings
@@ -79,8 +97,7 @@ def get_client_dashboard(request):
             # Get the next occurrence for this booking
             next_occurrence = BookingOccurrence.objects.filter(
                 booking=booking,
-                start_date__gte=today,
-                status='FINAL'
+                start_date__gte=today
             ).order_by('start_date', 'start_time').first()
             
             if next_occurrence:
@@ -90,13 +107,32 @@ def get_client_dashboard(request):
                     'start_date': next_occurrence.start_date,
                     'start_time': next_occurrence.start_time,
                     'service_type': booking.service_id.service_name if booking.service_id else None,
-                    'pets': PetSerializer(Pet.objects.filter(bookingpets__booking=booking), many=True).data
+                    'pets': PetSerializer(Pet.objects.filter(bookingpets__booking=booking), many=True).data,
+                    'status': booking.status  # Add status to the response
                 }
                 serialized_bookings.append(booking_data)
 
+        # Calculate onboarding progress
+        profile_complete = client.calculate_profile_completion()
+        marked_noreply_as_not_spam = client.marked_noreply_as_not_spam
+        has_pets = Pet.objects.filter(owner=client.user).exists()
+        
+        # Log the values for debugging
+        logger.info(f"Client {client.user.email} - profile_complete: {profile_complete}")
+        logger.info(f"Client {client.user.email} - has_pets: {has_pets}")
+        
+        onboarding_progress = {
+            'profile_complete': profile_complete,
+            'has_pets': has_pets,
+            'has_payment_method': PaymentMethod.objects.filter(user=client.user, is_primary=True).exists(),
+            'subscription_plan': getattr(client.user, 'current_subscription_plan', 0),  # Default to 0 if not set
+            'marked_noreply_as_not_spam': marked_noreply_as_not_spam
+        }
+
         # Prepare response data
         response_data = {
-            'upcoming_bookings': serialized_bookings
+            'upcoming_bookings': serialized_bookings,
+            'onboarding_progress': onboarding_progress
         }
 
         return Response(response_data)
@@ -192,6 +228,88 @@ class ClientPetsView(APIView):
             )
         except Exception as e:
             logger.error(f"Error getting client pets: {str(e)}")
+            return Response(
+                {"error": "An error occurred while fetching client pets"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+class GetClientPetsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        logger.info(f"GetClientPetsView: Getting pets for client")
+        
+        try:
+            # Get conversation_id from request parameters
+            conversation_id = request.query_params.get('conversation_id')
+            
+            if not conversation_id:
+                return Response(
+                    {"error": "conversation_id is required"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Determine the client from the conversation
+            logger.info(f"GetClientPetsView: Looking up conversation {conversation_id}")
+            
+            try:
+                conversation = Conversation.objects.get(conversation_id=conversation_id)
+                
+                # Verify that the current user is a participant in this conversation
+                current_user_id = str(request.user.id)
+                if current_user_id not in conversation.role_map:
+                    logger.warning(f"GetClientPetsView: User {current_user_id} attempted to access conversation {conversation_id} but is not a participant")
+                    return Response(
+                        {"error": "You are not authorized to access this conversation"},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+                
+                # Get the role map from the conversation
+                role_map = conversation.role_map
+                
+                # Find the client user ID in the role map
+                client_user_id = None
+                for user_id, role in role_map.items():
+                    if role == 'client':
+                        client_user_id = user_id
+                        break
+                
+                if not client_user_id:
+                    return Response(
+                        {"error": "No client found in this conversation"},
+                        status=status.HTTP_404_NOT_FOUND
+                    )
+                
+                # Get the client profile for this user
+                from django.contrib.auth import get_user_model
+                User = get_user_model()
+                client_user = User.objects.get(id=client_user_id)
+                client = Client.objects.get(user=client_user)
+                
+                logger.info(f"GetClientPetsView: Determined client_id {client.id} from conversation")
+                
+            except Conversation.DoesNotExist:
+                return Response(
+                    {"error": "Conversation not found"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            except Client.DoesNotExist:
+                return Response(
+                    {"error": "Client profile not found for user in conversation"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            # Get the client's pets
+            pets = Pet.objects.filter(owner=client.user)
+            
+            # Serialize the pets
+            serializer = PetSerializer(pets, many=True)
+            
+            logger.info(f"GetClientPetsView: Found {len(serializer.data)} pets for client {client.id}")
+            return Response(serializer.data)
+            
+        except Exception as e:
+            logger.error(f"GetClientPetsView: Error getting client pets: {str(e)}")
             return Response(
                 {"error": "An error occurred while fetching client pets"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR

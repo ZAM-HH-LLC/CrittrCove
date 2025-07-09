@@ -63,14 +63,15 @@ class Pet(models.Model):
     ]
     
     SEX_CHOICES = [
-        ('M', 'Male'),
-        ('F', 'Female'),
+        ('Male', 'Male'),
+        ('Female', 'Female'),
     ]
     
     ENERGY_LEVEL_CHOICES = [
-        ('LOW', 'Low'),
-        ('MODERATE', 'Moderate'),
-        ('HIGH', 'High'),
+        ('Low', 'Low'),
+        ('Medium', 'Medium'),
+        ('High', 'High'),
+        ('N/A', 'N/A'),
     ]
 
     # Basic Information
@@ -83,7 +84,7 @@ class Pet(models.Model):
         blank=True
     )
     name = models.CharField(max_length=100)
-    species = models.CharField(max_length=20, choices=SPECIES_CHOICES)
+    species = models.CharField(max_length=50)
     breed = models.CharField(max_length=100, blank=True)
     pet_type = models.CharField(max_length=100, blank=True, help_text="Specific type for exotic pets")
     
@@ -101,7 +102,7 @@ class Pet(models.Model):
     )
     weight = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     birthday = models.DateField(null=True, blank=True)
-    sex = models.CharField(max_length=1, choices=SEX_CHOICES, null=True, blank=True)
+    sex = models.CharField(max_length=10, choices=SEX_CHOICES, null=True, blank=True)
     
     # Photos
     profile_photo = models.ImageField(
@@ -138,7 +139,7 @@ class Pet(models.Model):
     potty_break_schedule = models.TextField(blank=True)
     energy_level = models.CharField(max_length=20, choices=ENERGY_LEVEL_CHOICES, blank=True)
     can_be_left_alone = models.BooleanField(null=True, blank=True)
-    medications = models.JSONField(default=dict, blank=True)
+    medications = models.TextField(blank=True)
     medication_notes = models.TextField(blank=True)
     special_care_instructions = models.TextField(blank=True)
     
@@ -150,6 +151,8 @@ class Pet(models.Model):
     vet_documents = models.JSONField(default=list, blank=True)
 
     def __str__(self):
+        if not self.owner:
+            return f"{self.name} - {self.species} (No owner assigned)"
         return f"{self.name} - {self.species} ({self.owner.email}'s pet)"
 
     class Meta:
