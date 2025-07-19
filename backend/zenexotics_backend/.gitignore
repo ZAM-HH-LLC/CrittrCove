@@ -46,8 +46,6 @@ venv.bak/
 
 # Local development settings
 .env*
-.env
-backend/zenexotics_backend/.env
 *.env
 .env.local
 .env.development.local
