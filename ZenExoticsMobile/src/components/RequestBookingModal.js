@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, Modal, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useContext } from 'react';
+import { View, StyleSheet, Modal, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Button, Text, TextInput } from 'react-native-paper';
 import { theme } from '../styles/theme';
 import DatePicker from './DatePicker';
@@ -10,9 +10,13 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SERVICE_TYPE_SUGGESTIONS, mockPets } from '../data/mockData';
 import ConfirmationModal from './ConfirmationModal';
 import { validateDateTimeRange } from '../utils/dateTimeValidation';
+import axios from 'axios';
+import { API_BASE_URL } from '../config/config';
+import { getStorage, AuthContext } from '../context/AuthContext';
 
-const RequestBookingModal = ({ visible, onClose, onSubmit, services = SERVICE_TYPE_SUGGESTIONS, pets = mockPets }) => {
+const RequestBookingModal = ({ visible, onClose, onSubmit, conversationId }) => {
   const [selectedService, setSelectedService] = useState('');
+  const { is_DEBUG } = useContext(AuthContext);
   const [selectedPets, setSelectedPets] = useState([]);
   const [showServiceDropdown, setShowServiceDropdown] = useState(false);
   const [showPetDropdown, setShowPetDropdown] = useState(false);
@@ -26,12 +30,67 @@ const RequestBookingModal = ({ visible, onClose, onSubmit, services = SERVICE_TY
     isLoading: false
   });
   const [occurrenceErrors, setOccurrenceErrors] = useState({});
+  const [services, setServices] = useState([]);
+  const [pets, setPets] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (visible && conversationId) {
+      fetchPreRequestData();
+    } else if (!visible) {
+      // Reset states when modal is closed
+      setIsLoading(false);
+      setError(null);
+    }
+  }, [visible, conversationId]);
+
+  const fetchPreRequestData = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      if (is_DEBUG) {
+        console.log('Fetching prerequest data for conversation:', conversationId);
+      }
+      
+      const token = await getStorage('userToken');
+      const response = await axios.get(
+        `${API_BASE_URL}/api/messages/v1/prerequest_booking/${conversationId}/`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      if (is_DEBUG) {
+        console.log('Prerequest data response:', response.data);
+      }
+      
+      setServices(response.data.services);
+      setPets(response.data.pets);
+      if (is_DEBUG) {
+        console.log('Updated services:', response.data.services);
+        console.log('Updated pets:', response.data.pets);
+      }
+    } catch (err) {
+      if (is_DEBUG) {
+        console.error('Error fetching pre-request data:', err.response || err);
+      }
+      setError('Failed to load booking data. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const resetForm = () => {
     setSelectedService('');
     setSelectedPets([]);
     setOccurrences([]);
     setSelectedOccurrence(null);
+    setIsLoading(false);
+    setError(null);
   };
 
   const validateOccurrences = (occs) => {
@@ -64,22 +123,44 @@ const RequestBookingModal = ({ visible, onClose, onSubmit, services = SERVICE_TY
       return;
     }
 
+    // Get the selected service object
+    const selectedServiceObj = services.find(s => s.service_name === selectedService);
+    if (!selectedServiceObj) {
+      setError('Please select a valid service');
+      return;
+    }
+
     const bookingData = {
-      serviceType: selectedService,
-      pets: selectedPets.map(petId => pets.find(p => p.id === petId)),
-      occurrences: occurrences
+      conversation_id: conversationId,
+      service_type: selectedServiceObj.service_id,
+      pets: selectedPets,
+      occurrences: occurrences.map(occ => ({
+        start_date: occ.startDate,
+        end_date: occ.endDate || occ.startDate,
+        start_time: occ.startTime,
+        end_time: occ.endTime
+      }))
     };
 
-    // Create a booking request message
-    const bookingRequestMessage = {
-      type: 'booking_request',
-      data: bookingData,
-      timestamp: new Date().toISOString()
-    };
+    if (is_DEBUG) {
+      console.log('Sending booking data:', JSON.stringify(bookingData, null, 2));
+    }
 
-    onSubmit(bookingRequestMessage);
-    resetForm();
-    onClose();
+    setIsLoading(true);
+    setError(null);
+    
+    onSubmit(bookingData)
+      .then(() => {
+        resetForm();
+        onClose();
+      })
+      .catch(err => {
+        const errorMessage = err.response?.data?.error || 'Failed to create booking request';
+        setError(errorMessage);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   };
 
   const handleDeleteOccurrence = async (occurrenceToDelete) => {
@@ -165,18 +246,18 @@ const RequestBookingModal = ({ visible, onClose, onSubmit, services = SERVICE_TY
           <ScrollView nestedScrollEnabled={true}>
             {services.map((service) => (
               <TouchableOpacity
-                key={service}
+                key={service.service_id}
                 style={styles.dropdownItem}
                 onPress={() => {
-                  setSelectedService(service);
+                  setSelectedService(service.service_name);
                   setShowServiceDropdown(false);
                 }}
               >
                 <Text style={[
                   styles.dropdownText,
-                  selectedService === service && styles.selectedOption
+                  selectedService === service.service_name && styles.selectedOption
                 ]}>
-                  {service}
+                  {service.service_name}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -189,12 +270,12 @@ const RequestBookingModal = ({ visible, onClose, onSubmit, services = SERVICE_TY
   const renderPetSelector = () => (
     <View style={{ zIndex: 2 }}>
       {selectedPets.map((petId) => {
-        const pet = pets.find(p => p.id === petId);
+        const pet = pets.find(p => p.pet_id === petId);
         return (
           <View key={petId} style={styles.petItem}>
             <View style={styles.petInfo}>
               <Text style={styles.petName}>{pet.name}</Text>
-              <Text style={styles.petDetails}>{pet.type} • {pet.breed}</Text>
+              <Text style={styles.petDetails}>{pet.pet_type} • {pet.breed}</Text>
             </View>
             <TouchableOpacity
               onPress={() => setSelectedPets(prev => prev.filter(id => id !== petId))}
@@ -227,20 +308,20 @@ const RequestBookingModal = ({ visible, onClose, onSubmit, services = SERVICE_TY
         <View style={styles.dropdownList}>
           <ScrollView nestedScrollEnabled={true} style={styles.petDropdown}>
             {pets
-              .filter(pet => !selectedPets.includes(pet.id))
+              .filter(pet => !selectedPets.includes(pet.pet_id))
               .map((pet) => (
                 <TouchableOpacity
-                  key={pet.id}
+                  key={pet.pet_id}
                   style={styles.dropdownItem}
                   onPress={() => {
-                    setSelectedPets(prev => [...prev, pet.id]);
+                    setSelectedPets(prev => [...prev, pet.pet_id]);
                     setShowPetDropdown(false);
                   }}
                 >
                   <View>
                     <Text style={styles.dropdownPetName}>{pet.name}</Text>
                     <Text style={styles.dropdownPetDetails}>
-                      {pet.type} • {pet.breed}
+                      {pet.pet_type} • {pet.breed}
                     </Text>
                   </View>
                 </TouchableOpacity>
@@ -262,8 +343,8 @@ const RequestBookingModal = ({ visible, onClose, onSubmit, services = SERVICE_TY
         <View style={styles.occurrenceDetails}>
           <Text style={styles.dateText}>
             {occ.endDate && occ.startDate !== occ.endDate ? 
-              `${format(new Date(occ.startDate), 'MMM d, yyyy')} - ${format(new Date(occ.endDate), 'MMM d, yyyy')}` :
-              format(new Date(occ.startDate), 'MMM d, yyyy')
+              `${occ.startDate} - ${occ.endDate}` :
+              occ.startDate
             }
           </Text>
           <Text style={styles.timeText}>
@@ -305,30 +386,44 @@ const RequestBookingModal = ({ visible, onClose, onSubmit, services = SERVICE_TY
         <View style={styles.modalContent}>
           <Text style={styles.modalTitle}>Request Booking</Text>
           
-          <ScrollView style={styles.scrollView}>
-            {/* Service Selection */}
-            <Text style={styles.label}>Select Service</Text>
-            {renderServiceDropdown()}
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={theme.colors.primary} />
+              <Text>Loading booking data...</Text>
+            </View>
+          ) : error ? (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+              <Button mode="contained" onPress={fetchPreRequestData}>
+                Retry
+              </Button>
+            </View>
+          ) : (
+            <ScrollView style={styles.scrollView}>
+              {/* Service Selection */}
+              <Text style={styles.label}>Select Service</Text>
+              {renderServiceDropdown()}
 
-            {/* Pet Selection */}
-            <Text style={styles.label}>Select Pets</Text>
-            {renderPetSelector()}
+              {/* Pet Selection */}
+              <Text style={styles.label}>Select Pets</Text>
+              {renderPetSelector()}
 
-            {/* Date & Time Selection */}
-            <Text style={styles.label}>Select Date & Time</Text>
-            {occurrences.map((occ, index) => renderOccurrenceCard(occ, index))}
+              {/* Date & Time Selection */}
+              <Text style={styles.label}>Select Date & Time</Text>
+              {occurrences.map((occ, index) => renderOccurrenceCard(occ, index))}
 
-            <TouchableOpacity
-              style={styles.addOccurrenceButton}
-              onPress={() => {
-                setSelectedOccurrence(null);
-                handleOpenOccurrenceModal();
-              }}
-            >
-              <MaterialCommunityIcons name="plus" size={24} color={theme.colors.primary} />
-              <Text style={styles.addOccurrenceText}>Add Date & Time</Text>
-            </TouchableOpacity>
-          </ScrollView>
+              <TouchableOpacity
+                style={styles.addOccurrenceButton}
+                onPress={() => {
+                  setSelectedOccurrence(null);
+                  handleOpenOccurrenceModal();
+                }}
+              >
+                <MaterialCommunityIcons name="plus" size={24} color={theme.colors.primary} />
+                <Text style={styles.addOccurrenceText}>Add Date & Time</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          )}
 
           <View style={styles.buttonContainer}>
             <Button mode="outlined" onPress={handleClose} style={styles.button}>
@@ -338,7 +433,7 @@ const RequestBookingModal = ({ visible, onClose, onSubmit, services = SERVICE_TY
               mode="contained" 
               onPress={handleSubmit}
               style={styles.button}
-              disabled={!selectedService || selectedPets.length === 0 || occurrences.length === 0}
+              disabled={!selectedService || selectedPets.length === 0 || occurrences.length === 0 || isLoading}
             >
               Submit
             </Button>
@@ -353,6 +448,7 @@ const RequestBookingModal = ({ visible, onClose, onSubmit, services = SERVICE_TY
         hideRates={true}
         initialOccurrence={selectedOccurrence}
         modalTitle={selectedOccurrence ? 'Edit Occurrence' : 'Add New Occurrence'}
+        isFromRequestBooking={true}
       />
 
       <ConfirmationModal
@@ -615,6 +711,18 @@ const styles = StyleSheet.create({
     color: theme.colors.error,
     fontSize: theme.fontSizes.small,
     marginTop: 4,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
   },
 });
 

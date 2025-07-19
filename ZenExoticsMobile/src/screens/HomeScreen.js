@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { View, ScrollView, Image, StyleSheet, Linking, Dimensions, Platform, TouchableOpacity, TextInput } from 'react-native';
 import { Button, Text, Card, Title, Paragraph, useTheme } from 'react-native-paper';
 import { ImageBackground } from 'react-native';
@@ -9,11 +9,22 @@ import { navigateToFrom } from '../components/Navigation';
 import { FontAwesome } from '@expo/vector-icons';
 import { FontAwesome5 } from '@expo/vector-icons';
 import RoadmapSection from '../components/RoadmapSection';
-import { useForm, ValidationError } from '@formspree/react';
+// Conditionally import formspree only on web
+let useForm, ValidationError;
+if (Platform.OS === 'web') {
+  try {
+    const formspree = require('@formspree/react');
+    useForm = formspree.useForm;
+    ValidationError = formspree.ValidationError;
+  } catch (error) {
+    console.log('Formspree not available:', error);
+  }
+}
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { FontAwesome6 } from '@expo/vector-icons';
 import { MaterialIcons } from '@expo/vector-icons';
 import { BLOG_POSTS } from '../data/mockData';
+import { AuthContext } from '../context/AuthContext';
 
 const { width: windowWidth, height: windowHeight } = Dimensions.get('window');
 
@@ -51,6 +62,8 @@ const ReviewImage = ({ source, style }) => {
 
 export default function HomeScreen({ navigation }) {
   const { colors } = useTheme();
+  const { screenWidth } = useContext(AuthContext);
+  const isMobileView = screenWidth < 660;
   const openAppStore = (url) => {
     Linking.openURL(url);
   };
@@ -180,7 +193,7 @@ export default function HomeScreen({ navigation }) {
           />
           <View>
             <Text style={styles.reviewAuthorName}>{review.author}</Text>
-            <Text style={styles.reviewAuthorTitle}>Client Review</Text>
+            <Text style={styles.reviewAuthorTitle}>Owner Review</Text>
             <View style={styles.starsContainer}>
               {[1, 2, 3, 4, 5].map((_, index) => (
                 <MaterialCommunityIcons 
@@ -217,10 +230,20 @@ export default function HomeScreen({ navigation }) {
         onPress={() => navigateToFrom(navigation, 'BlogPost', 'Home', { post })}
       >
         <View style={styles.authorContainer}>
-          <Image
-            source={{ uri: post.author.profilePicture }}
-            style={styles.authorImage}
-          />
+          {/* Add safety check for image source */}
+          {post.author.profilePicture && (
+            <Image
+              source={
+                typeof post.author.profilePicture === 'string' 
+                  ? { uri: post.author.profilePicture }
+                  : post.author.profilePicture
+              }
+              style={styles.authorImage}
+              onError={(error) => {
+                console.log('Image load error:', error);
+              }}
+            />
+          )}
           <View style={styles.blogContent}>
             <Text style={[styles.title, { color: theme.colors.primary }]} numberOfLines={2}>
               {post.title}
@@ -354,7 +377,7 @@ export default function HomeScreen({ navigation }) {
                 </View>
               </View>
               <View style={styles.buttonContainer}>
-                <TouchableOpacity style={styles.actionButton} onPress={() => navigateToFrom(navigation, 'Waitlist', 'Home')}>
+                <TouchableOpacity style={styles.actionButton} onPress={() => navigateToFrom(navigation, 'SignUp', 'Home')}>
                   <Text style={styles.buttonText}>Sign up Today!</Text>
                 </TouchableOpacity>
               </View>
@@ -387,7 +410,7 @@ export default function HomeScreen({ navigation }) {
                     <FontAwesome6 name="handshake-simple" size={24} color="white" />
                   </View>
                   <View style={featureContentStyle}>
-                    <Text style={styles.featureTitle}>Get Matched with Clients</Text>
+                    <Text style={styles.featureTitle}>Get Matched with Owners</Text>
                     <Text style={styles.featureText}>Pet owners in your area will reach out to you for yourservices.</Text>
                   </View>
                 </View>
@@ -402,7 +425,7 @@ export default function HomeScreen({ navigation }) {
                 </View>
               </View>
               <View style={styles.buttonContainer}>
-                <TouchableOpacity style={styles.actionButton} onPress={() => navigateToFrom(navigation, 'Waitlist', 'Home')}>
+                <TouchableOpacity style={styles.actionButton} onPress={() => navigateToFrom(navigation, 'SignUp', 'Home')}>
                   <Text style={styles.buttonText}>Become a Professional</Text>
                 </TouchableOpacity>
               </View>
@@ -414,29 +437,65 @@ export default function HomeScreen({ navigation }) {
   };
 
   const ContactSection = () => {
-    const [state, handleSubmit] = useForm("mkgobpro");
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [message, setMessage] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSubmitted, setIsSubmitted] = useState(false);
+
+    // Use formspree only on web
+    const webFormData = Platform.OS === 'web' && useForm ? useForm("mkgobpro") : [null, null];
+    const [state, handleSubmit] = webFormData;
 
     const handleFormSubmit = async (e) => {
-      e.preventDefault();
-      const formData = {
-        name: name,
-        email: email,
-        message: message
-      };
-      
-      await handleSubmit(formData);
-      
-      if (state.succeeded) {
-        setName('');
-        setEmail('');
-        setMessage('');
+      if (Platform.OS === 'web') {
+        e.preventDefault();
       }
+      
+      setIsSubmitting(true);
+
+      if (Platform.OS === 'web' && handleSubmit) {
+        // Use formspree on web
+        const formData = {
+          name: name,
+          email: email,
+          message: message
+        };
+        
+        await handleSubmit(formData);
+        
+        if (state && state.succeeded) {
+          setName('');
+          setEmail('');
+          setMessage('');
+          setIsSubmitted(true);
+        }
+      } else {
+        // On mobile, use mailto or show success message
+        const subject = `Contact from ${name}`;
+        const body = `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`;
+        const mailtoUrl = `mailto:support@crittrcove.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        
+        try {
+          await Linking.openURL(mailtoUrl);
+          setName('');
+          setEmail('');
+          setMessage('');
+          setIsSubmitted(true);
+        } catch (error) {
+          console.log('Error opening mail app:', error);
+          // Still show success for better UX
+          setIsSubmitted(true);
+        }
+      }
+      
+      setIsSubmitting(false);
     };
 
-    if (state.succeeded) {
+    const isWebSubmitted = Platform.OS === 'web' && state && state.succeeded;
+    const showSuccessMessage = isSubmitted || isWebSubmitted;
+
+    if (showSuccessMessage) {
       return (
         <View style={styles.contactSection}>
           <View style={styles.contactContainer}>
@@ -444,12 +503,17 @@ export default function HomeScreen({ navigation }) {
               Thanks for reaching out!
             </Text>
             <Text style={styles.successMessage}>
-              We'll get back to you soon.
+              {Platform.OS === 'web' 
+                ? "We'll get back to you soon." 
+                : "Your email app should open with a pre-filled message."}
             </Text>
           </View>
         </View>
       );
     }
+
+    const webErrors = Platform.OS === 'web' && state ? state.errors : null;
+    const currentlySubmitting = isSubmitting || (Platform.OS === 'web' && state && state.submitting);
 
     return (
       <View style={styles.contactSection}>
@@ -462,7 +526,9 @@ export default function HomeScreen({ navigation }) {
             onChangeText={setName}
             name="name"
           />
-          <ValidationError prefix="Name" field="name" errors={state.errors} />
+          {Platform.OS === 'web' && ValidationError && (
+            <ValidationError prefix="Name" field="name" errors={webErrors} />
+          )}
           
           <TextInput
             placeholder="Your Email"
@@ -473,7 +539,9 @@ export default function HomeScreen({ navigation }) {
             name="email"
             autoCapitalize="none"
           />
-          <ValidationError prefix="Email" field="email" errors={state.errors} />
+          {Platform.OS === 'web' && ValidationError && (
+            <ValidationError prefix="Email" field="email" errors={webErrors} />
+          )}
           
           <TextInput
             placeholder="Your Message"
@@ -483,19 +551,21 @@ export default function HomeScreen({ navigation }) {
             multiline
             name="message"
           />
-          <ValidationError prefix="Message" field="message" errors={state.errors} />
+          {Platform.OS === 'web' && ValidationError && (
+            <ValidationError prefix="Message" field="message" errors={webErrors} />
+          )}
           
           <View style={styles.buttonContainer}>
             <TouchableOpacity
               style={[
                 styles.actionButton,
-                state.submitting && styles.disabledButton
+                currentlySubmitting && styles.disabledButton
               ]}
               onPress={handleFormSubmit}
-              disabled={state.submitting}
+              disabled={currentlySubmitting}
             >
               <Text style={styles.buttonText}>
-                {state.submitting ? 'Sending...' : 'Send'}
+                {currentlySubmitting ? 'Sending...' : (Platform.OS === 'web' ? 'Send' : 'Open Email')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -504,15 +574,125 @@ export default function HomeScreen({ navigation }) {
     );
   };
 
+  const ServiceCard = ({ icon, title, description, color }) => {
+    const cardStyles = {
+      container: {
+        width: isMobileView ? '90%' : '45%',
+        minWidth: isMobileView ? 'auto' : 300,
+        maxWidth: 500,
+        padding: 20,
+        backgroundColor: '#fff',
+        borderRadius: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+        marginBottom: 20,
+        alignSelf: 'center',
+      },
+      header: {
+        flexDirection: 'column',
+        alignItems: 'center',
+        marginBottom: 15,
+      },
+      iconContainer: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        backgroundColor: `${theme.colors.primary}15`,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 15,
+      },
+      title: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: theme.colors.text,
+        fontFamily: theme.fonts.header.fontFamily,
+        textAlign: 'center',
+        marginBottom: 10,
+      },
+      description: {
+        fontSize: 16,
+        lineHeight: 24,
+        color: theme.colors.text,
+        fontFamily: theme.fonts.regular.fontFamily,
+        textAlign: 'center',
+      },
+    };
+
+    return (
+      <View style={cardStyles.container}>
+        <View style={cardStyles.header}>
+          <View style={cardStyles.iconContainer}>
+            <MaterialCommunityIcons name={icon} size={32} color={color} />
+          </View>
+          <Text style={cardStyles.title}>{title}</Text>
+        </View>
+        <Text style={cardStyles.description}>{description}</Text>
+      </View>
+    );
+  };
+
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView 
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+      showsVerticalScrollIndicator={true}
+      bounces={false}
+      overScrollMode="never"
+    >
       <View style={styles.heroSection}>
         <Image
-          source={require('../../assets/hero-image.jpg')} // Replace with your image
+          source={require('../../assets/hero-image.jpg')}
           style={styles.heroImage}
           resizeMode="cover"
         />
-        <Text style={styles.heroText}>Welcome to CrittrCove</Text>
+        <View style={styles.heroContent}>
+          <Text style={styles.heroText}>Welcome to CrittrCove</Text>
+          <TouchableOpacity 
+            style={styles.heroSignupButton} 
+            onPress={() => navigateToFrom(navigation, 'SignUp', 'Home')}
+          >
+            <Text style={styles.heroSignupButtonText}>Sign Up Today</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Service Highlights Section */}
+      <View style={styles.serviceHighlightsSection}>
+        <Text style={styles.mainServiceTitle}>Marketplace for Pet Owners and Care Professionals</Text>
+        
+        <View style={[styles.servicesGrid, { 
+          flexDirection: isMobileView ? 'column' : 'row',
+          alignItems: isMobileView ? 'center' : 'flex-start',
+        }]}>
+          <ServiceCard
+            icon="paw"
+            title="All Animals Welcome"
+            description="From everyday pets to exotic companions, CrittrCove is a marketplace where you can find independent professionals offerring care for a wide variety of animals."
+            color={theme.colors.mainColors.senary}
+          />
+          <ServiceCard
+            icon="calendar-clock"
+            title="Flexible Booking Options"
+            description="Book single visits, multiple days, or set up recurring services. Create subscription plans or schedule services months in advance."
+            color={theme.colors.mainColors.quinary}
+          />
+          <ServiceCard
+            icon="shield-check"
+            title="Verified Badges"
+            description="All professionals are allowed on the platform, and clients can see their verified badges to ensure they are who they say they are."
+            color={theme.colors.mainColors.main}
+          />
+          <ServiceCard
+            icon="tune-variant"
+            title="Customizable Services"
+            description="Professionals can create custom service packages and pricing plans tailored to your specific needs and preferences."
+            color={theme.colors.mainColors.quaternary}
+          />
+        </View>
       </View>
 
       <Features />
@@ -541,20 +721,6 @@ export default function HomeScreen({ navigation }) {
         ))} 
       </View> */}
 
-      {/* Waitlist Section */}
-      <View style={[styles.section, styles.waitlistSection]}>
-        <Text style={styles.sectionTitle}>Join Our Waitlist</Text>
-        <Text style={styles.waitlistDescription}>
-          Get exclusive bonus offers, promotions, and discounts when the app and website launches by signing up on our waitlist today!
-        </Text>
-        <TouchableOpacity 
-          style={[styles.actionButton, styles.waitlistButton]} 
-          onPress={() => navigateToFrom(navigation, 'Waitlist', 'Home')}
-        >
-          <Text style={styles.buttonText}>Join Waitlist</Text>
-        </TouchableOpacity>
-      </View>
-
       {/* Contact Us Section */}
       <ContactSection />
 
@@ -563,7 +729,7 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.socialIconsRow}>
           <TouchableOpacity 
             style={styles.socialIcon} 
-            onPress={() => Linking.openURL('https://instagram.com/thezensitter')}
+            onPress={() => Linking.openURL('https://www.instagram.com/thezensitter')}
           >
             <FontAwesome name="instagram" size={24} color="white" />
           </TouchableOpacity>
@@ -584,22 +750,31 @@ export default function HomeScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  scrollView: {
+  container: {
     flex: 1,
   },
   contentContainer: {
-    paddingBottom: 80, // Add padding to the bottom of the content
+    flexGrow: 1,
   },
   heroSection: {
     height: Platform.OS === 'web' ? '70vh' : windowHeight * 0.5,
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
+    position: 'relative',
   },
   heroImage: {
     width: '100%',
     height: '100%',
     position: 'absolute',
+  },
+  heroContent: {
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+    height: '100%',
+    paddingHorizontal: 20,
   },
   heroText: {
     fontSize: 32,
@@ -609,7 +784,25 @@ const styles = StyleSheet.create({
     color: 'white',
     textShadowColor: 'rgba(0, 0, 0, 0.75)',
     textShadowOffset: {width: -1, height: 1},
-    textShadowRadius: 10
+    textShadowRadius: 10,
+    marginBottom: 20,
+  },
+  heroSignupButton: {
+    backgroundColor: 'white',
+    paddingHorizontal: 30,
+    paddingVertical: 15,
+    borderRadius: 25,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  heroSignupButtonText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: theme.colors.primary,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
   section: {
     padding: 20,
@@ -759,7 +952,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'black',
   },
   featuresSection: {
-    marginBottom: 20,
+    marginBottom: 80,
     marginTop: 20,
   },
   toggleContainer: {
@@ -1142,5 +1335,27 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  serviceHighlightsSection: {
+    padding: 20,
+    width: '100%',
+    maxWidth: 1200,
+    marginLeft: 'auto',
+    marginRight: 'auto',
+    alignItems: 'center',
+  },
+  mainServiceTitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 40,
+    color: theme.colors.text,
+    fontFamily: theme.fonts.header.fontFamily,
+  },
+  servicesGrid: {
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 20,
+    width: '100%',
   },
 });

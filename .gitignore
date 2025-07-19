@@ -116,3 +116,7 @@ backend/zenexotics_backend/.env
 # New additions
 *.zip
 application.zip
+
+# Backup files from deployment
+backup_*/
+last_backup_path.txt

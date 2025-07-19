@@ -2,16 +2,16 @@
 export const BOOKING_STATES = {
   // # Initial States
   DRAFT: 'Draft',
-  PENDING_INITIAL_PROFESSIONAL_CHANGES: 'Pending initial Professional Changes',
+  PENDING_INITIAL_PROFESSIONAL_CHANGES: 'Pending Initial Professional Changes',
     
   // # Review States
   PENDING_PROFESSIONAL_CHANGES: 'Pending Professional Changes',
-  PENDING_CLIENT_APPROVAL: 'Pending Client Approval',
+  PENDING_CLIENT_APPROVAL: 'Pending Owner Approval',
     
   // # Active States
   CONFIRMED: 'Confirmed',
   CONFIRMED_PENDING_PROFESSIONAL_CHANGES: 'Confirmed Pending Professional Changes',
-  CONFIRMED_PENDING_CLIENT_APPROVAL: 'Confirmed Pending Client Approval',
+  CONFIRMED_PENDING_CLIENT_APPROVAL: 'Confirmed Pending Owner Approval',
     
   // # Terminal States
   COMPLETED: 'Completed',
@@ -21,17 +21,414 @@ export const BOOKING_STATES = {
   // # States where professionals can edit
   PROFESSIONAL_EDITABLE_STATES: [
     'Draft',
-    'Pending initial Professional Changes',
+    'Pending Initial Professional Changes',
     'Pending Professional Changes',
     'Confirmed Pending Professional Changes',
     'Confirmed'
   ]
 };
 
+export const defaultTermsData = [
+    {
+      header: "Welcome to CrittrCove",
+      body: "Welcome to CrittrCove! These Terms of Service ('Terms') create a binding legal agreement between you and CrittrCove LLC, a Colorado-based company ('we,' 'us,' or 'our'). By using our platform, mobile apps, website, or any other CrittrCove services (collectively, the 'Platform'), you're agreeing to these Terms. If you don't agree, please don't use our services. We may update these Terms from time to time, and continued use means you accept any changes. You can find our current Terms at https://www.crittrcove.com/terms-of-service/."
+    },
+    {
+      header: "What CrittrCove Does",
+      subsections: [
+        {
+          subtitle: "Our Platform's Purpose",
+          body: "CrittrCove connects pet owners with professional pet care providers. We're a marketplace platform that facilitates introductions, communications, and service arrangements between pet owners and service providers. Think of us as the digital bridge that helps you find trusted care for your beloved pets."
+        },
+        {
+          subtitle: "We're Not Your Pet Care Provider",
+          body: "Important: CrittrCove doesn't provide pet care services ourselves. We're the platform that connects you with independent professionals who do. Each service provider operates their own business and makes their own decisions about how to care for your pets. While we help facilitate connections and provide support resources, the actual pet care is between you and your chosen provider."
+        },
+        {
+          subtitle: "What We Do Provide",
+          body: "We may offer emergency support, educational resources for providers, safety guidelines, and tools to help you find and communicate with pet care professionals. We also facilitate optional background checks for service providers and provide a platform for reviews and recommendations."
+        },
+        {
+          subtitle: "Your Responsibility for Safety",
+          body: "You're responsible for making smart decisions about pet care. While we provide tools and information to help you choose wisely, you should always use your judgment, ask questions, and ensure your pets' vaccinations and health records are current. We can't guarantee the quality of any specific service provider."
+        }
+      ]
+    },
+    {
+      header: "Legal Compliance & User Responsibilities",
+      subsections: [
+        {
+          subtitle: "Age and Legal Requirements",
+          body: "You must be at least 18 years old (or the age of majority in your area) to use CrittrCove. You're responsible for following all applicable laws and regulations related to your activities on our platform."
+        },
+        {
+          subtitle: "Pet Owner Responsibilities",
+          body: "As a pet owner, you must ensure your pets are properly vaccinated, licensed, and identified as required by local laws. You should also maintain appropriate insurance coverage for your pets and disclose any behavioral or health concerns to service providers."
+        },
+        {
+          subtitle: "Service Provider Responsibilities",
+          body: "As a service provider, you must have all necessary business licenses, permits, and insurance required by your jurisdiction. You're responsible for complying with local pet care regulations, leash laws, waste disposal rules, and any other applicable requirements."
+        },
+        {
+          subtitle: "Exotic and Farm Animal Care",
+          body: "CrittrCove welcomes providers who care for exotic animals, farm animals, and livestock, provided they have appropriate experience, facilities, and permits. However, pet owners must disclose if they have animals with dangerous behaviors or species requiring special handling, and service providers should only accept bookings within their expertise and qualifications. CrittrCove strictly prohibits the arrangement of care for illegal species through our platform or those without the proper permiting and licensing. CrittrCove is not liable for any injuries, damages, or losses that occur during pet care services. We're not liable for any actions taken by service providers or pet owners during service provision. CrittrCove is not liable for decisions made by providers during emergency medical care."
+        }
+      ]
+    },
+    {
+      header: "User Conduct & Platform Rules",
+      subsections: [
+        {
+          subtitle: "What You Can Do",
+          body: "Use our platform to find and connect with pet care providers, communicate about services, arrange bookings, and share honest reviews. Be respectful, honest, and professional in all your interactions."
+        },
+        {
+          subtitle: "What You Cannot Do",
+          body: "Don't use our platform for illegal activities, harassment, or fraud. Don't post false information, spam, or inappropriate content. Don't try to circumvent our platform for payments (outside of beta) or arrange services outside our system. Don't create multiple accounts or impersonate others."
+        },
+        {
+          subtitle: "Content Standards",
+          body: "Any content you post must be accurate, respectful, and legal. No hate speech, threats, or inappropriate material. We reserve the right to remove content that violates our standards."
+        },
+        {
+          subtitle: "Payment Processing",
+          body: "When we launch payment processing, CrittrCove will be a limited payment agent for the provider (not a principal). We will specify refund handling, dispute channels, and timing of disbursement. We will also reassess risk of chargebacks and integrate Stripe/third-party payment terms. We also reserve the right to change which payment processor we use at any time - whether internally or through a third-party provider."
+        },
+        {
+          subtitle: "Account Security",
+          body: "Keep your account credentials secure and notify us immediately if you suspect unauthorized access. You're responsible for all activity under your account."
+        }
+      ]
+    },
+    {
+      header: "Service Arrangements & Bookings",
+      subsections: [
+        {
+          subtitle: "How Bookings Work",
+          body: "When you find a service provider you like, you can request a booking through our platform. The provider will review your request and either accept, decline, or suggest modifications. Once both parties agree, you have a confirmed booking."
+        },
+        {
+          subtitle: "Pricing and Payments",
+          body: "During our beta period, CrittrCove doesn't process payments or charge service fees. All payments are handled directly between you and your service provider using your preferred method (cash, Venmo, etc.). We reserve the right to implement payment processing and service fees in the future."
+        },
+        {
+          subtitle: "Cancellation Policies",
+          body: "Cancellation policies are set by individual service providers and discussed through our messaging system. Make sure you understand the provider's policy before confirming a booking. We encourage open communication about any changes or concerns."
+        },
+        {
+          subtitle: "Service Completion",
+          body: "Service providers mark bookings as complete once the service period ends. This helps maintain accurate records and enables proper review systems."
+        }
+      ]
+    },
+    {
+      header: "Emergency Situations & Pet Safety",
+      subsections: [
+        {
+          subtitle: "Emergency Contact Information",
+          body: "Pet owners should provide emergency contact information and ensure service providers can reach them if needed. Service providers should immediately contact pet owners (or if unreachable, their emergency contacts) in emergency situations."
+        },
+        {
+          subtitle: "Veterinary Care Authorization",
+          body: "By using our platform, pet owners authorize service providers to seek emergency veterinary care if the pet owner or emergency contact cannot be reached. Pet owners are responsible for all veterinary costs and authorize service providers to make emergency decisions. If a provider oversteps or delays in any way, CrittrCove is not liable for any damages or losses or any other issues that may arise."
+        },
+        {
+          subtitle: "Abandoned Pets",
+          body: "If a pet owner fails to retrieve their pet after the agreed service period, service providers may take appropriate action including contacting animal control or finding alternative care. Pet owners are responsible for all associated costs."
+        },
+        {
+          subtitle: "Pet Safety and Removal",
+          body: "CrittrCove reserves the right to remove pets from service providers' care if safety concerns arise. We'll attempt to contact pet owners and emergency contacts before taking such action."
+        },
+        {
+          subtitle: "CrittrCove's Responsibility",
+          body: "CrittrCove is not responsible for any injuries, damages, or losses that occur during pet care services. We're not liable for any actions taken by service providers or pet owners during service provision. CrittrCove is not liable for decisions made by providers during emergency medical care. We recomment that service providers procure necessary insurance, and background checks. We also recommend that pet owners ensure their pets are properly vaccinated and licensed, and search for service providers with insurance and background check badges as displayed in the search results."
+        }
+      ]
+    },
+    {
+      header: "Background Checks & Verification",
+      subsections: [
+        {
+          subtitle: "Optional Background Checks",
+          body: "CrittrCove offers optional background check services for service providers through third-party vendors. These checks are voluntary but highly recommended for pet owner safety and trust."
+        },
+        {
+          subtitle: "How Background Checks Work",
+          body: "Service providers can request background checks through our contact form. We'll provide a secure link to complete the verification process through our third-party provider. Results are displayed on provider profiles to help pet owners make informed decisions."
+        },
+        {
+          subtitle: "Limitations of Background Checks",
+          body: "Background checks have limitations and may not include all jurisdictions, juvenile records, or foreign convictions. They're not a substitute for your own due diligence and judgment when selecting service providers."
+        },
+        {
+          subtitle: "Your Authorization",
+          body: "By undergoing a background check, you authorize the collection and use of your information by our third-party verification provider. You agree to provide accurate information and understand that CrittrCove may rely on these results for platform decisions."
+        }
+      ]
+    },
+    {
+      header: "Reviews & Community Guidelines",
+      subsections: [
+        {
+          subtitle: "Honest Reviews",
+          body: "We encourage honest, constructive reviews based on your actual experiences. Reviews help our community make informed decisions and improve service quality."
+        },
+        {
+          subtitle: "Review Standards",
+          body: "Reviews must be truthful, respectful, and based on personal experience. No false claims, harassment, or inappropriate content. We may remove reviews that violate our standards."
+        },
+        {
+          subtitle: "Review Ownership",
+          body: "You retain ownership of your reviews but grant CrittrCove a license to use, display, and share them as part of our platform. We may remove reviews at our discretion."
+        }
+      ]
+    },
+    {
+      header: "Content & Intellectual Property",
+      subsections: [
+        {
+          subtitle: "Your Content",
+          body: "You own the content you create on our platform. By posting content, you grant CrittrCove a license to use it for platform operations and improvements. You're responsible for ensuring you have rights to any content you share."
+        },
+        {
+          subtitle: "Our Platform",
+          body: "CrittrCove owns all rights to our platform, technology, and brand. You may use our services as intended but may not copy, modify, or distribute our proprietary materials without permission."
+        },
+        {
+          subtitle: "Copyright Protection",
+          body: "If you believe your copyrighted work has been infringed on our platform, please contact us with detailed information including your contact details, description of the work, and location of the infringing material. Send notices to: CrittrCove LLC, Attn: Copyright Notice, 2510 Summit Dr, Colorado Springs, CO, 80909."
+        },
+        {
+          subtitle: "CrittrCove's Name, Logo, and Branding",
+          body: "You may not use the CrittrCove name, logo, or branding without our prior written consent."
+        }
+      ]
+    },
+    {
+      header: "Privacy & Data Protection",
+      body: "We take your privacy seriously. Our collection and use of your personal information is described in our Privacy Policy at https://www.crittrcove.com/privacy-policy/. By using our platform, you acknowledge that you've read and understand our Privacy Policy."
+    },
+    {
+      header: "Communications & Notifications",
+      subsections: [
+        {
+          subtitle: "Service Communications",
+          body: "You consent to receive communications from CrittrCove about your account, bookings, platform updates, and service-related information. These may include emails, text messages, and in-app notifications."
+        },
+        {
+          subtitle: "Marketing Communications",
+          body: "You may opt out of marketing communications at any time through your account settings or by contacting us. Service-related communications are required for platform functionality."
+        },
+        {
+          subtitle: "Contact Information Updates",
+          body: "Keep your contact information current. If you change your phone number or email, update your account promptly to ensure you receive important communications."
+        }
+      ]
+    },
+    {
+      header: "Limitations & Disclaimers",
+      subsections: [
+        {
+          subtitle: "Service Availability",
+          body: "We strive to provide reliable service but can't guarantee uninterrupted access. Our platform is provided 'as is' and may have occasional downtime for maintenance or updates."
+        },
+        {
+          subtitle: "Third-Party Services",
+          body: "We may use third-party services for payments, background checks, mapping, and other features. We're not responsible for these services' availability, accuracy, or content."
+        },
+        {
+          subtitle: "User Interactions",
+          body: "We're not responsible for disputes between users, the quality of pet care services, or any harm that occurs during service provision. Users are responsible for their own safety and decisions."
+        },
+        {
+          subtitle: "Liability Limits",
+          body: "To the maximum extent permitted by law, CrittrCove's liability is limited to $100 USD. We're not liable for indirect, consequential, or punitive damages."
+        }
+      ]
+    },
+    {
+      header: "Dispute Resolution",
+      subsections: [
+        {
+          subtitle: "Informal Resolution",
+          body: "We prefer to resolve issues amicably. Before pursuing formal dispute resolution, please contact us with details about your concern. We'll work with you to find a solution."
+        },
+        {
+          subtitle: "Arbitration Agreement",
+          body: "For most disputes, you and CrittrCove agree to resolve them through individual arbitration rather than court proceedings. This means disputes will be heard by a neutral arbitrator, not a judge or jury."
+        },
+        {
+          subtitle: "Class Action Waiver",
+          body: "You agree to bring claims only on an individual basis, not as part of a class action or representative proceeding. This helps keep dispute resolution efficient and fair."
+        },
+        {
+          subtitle: "Opt-Out Rights",
+          body: "You can opt out of arbitration within 30 days of accepting these Terms by mailing a written notice to CrittrCove LLC, Attn: Legal, 2510 Summit Dr, Colorado Springs, CO, 80909."
+        }
+      ]
+    },
+    {
+      header: "Legal Framework",
+      subsections: [
+        {
+          subtitle: "Governing Law",
+          body: "These Terms are governed by Colorado law for US users and English law for EEA/UK users. The Federal Arbitration Act governs our arbitration agreement."
+        },
+        {
+          subtitle: "Jurisdiction",
+          body: "For US users, disputes will be resolved in Colorado courts. For EEA users, disputes will be resolved in English courts or your local courts as applicable."
+        },
+        {
+          subtitle: "Severability",
+          body: "If any part of these Terms is found unenforceable, the remaining parts continue in effect. We'll work to replace unenforceable provisions with valid alternatives."
+        },
+        {
+          subtitle: "Entire Agreement",
+          body: "These Terms, along with our Privacy Policy, constitute the complete agreement between you and CrittrCove regarding our platform."
+        }
+      ]
+    },
+    {
+      header: "Force Majeure",
+      body: "CrittrCove is not liable for delays or failures caused by events beyond our reasonable control, including natural disasters, war, terrorism, pandemics, strikes, or government actions. During such events, normal cancellation policies may not apply."
+    },
+    {
+      header: "Indemnification",
+      body: "You agree to defend and hold harmless CrittrCove from any claims, damages, or expenses arising from your use of our platform, violation of these Terms, or interactions with other users."
+    },
+    {
+      header: "Account Termination",
+      body: "We may suspend or terminate accounts for violations of these Terms, harmful conduct, or other reasons at our discretion. Termination doesn't affect your obligations under these Terms. We may also suspend or terminate accounts for non-payment of fees or other charges. Repeated violations of review standards, safety rules, or off-platform solicitation may result in permanent bans"
+    },
+    {
+      header: "Changes to Terms",
+      body: "We may update these Terms from time to time. We'll notify you of significant changes, and continued use of our platform constitutes acceptance of updated Terms."
+    },
+    {
+      header: "Contact Us",
+      body: "Questions about these Terms? Contact us at support@crittrcove.com or write to CrittrCove LLC, 2510 Summit Dr, Colorado Springs, CO, 80909."
+    }
+];
+
+export const privacyPolicyData = {
+  title: "CrittrCove Privacy Policy",
+  lastUpdated: "7/18/2025",
+  introduction: "Welcome to CrittrCove! Your privacy matters to us. This Privacy Policy explains how CrittrCove LLC (\"CrittrCove,\" \"we,\" \"our,\" or \"us\") collects, uses, and protects your personal information when you use our services, including our website, mobile apps, and any platform features related to connecting pet owners with animal care providers (the \"Services\").",
+  sections: [
+    {
+      title: "What This Policy Covers",
+      content: "This Privacy Policy applies to:",
+      listItems: [
+        "Users who visit our website or app",
+        "Pet owners and pet care providers using our Services",
+        "Any data collected during interactions with our Services, support tools, or beta features"
+      ],
+      additionalInfo: "This policy does not apply to third-party platforms we link to or integrate with. Those sites have their own policies."
+    },
+    {
+      title: "Information We Collect",
+      subsections: [
+        {
+          subtitle: "Information You Provide Directly",
+          items: [
+            "Account Info: Information includes, but is NOT limited to: Your name, email, phone, zip code, pet types, availability, photos, and profile descriptions.",
+            "Communication Content: Messages between users or with us.",
+            "Forms & Feedback: Survey responses, support inquiries, or beta testing feedback."
+          ]
+        },
+        {
+          subtitle: "Information We Collect Automatically",
+          items: [
+            "Device Info: IP address, browser type, OS, and device ID.",
+            "Usage Data: Pages visited, actions on the app, error logs.",
+            "Location Info: We may use your location to show local pet service options. You agree that CrittrCove may grab your approximate location for timezones."
+          ]
+        },
+        {
+          subtitle: "Data From Others",
+          content: "We may receive limited information about you from:",
+          items: [
+            "Social Logins (if enabled)",
+            "Referral sources",
+            "Background checks (when implemented in the future for professionals)"
+          ],
+          additionalInfo: "We do not currently collect sensitive data like social security numbers, government IDs, or health info."
+        }
+      ]
+    },
+    {
+      title: "How We Use Your Information",
+      content: "We use the data we collect to:",
+      listItems: [
+        "Let you create and manage your profile",
+        "Match you with other users (clients or professionals)",
+        "Improve the app and monitor performance",
+        "Send optional updates, news, or promotional content (you can opt out)",
+        "Prevent fraud or abuse of the platform"
+      ],
+      additionalInfo: "We may analyze trends and usage patterns to enhance functionality but do not sell your personal information."
+    },
+    {
+      title: "Sharing of Information",
+      content: "We may share limited information:",
+      listItems: [
+        "Between users for service coordination (e.g., pet name, general location, messages)",
+        "With service providers that help us run the platform (e.g., email providers, hosting companies)",
+        "When legally required, such as to respond to law enforcement or court orders"
+      ],
+      additionalInfo: "We may also share aggregated or anonymized data for research or marketing purposes that cannot be traced back to individuals."
+    },
+    {
+      title: "Your Rights & Choices",
+      content: "You can:",
+      listItems: [
+        "Edit or delete your profile information at any time",
+        "Request deletion of your account by contacting support",
+        "Decline location tracking in your device settings",
+        "Opt out of non-essential emails by clicking \"unsubscribe\" in messages"
+      ],
+      additionalInfo: "During beta, some opt-out or privacy tools may not yet be live. We're working to expand these features before full launch."
+    },
+    {
+      title: "Security of Your Data",
+      content: "We use reasonable safeguards to protect your data from unauthorized access or misuse. However, no platform is completely secure. Please:",
+      listItems: [
+        "Use a strong password",
+        "Log out after using shared devices",
+        "Contact us immediately if you suspect unauthorized activity"
+      ]
+    },
+    {
+      title: "Data Storage & Retention",
+      content: "Data is stored in the U.S. or other regions where our systems are hosted. We retain your information only as long as necessary to provide our Services or comply with legal requirements.",
+      additionalInfo: "If you delete your account, your data will be removed from active systems within 30 days, though backups or logs may take longer to fully purge."
+    },
+    {
+      title: "Children's Privacy",
+      content: "CrittrCove is not intended for users under the age of 18. We do not knowingly collect data from minors. If you believe a child is using our platform, contact us so we can take action."
+    },
+    {
+      title: "Changes to This Policy",
+      content: "We may update this Privacy Policy from time to time. If major changes are made, we'll notify you via email or app notification. Continued use of the Services means you accept any changes."
+    },
+    {
+      title: "Contact Us",
+      content: "If you have questions or requests related to your privacy, contact us at:",
+      contactInfo: {
+        company: "CrittrCove LLC",
+        attention: "Attn: Privacy Team",
+        address: "2510 Summit Dr, Colorado Springs, CO, 80909",
+        email: "support@crittrcove.com"
+      }
+    }
+  ]
+};
+
 export const ALL_SERVICES = "All Services";
 export const SERVICE_TYPES = [
   ALL_SERVICES,
-  "Overnight Cat Sitting (Client's Home)",
+  "Overnight Cat Sitting (Owner's Home)",
   "Cat Boarding",
   "Drop-In Visits (30 min)",
   "Drop-In Visits (60 min)",
@@ -44,18 +441,48 @@ export const SERVICE_TYPES = [
 ];
 
 export const TIME_OPTIONS = [
-  '15 min',
-  '30 min',
-  '45 min',
-  '1 hr',
-  '2 hr',
-  '4 hr',
-  '8 hr',
-  '24 hr',
-  'overnight',
-  'per day',
-  'per visit'
+  '15 Min',
+  '30 Min',
+  '45 Min',
+  '1 Hour',
+  '2 Hour',
+  '3 Hour',
+  '4 Hour',
+  '5 Hour',
+  '6 Hour',
+  '7 Hour',
+  '8 Hour',
+  '24 Hour',
+  'Per Day',
+  'Per Visit',
+  'Week'
 ];
+
+// Mapping of user-friendly time unit labels to backend constants
+export const TIME_UNIT_MAPPING = {
+  // User-friendly labels mapped to backend constants
+  'Per Visit': 'Per Visit',
+  'Per Day (24 Hours)': 'Per Day',
+  'Per Night': 'Per Night',
+  'Every 15 Minutes': '15 Min',
+  'Every 30 Minutes': '30 Min',
+  'Every 45 Minutes': '45 Min',
+  'Per Hour': '1 Hour',
+  'Every 2 Hours': '2 Hour',
+  'Every 3 Hours': '3 Hour',
+  'Every 4 Hours': '4 Hour',
+  'Every 5 Hours': '5 Hour',
+  'Every 6 Hours': '6 Hour',
+  'Every 7 Hours': '7 Hour',
+  'Every 8 Hours': '8 Hour',
+  'Per Week': 'Week'
+};
+
+// Reverse mapping for display purposes
+export const BACKEND_TO_FRONTEND_TIME_UNIT = Object.entries(TIME_UNIT_MAPPING).reduce((acc, [key, value]) => {
+  acc[value] = key;
+  return acc;
+}, {});
 
 export const mockAdditionalRates = {
   'Fish Tank Cleaning': [
@@ -235,129 +662,182 @@ export const mockPets = [
 
 export const mockProfessionals = [
   {
-    id: '1',
-    name: 'John Doe',
+    id: 1,
+    name: "Mike V.",
     profilePicture: require('../../assets/user1.png'),
-    reviews: 4.5,
-    price: 25,
-    bio: 'Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.Experienced with all types of pets.',
-    location: 'Colorado Springs, CO',
-    coordinates: { latitude: 38.8339, longitude: -104.8214 },
-    serviceTypes: ['House Sitting', 'Dog Walking'],
-    animalTypes: ['dogs', 'cats'],
-  },
-  {
-    id: '2',
-    name: 'Jane Smith',
-    profilePicture: require('../../assets/user2.png'),
-    reviews: 4.8,
-    price: 30,
-    bio: 'Specialized in exotic pets.',
-    location: 'Manitou Springs, CO',
-    coordinates: { latitude: 38.8597, longitude: -104.9172 },
-    serviceTypes: ['House Sitting', 'Drop-ins'],
-    animalTypes: ['exotics', 'cats'],
-  },
-  {
-    id: '3',
-    name: 'Mike Wilson',
-    profilePicture: require('../../assets/user3.png'),
-    reviews: 4.7,
-    price: 28,
-    bio: 'Dog trainer with 5 years experience.',
-    location: 'Security-Widefield, CO',
-    coordinates: { latitude: 38.7478, longitude: -104.7288 },
-    serviceTypes: ['Dog Walking', 'Training'],
-    animalTypes: ['dogs'],
-  },
-  {
-    id: '4',
-    name: 'Sarah Johnson',
-    profilePicture: require('../../assets/user4.png'),
-    reviews: 4.9,
+    location: "Briargate, Colorado Springs, CO, 80920",
+    rating: 5.0,
+    reviewCount: 72,
     price: 35,
-    bio: 'Veterinary technician, great with medical needs.',
-    location: 'Fountain, CO',
-    coordinates: { latitude: 38.6822, longitude: -104.7008 },
-    serviceTypes: ['House Sitting', 'Drop-ins'],
-    animalTypes: ['dogs', 'cats', 'exotics'],
+    distance: "5.7 mi. away",
+    coordinates: {
+      latitude: 38.8339,
+      longitude: -104.8214,
+    },
+    services: ["Dog Walking", "Pet Sitting", "Grooming"],
+    experience: "5 years",
+    description: "Professional pet sitter with extensive experience in dog walking and pet sitting. Certified in pet first aid and CPR.",
+    repeat_owners: 18,
+    verified: true,
+    bestReview: "Benny's stay with Mike was outstanding! I would not hesitate to have Benny stay with them again. I would highly recommend Mike to anyone needing pet care services."
   },
   {
-    id: '5',
-    name: 'Tom Brown',
+    id: 2,
+    name: "Sarah Johnson",
+    profilePicture: require('../../assets/user2.png'),
+    location: "Colorado Springs, CO",
+    rating: 4.8,
+    reviewCount: 127,
+    price: 45,
+    coordinates: {
+      latitude: 38.8340,
+      longitude: -104.8215,
+    },
+    services: ["Dog Walking", "Pet Sitting", "Training"],
+    experience: "8 years",
+    description: "Experienced dog trainer and pet sitter. Specializes in working with large breeds and puppies.",
+    verified: true,
+    bestReview: "Sarah is amazing with pets! She took great care of my dog and sent regular updates."
+  },
+  {
+    id: 3,
+    name: "Emily Rodriguez",
+    profilePicture: require('../../assets/user3.png'),
+    location: "Colorado Springs, CO",
+    rating: 4.7,
+    reviewCount: 156,
+    price: 40,
+    coordinates: {
+      latitude: 38.8341,
+      longitude: -104.8216,
+    },
+    services: ["Dog Walking", "Pet Sitting", "Grooming", "Training"],
+    experience: "6 years",
+    description: "Professional pet sitter and groomer. Available for both short-term and long-term pet care needs.",
+    verified: true
+  },
+  {
+    id: 4,
+    name: "David Kim",
+    profilePicture: require('../../assets/user4.png'),
+    location: "Colorado Springs, CO",
+    rating: 4.9,
+    reviewCount: 98,
+    price: 55,
+    coordinates: {
+      latitude: 38.8342,
+      longitude: -104.8217,
+    },
+    services: ["Dog Walking", "Pet Sitting", "Training", "Grooming"],
+    experience: "10 years",
+    description: "Certified dog trainer and experienced pet sitter. Specializes in working with rescue dogs and behavioral training.",
+    verified: true
+  },
+  {
+    id: 5,
+    name: "Lisa Thompson",
     profilePicture: require('../../assets/user5.png'),
-    reviews: 4.6,
-    price: 27,
-    bio: 'Experienced with large breeds.',
-    location: 'Black Forest, CO',
-    coordinates: { latitude: 39.0128, longitude: -104.7008 },
-    serviceTypes: ['Dog Walking', 'House Sitting'],
-    animalTypes: ['dogs'],
+    location: "Colorado Springs, CO",
+    rating: 4.8,
+    reviewCount: 143,
+    price: 45,
+    coordinates: {
+      latitude: 38.8343,
+      longitude: -104.8218,
+    },
+    services: ["Dog Walking", "Pet Sitting", "Grooming"],
+    experience: "7 years",
+    description: "Professional pet sitter with a passion for animal care. Available for both regular and occasional pet sitting needs.",
+    verified: true
   },
-  // Additional professionals further out
   {
-    id: '6',
-    name: 'Lisa Anderson',
+    id: 6,
+    name: "John Martinez",
     profilePicture: require('../../assets/user6.png'),
-    reviews: 4.4,
-    price: 32,
-    bio: 'Experienced with birds and small animals.',
-    location: 'Monument, CO',
-    coordinates: { latitude: 39.0917, longitude: -104.8722 },
-    serviceTypes: ['House Sitting', 'Drop-ins'],
-    animalTypes: ['exotics', 'cats'],
+    location: "Colorado Springs, CO",
+    rating: 4.6,
+    reviewCount: 89,
+    price: 42,
+    coordinates: {
+      latitude: 38.8344,
+      longitude: -104.8219,
+    },
+    services: ["Dog Walking", "Pet Sitting"],
+    experience: "4 years",
+    description: "Dedicated pet care professional specializing in dog walking and pet sitting services.",
+    verified: true
   },
   {
-    id: '7',
-    name: 'David Clark',
+    id: 7,
+    name: "Rachel White",
     profilePicture: require('../../assets/user7.png'),
-    reviews: 4.7,
-    price: 29,
-    bio: 'Specializing in puppy care and training.',
-    location: 'Woodland Park, CO',
-    coordinates: { latitude: 38.9939, longitude: -105.0569 },
-    serviceTypes: ['Dog Walking', 'Training'],
-    animalTypes: ['dogs'],
+    location: "Colorado Springs, CO",
+    rating: 4.9,
+    reviewCount: 167,
+    price: 48,
+    coordinates: {
+      latitude: 38.8345,
+      longitude: -104.8220,
+    },
+    services: ["Dog Walking", "Pet Sitting", "Training"],
+    experience: "9 years",
+    description: "Experienced pet trainer and caregiver with a focus on positive reinforcement techniques.",
+    verified: true
   },
   {
-    id: '8',
-    name: 'Emma White',
+    id: 8,
+    name: "Michael Chen",
     profilePicture: require('../../assets/user8.png'),
-    reviews: 4.8,
-    price: 33,
-    bio: 'Experienced with senior pets.',
-    location: 'Pueblo West, CO',
-    coordinates: { latitude: 38.3494, longitude: -104.7224 },
-    serviceTypes: ['House Sitting', 'Drop-ins'],
-    animalTypes: ['dogs', 'cats'],
+    location: "Colorado Springs, CO",
+    rating: 4.7,
+    reviewCount: 112,
+    price: 38,
+    coordinates: {
+      latitude: 38.8346,
+      longitude: -104.8221,
+    },
+    services: ["Dog Walking", "Pet Sitting", "Grooming"],
+    experience: "5 years",
+    description: "Professional pet groomer and sitter with expertise in handling various breeds.",
+    verified: true
   },
   {
-    id: '9',
-    name: 'James Miller',
+    id: 9,
+    name: "Amanda Foster",
     profilePicture: require('../../assets/user9.png'),
-    reviews: 4.5,
-    price: 26,
-    bio: 'Great with high-energy dogs.',
-    location: 'Castle Rock, CO',
-    coordinates: { latitude: 39.3722, longitude: -104.8561 },
-    serviceTypes: ['Dog Walking', 'House Sitting'],
-    animalTypes: ['dogs'],
+    location: "Colorado Springs, CO",
+    rating: 4.8,
+    reviewCount: 134,
+    price: 44,
+    coordinates: {
+      latitude: 38.8347,
+      longitude: -104.8222,
+    },
+    services: ["Dog Walking", "Pet Sitting", "Training"],
+    experience: "7 years",
+    description: "Certified pet trainer with extensive experience in behavioral modification.",
+    verified: true
   },
   {
-    id: '10',
-    name: 'Rachel Green',
+    id: 10,
+    name: "Robert Taylor",
     profilePicture: require('../../assets/user10.png'),
-    reviews: 4.9,
-    price: 34,
-    bio: 'Experienced with reptiles and amphibians.',
-    location: 'Palmer Lake, CO',
-    coordinates: { latitude: 39.1153, longitude: -104.9158 },
-    serviceTypes: ['House Sitting', 'Drop-ins'],
-    animalTypes: ['exotics'],
+    location: "Colorado Springs, CO",
+    rating: 4.9,
+    reviewCount: 178,
+    price: 50,
+    coordinates: {
+      latitude: 38.8348,
+      longitude: -104.8223,
+    },
+    services: ["Dog Walking", "Pet Sitting", "Training", "Grooming"],
+    experience: "11 years",
+    description: "Comprehensive pet care professional offering a full range of services.",
+    verified: true
   }
 ];
 
-export const mockClients = [
+export const mockOwners = [
   {
     id: '1',
     name: 'Alice Johnson',
@@ -428,13 +908,13 @@ export const fetchAvailabilityData = () => {
         },
         bookings: {
           '2025-02-06': [
-            { id: 'bk1', startTime: '14:00', endTime: '16:00', client_name: 'Charlie', service_type: 'Dog Walking' },
-            { id: 'bk2', startTime: '16:00', endTime: '18:00', client_name: 'Bob', service_type: 'Dog Walking' },
-            { id: 'bk3', startTime: '18:00', endTime: '20:00', client_name: 'Nick', service_type: 'Pet Boarding' },
-            { id: 'bk4', startTime: '20:00', endTime: '22:00', client_name: 'Alfred', service_type: 'Drop-In Visits (30 min)' }
+            { id: 'bk1', startTime: '14:00', endTime: '16:00', owner_name: 'Charlie', service_type: 'Dog Walking' },
+            { id: 'bk2', startTime: '16:00', endTime: '18:00', owner_name: 'Bob', service_type: 'Dog Walking' },
+            { id: 'bk3', startTime: '18:00', endTime: '20:00', owner_name: 'Nick', service_type: 'Pet Boarding' },
+            { id: 'bk4', startTime: '20:00', endTime: '22:00', owner_name: 'Alfred', service_type: 'Drop-In Visits (30 min)' }
           ],
           '2025-02-07': [
-            { id: 'bk5', startTime: '10:00', endTime: '12:00', client_name: 'Uhtred', service_type: 'Dog Walking' }
+            { id: 'bk5', startTime: '10:00', endTime: '12:00', owner_name: 'Uhtred', service_type: 'Dog Walking' }
           ],
         },
       });
@@ -464,7 +944,7 @@ export const updateBooking = (bookingData) => {
 const sharedBookingDetails = {
   booking_id: 'bk1',
   status: 'Confirmed',
-  client_name: 'matt aertker',
+  owner_name: 'matt aertker',
   professional_name: 'matt2 aertker2',
   service_details: {
     service_type: 'Ferrier'
@@ -553,7 +1033,7 @@ const sharedBookingDetails = {
     subtotal: 181.12,
     platform_fee: 18.11,
     taxes: 15.94,
-    total_client_cost: 215.17,
+    total_owner_cost: 215.17,
     total_sitter_payout: 163.01,
     is_prorated: true
   }
@@ -564,7 +1044,7 @@ const mockBookingDetails = {
   '1234': {
     ...sharedBookingDetails,
     id: '1234',
-    clientName: 'John Doe',
+    ownerName: 'John Doe',
     status: BOOKING_STATES.CONFIRMED,
     startDate: '2024-02-20',
     startTime: '14:00',
@@ -572,7 +1052,7 @@ const mockBookingDetails = {
   '5678': {
     ...sharedBookingDetails,
     id: '5678',
-    clientName: 'Margarett Laporte',
+    ownerName: 'Margarett Laporte',
     status: BOOKING_STATES.CANCELLED,
     startDate: '2024-02-21',
     startTime: '15:30',
@@ -580,7 +1060,7 @@ const mockBookingDetails = {
   '56782': {
     ...sharedBookingDetails,
     id: '56782',
-    clientName: 'Zoe Aerial',
+    ownerName: 'Zoe Aerial',
     status: BOOKING_STATES.DENIED,
     startDate: '2024-02-21',
     startTime: '15:30',
@@ -588,7 +1068,7 @@ const mockBookingDetails = {
   '5673': {
     ...sharedBookingDetails,
     id: '5673',
-    clientName: 'Matt Clark',
+    ownerName: 'Matt Clark',
     status: BOOKING_STATES.PENDING_INITIAL_PROFESSIONAL_CHANGES,
     startDate: '2024-02-21',
     startTime: '15:30',
@@ -596,7 +1076,7 @@ const mockBookingDetails = {
   '5674': {
     ...sharedBookingDetails,
     id: '5674',
-    clientName: 'Mark Smith',
+    ownerName: 'Mark Smith',
     status: BOOKING_STATES.PENDING_CLIENT_APPROVAL,
     startDate: '2024-02-21',
     startTime: '15:30',
@@ -604,7 +1084,7 @@ const mockBookingDetails = {
   '5675': {
     ...sharedBookingDetails,
     id: '5675',
-    clientName: 'Lauren Smith',
+    ownerName: 'Lauren Smith',
     status: BOOKING_STATES.PENDING_PROFESSIONAL_CHANGES,
     startDate: '2024-02-21',
     startTime: '15:30',
@@ -612,7 +1092,7 @@ const mockBookingDetails = {
   '5675': {
     ...sharedBookingDetails,
     id: '56712',
-    clientName: 'Matt Smith',
+    ownerName: 'Matt Smith',
     status: BOOKING_STATES.CONFIRMED_PENDING_PROFESSIONAL_CHANGES,
     startDate: '2024-02-21',
     startTime: '15:30',
@@ -620,14 +1100,14 @@ const mockBookingDetails = {
   '56713': {
     ...sharedBookingDetails,
     id: '567123',
-    clientName: 'Albert Einstein',
+    ownerName: 'Albert Einstein',
     status: BOOKING_STATES.PENDING_INITIAL_PROFESSIONAL_CHANGES,
     startDate: '2025-02-21',
     startTime: '15:30',
   },
   '3749': {...sharedBookingDetails,
     id: '567132',
-    clientName: 'Dr. Mike Johnson',
+    ownerName: 'Dr. Mike Johnson',
     status: BOOKING_STATES.PENDING_INITIAL_PROFESSIONAL_CHANGES,
     startDate: '2025-02-21',
     startTime: '15:30',
@@ -635,7 +1115,7 @@ const mockBookingDetails = {
   '91011': {
     ...sharedBookingDetails,
     id: '91011',
-    clientName: 'Dr. Bla Johnson',
+    ownerName: 'Dr. Bla Johnson',
     status: BOOKING_STATES.PENDING_INITIAL_PROFESSIONAL_CHANGES,
     startDate: '2025-02-21',
     startTime: '15:30',
@@ -643,7 +1123,7 @@ const mockBookingDetails = {
   '91012': {
     ...sharedBookingDetails,
     id: '91012',
-    clientName: 'Dr. Blabla Johnson',
+    ownerName: 'Dr. Blabla Johnson',
     status: BOOKING_STATES.PENDING_INITIAL_PROFESSIONAL_CHANGES,
     startDate: '2025-02-21',
     startTime: '15:30',
@@ -654,26 +1134,26 @@ const mockBookingDetails = {
 export const mockProfessionalBookings = Object.values(mockBookingDetails)
   .map(booking => ({
     id: booking.id,
-    clientName: booking.clientName,
+    ownerName: booking.ownerName,
     status: booking.status,
     date: booking.startDate,
     time: booking.startTime,
     serviceType: booking.serviceType,
     numberOfPets: booking.numberOfPets || 1,
-    totalCost: booking.costs?.totalClientCost || 0,
+    totalCost: booking.costs?.totalOwnerCost || 0,
     professionalPayout: booking.costs?.professionalPayout || 0
   }));
 
 // Add the createBooking function
-export const createBooking = async (clientId, freelancerId, initialData = {}) => {
+export const createBooking = async (ownerId, freelancerId, initialData = {}) => {
   const newBookingId = `booking_${Date.now()}`;
   
   const newBooking = {
     id: newBookingId,
-    clientId: clientId,
+    ownerId: ownerId,
     freelancerId: freelancerId,
     status: BOOKING_STATES.PENDING_INITIAL_PROFESSIONAL_CHANGES,
-    clientName: initialData.clientName || 'TBD',
+    ownerName: initialData.ownerName || 'TBD',
     professionalName: initialData.professionalName || 'TBD',
     serviceType: initialData.serviceType || 'TBD',
     animalType: initialData.animalType || 'TBD',
@@ -690,9 +1170,9 @@ export const createBooking = async (clientId, freelancerId, initialData = {}) =>
       additionalPetTotal: 0,
       extraServicesTotal: 0,
       subtotal: 0,
-      clientFee: 0,
+      ownerFee: 0,
       taxes: 0,
-      totalClientCost: 0,
+      totalOwnerCost: 0,
       professionalPayout: 0
     },
     created_at: new Date().toISOString(),
@@ -712,25 +1192,6 @@ export const createBooking = async (clientId, freelancerId, initialData = {}) =>
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 500));
   return newBookingId;
-};
-
-// Update fetchBookingDetails with better logging
-export const fetchBookingDetails = async (bookingId) => {
-  // console.log('Fetching booking details');
-  
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
-  const bookingDetails = mockBookingDetails[bookingId];
-  if (!bookingDetails) {
-    console.error('Booking not found:', {
-      requestedId: bookingId,
-      availableBookings: Object.keys(mockBookingDetails)
-    });
-    throw new Error('Booking not found');
-  }
-  
-  return bookingDetails;
 };
 
 // Export mockBookingDetails for debugging
@@ -776,7 +1237,7 @@ export const updateBookingStatus = async (bookingId, newStatus, reason = '', met
 };
 
 // Make sure to update MyBookings.js to use the same BOOKING_STATES constant
-export const mockClientBookings = [
+export const mockOwnerBookings = [
   {
     id: '91011',
     professionalName: 'Sarah Wilson',
@@ -809,7 +1270,7 @@ export const mockConversations = [
     participant2_id: 202,
     name: "Dr. Sarah Smith",
     role_map: {
-      participant1_role: "client",
+      participant1_role: "owner",
       participant2_role: "professional"
     },
     lastMessage: "I'd be happy to help! What kind of pet do you have?",
@@ -822,7 +1283,7 @@ export const mockConversations = [
     participant2_id: CURRENT_USER_ID,
     name: "Dr. Mike Johnson",
     role_map: {
-      participant1_role: "client",
+      participant1_role: "owner",
       participant2_role: "professional"
     },
     lastMessage: "I'm available! Let's set up a booking",
@@ -835,7 +1296,7 @@ export const mockConversations = [
     participant2_id: 204,
     name: "Dr. Emily Wilson",
     role_map: {
-      participant1_role: "client",
+      participant1_role: "owner",
       participant2_role: "professional"
     },
     lastMessage: "Your cat's checkup is scheduled",
@@ -848,7 +1309,7 @@ export const mockConversations = [
     participant2_id: 205,
     name: "Dr. James Anderson",
     role_map: {
-      participant1_role: "client",
+      participant1_role: "owner",
       participant2_role: "professional"
     },
     lastMessage: "See you tomorrow at 2 PM",
@@ -861,7 +1322,7 @@ export const mockConversations = [
     participant2_id: 206,
     name: "Dr. Lisa Brown",
     role_map: {
-      participant1_role: "client",
+      participant1_role: "owner",
       participant2_role: "professional"
     },
     lastMessage: "How is Max doing today?",
@@ -874,7 +1335,7 @@ export const mockConversations = [
     participant2_id: 207,
     name: "Dr. Robert Taylor",
     role_map: {
-      participant1_role: "client",
+      participant1_role: "owner",
       participant2_role: "professional"
     },
     lastMessage: "The medication has been prescribed",
@@ -887,7 +1348,7 @@ export const mockConversations = [
     participant2_id: 208,
     name: "Dr. Maria Garcia",
     role_map: {
-      participant1_role: "client",
+      participant1_role: "owner",
       participant2_role: "professional"
     },
     lastMessage: "Your appointment is confirmed",
@@ -900,7 +1361,7 @@ export const mockConversations = [
     participant2_id: 209,
     name: "Dr. David Lee",
     role_map: {
-      participant1_role: "client",
+      participant1_role: "owner",
       participant2_role: "professional"
     },
     lastMessage: "Let's schedule a follow-up",
@@ -913,7 +1374,7 @@ export const mockConversations = [
     participant2_id: 210,
     name: "Dr. Sarah Martinez",
     role_map: {
-      participant1_role: "client",
+      participant1_role: "owner",
       participant2_role: "professional"
     },
     lastMessage: "The test results are ready",
@@ -926,7 +1387,7 @@ export const mockConversations = [
     participant2_id: 211,
     name: "Dr. John White",
     role_map: {
-      participant1_role: "client",
+      participant1_role: "owner",
       participant2_role: "professional"
     },
     lastMessage: "How's the new diet working?",
@@ -939,7 +1400,7 @@ export const mockConversations = [
     participant2_id: 212,
     name: "Dr. Anna Clark",
     role_map: {
-      participant1_role: "client",
+      participant1_role: "owner",
       participant2_role: "professional"
     },
     lastMessage: "Vaccination reminder",
@@ -952,7 +1413,7 @@ export const mockConversations = [
     participant2_id: 213,
     name: "Dr. Thomas Wright",
     role_map: {
-      participant1_role: "client",
+      participant1_role: "owner",
       participant2_role: "professional"
     },
     lastMessage: "Surgery scheduled for next week",
@@ -965,7 +1426,7 @@ export const mockConversations = [
     participant2_id: 214,
     name: "Dr. Patricia Moore",
     role_map: {
-      participant1_role: "client",
+      participant1_role: "owner",
       participant2_role: "professional"
     },
     lastMessage: "Emergency consultation available",
@@ -978,7 +1439,7 @@ export const mockConversations = [
     participant2_id: 215,
     name: "Dr. Kevin Hall",
     role_map: {
-      participant1_role: "client",
+      participant1_role: "owner",
       participant2_role: "professional"
     },
     lastMessage: "Treatment plan updated",
@@ -991,7 +1452,7 @@ export const mockConversations = [
     participant2_id: 216,
     name: "Dr. Rachel Green",
     role_map: {
-      participant1_role: "client",
+      participant1_role: "owner",
       participant2_role: "professional"
     },
     lastMessage: "Prescription ready for pickup",
@@ -1008,7 +1469,7 @@ export const mockMessages = {
       participant2_id: 202,
       sender: CURRENT_USER_ID,
       role_map: {
-        participant1_role: "client",
+        participant1_role: "owner",
         participant2_role: "professional"
       },
       content: "Hi, I'm interested in your pet sitting services",
@@ -1024,7 +1485,7 @@ export const mockMessages = {
       participant2_id: 202,
       sender: 202,
       role_map: {
-        participant1_role: "client",
+        participant1_role: "owner",
         participant2_role: "professional"
       },
       content: "I'd be happy to help! What kind of pet do you have?",
@@ -1042,7 +1503,7 @@ export const mockMessages = {
       participant2_id: CURRENT_USER_ID,
       sender: 303,
       role_map: {
-        participant1_role: "client",
+        participant1_role: "owner",
         participant2_role: "professional"
       },
       content: "Looking for a dog walker next week",
@@ -1058,7 +1519,7 @@ export const mockMessages = {
       participant2_id: CURRENT_USER_ID,
       sender: 303,
       role_map: {
-        participant1_role: "client",
+        participant1_role: "owner",
         participant2_role: "professional"
       },
       type: 'booking_request',
@@ -1087,7 +1548,7 @@ export const mockMessages = {
       participant2_id: CURRENT_USER_ID,
       sender: CURRENT_USER_ID,
       role_map: {
-        participant1_role: "client",
+        participant1_role: "owner",
         participant2_role: "professional"
       },
       content: "I'll take a look!",
@@ -1101,17 +1562,17 @@ export const mockMessages = {
 };
 
 // Helper function to create a new conversation
-export const createNewConversation = (professionalId, professionalName, clientId, clientName) => {
+export const createNewConversation = (professionalId, professionalName, ownerId, ownerName) => {
   const conversationId = `conv_${Date.now()}`;
-  const isCurrentUserClient = clientId === CURRENT_USER_ID;
+  const isCurrentUserOwner = ownerId === CURRENT_USER_ID;
   
   return {
     id: conversationId,
-    participant1_id: isCurrentUserClient ? clientId : professionalId,
-    participant2_id: isCurrentUserClient ? professionalId : clientId,
+    participant1_id: isCurrentUserOwner ? ownerId : professionalId,
+    participant2_id: isCurrentUserOwner ? professionalId : ownerId,
     role_map: {
-      participant1_role: isCurrentUserClient ? "client" : "professional",
-      participant2_role: isCurrentUserClient ? "professional" : "client"
+      participant1_role: isCurrentUserOwner ? "owner" : "professional",
+      participant2_role: isCurrentUserOwner ? "professional" : "owner"
     },
     lastMessage: "",
     timestamp: new Date().toISOString(),
@@ -1142,7 +1603,7 @@ export const DEFAULT_SERVICES = [
 ];
 
 export const SERVICE_TYPE_SUGGESTIONS = [
-  "Overnight Cat Sitting (Client's Home)",
+  "Overnight Cat Sitting (Owner's Home)",
   "Cat Boarding",
   "Drop-In Visits (30 min)",
   "Drop-In Visits (60 min)",

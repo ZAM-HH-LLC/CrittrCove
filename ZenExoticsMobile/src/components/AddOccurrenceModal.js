@@ -1,12 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, Modal, TextInput, TouchableOpacity, StyleSheet, ScrollView, Picker, ActivityIndicator, Platform } from 'react-native';
+import React, { useState, useEffect, useContext, useRef, useCallback } from 'react';
+import { View, Text, Modal, TextInput, TouchableOpacity, StyleSheet, ScrollView, Picker, ActivityIndicator, Platform, Animated, Alert } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
-import DatePicker from './DatePicker';
-import TimePicker from './TimePicker';
-import { format } from 'date-fns';
+import DateTimePicker from './DateTimePicker';
+import { AuthContext } from '../context/AuthContext'
+import { format, parse } from 'date-fns';
 import { TIME_OPTIONS } from '../data/mockData';
 import { validateDateTimeRange } from '../utils/dateTimeValidation';
+import { Button } from 'react-native-paper';
+import { API_BASE_URL } from '../config/config';
+import ConfirmationModal from './ConfirmationModal';
+import { getStorage } from '../context/AuthContext';
+import { debounce } from 'lodash';
+import { calculateOccurrenceCost } from '../data/calculations';
 
 const ANIMAL_COUNT_OPTIONS = ['1', '2', '3', '4', '5'];
 
@@ -71,207 +77,601 @@ const AddOccurrenceModal = ({
   hideRates = false,
   initialOccurrence = null,
   isEditing = false,
-  modalTitle = 'Add New Occurrence'
+  modalTitle = 'Add New Occurrence',
+  isFromRequestBooking = false,
+  booking
 }) => {
+  const { is_DEBUG, screenWidth, timeSettings } = useContext(AuthContext);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [isAnyPickerActive, setIsAnyPickerActive] = useState(false);
+  const heightAnim = useRef(new Animated.Value(0)).current;
+  const [validationError, setValidationError] = useState(null);
+  const initialValues = useRef(null);
+  const [isCalculatingCost, setIsCalculatingCost] = useState(false);
 
-  // Helper function to create a Date object from a time string
-  const createTimeDate = (timeStr) => {
-    if (timeStr instanceof Date) return timeStr;
-    const [hours, minutes] = timeStr.split(':');
-    const date = new Date();
-    date.setHours(parseInt(hours, 10));
-    date.setMinutes(parseInt(minutes, 10));
-    return date;
+  const parseInitialDates = (initialOccurrence) => {
+    if (is_DEBUG) {
+      console.log('MBA1234 Parsing initial occurrence:', initialOccurrence);
+      console.log('MBA1234 Time settings:', timeSettings);
+    }
+
+    if (!initialOccurrence) {
+      const now = new Date();
+      const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
+      return {
+        startDateTime: now,
+        endDateTime: oneHourLater,
+        isMilitary: timeSettings.use_military_time
+      };
+    }
+
+    try {
+      const { startDate, startTime, endDate, endTime } = initialOccurrence;
+      
+      // Use the user's time format preference from settings 
+      const isMilitary = timeSettings.use_military_time;
+      
+      if (is_DEBUG) {
+        console.log('MBA1234 Time format detection:', {
+          startTime,
+          endTime,
+          isMilitary,
+          timeSettings
+        });
+      }
+
+      // Parse the date and time strings based on format
+      let startDateTime, endDateTime;
+      
+      if (isMilitary) {
+        startDateTime = parse(
+          `${startDate} ${startTime}`,
+          'yyyy-MM-dd HH:mm',
+          new Date()
+        );
+        endDateTime = parse(
+          `${endDate} ${endTime}`,
+          'yyyy-MM-dd HH:mm',
+          new Date()
+        );
+      } else {
+        startDateTime = parse(
+          `${startDate} ${startTime}`,
+          'yyyy-MM-dd hh:mm aa',
+          new Date()
+        );
+        endDateTime = parse(
+          `${endDate} ${endTime}`,
+          'yyyy-MM-dd hh:mm aa',
+          new Date()
+        );
+      }
+
+      if (is_DEBUG) {
+        console.log('MBA1234 Parsed dates:', {
+          startDateTime: startDateTime.toISOString(),
+          endDateTime: endDateTime.toISOString(),
+          isMilitary
+        });
+      }
+
+      return {
+        startDateTime,
+        endDateTime,
+        isMilitary
+      };
+    } catch (error) {
+      console.error('MBA1234 Error parsing dates:', error);
+      const now = new Date();
+      const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
+      return {
+        startDateTime: now,
+        endDateTime: oneHourLater,
+        isMilitary: timeSettings.use_military_time
+      };
+    }
   };
 
+  const initialDates = parseInitialDates(initialOccurrence);
+  
+  if (is_DEBUG) {
+    console.log('MBA565656 AddOccurrenceModal initializing with:', {
+      defaultRates,
+      initialOccurrence,
+      initialDates
+    });
+  }
+
   const [occurrence, setOccurrence] = useState(() => {
-    
-    
-    if (initialOccurrence) {
-      const initialState = {
-        startDate: initialOccurrence.startDate,
-        endDate: initialOccurrence.endDate,
-        startTime: createTimeDate(initialOccurrence.startTime),
-        endTime: createTimeDate(initialOccurrence.endTime),
-        rates: {
-          baseRate: initialOccurrence.rates.baseRate || '0',
-          additionalAnimalRate: initialOccurrence.rates.additionalAnimalRate || '0',
-          appliesAfterAnimals: initialOccurrence.rates.appliesAfterAnimals || '1',
-          holidayRate: initialOccurrence.rates.holidayRate || '0',
-          timeUnit: initialOccurrence.rates.timeUnit || 'per visit',
-          additionalRates: (initialOccurrence.rates.additionalRates || []).map(rate => ({
-            name: rate.name,
-            description: rate.description || '',
-            amount: rate.amount.toString()
-          }))
-        },
-        totalCost: initialOccurrence.totalCost || '0',
-        baseTotal: initialOccurrence.baseTotal || '0'
+    const initialState = {
+      startDateTime: initialDates.startDateTime,
+      endDateTime: initialDates.endDateTime,
+      isMilitary: timeSettings.use_military_time,
+      rates: {
+        baseRate: '0',
+        additionalAnimalRate: '0',
+        appliesAfterAnimals: '1',
+        holidayRate: '0',
+        unit_of_time: 'Per Visit',
+        additionalRates: []
+      },
+      calculatedCost: '0'
+    };
+
+    // If we have an initial occurrence, use its rates
+    if (initialOccurrence?.rates) {
+      initialState.rates = initialOccurrence.rates;
+      initialState.calculatedCost = initialOccurrence.calculatedCost || '0';
+    }
+    // Otherwise if we have default rates, use those
+    else if (defaultRates) {
+      initialState.rates = {
+        baseRate: defaultRates.base_rate?.toString() || '0',
+        additionalAnimalRate: defaultRates.additional_animal_rate?.toString() || '0',
+        appliesAfterAnimals: defaultRates.applies_after?.toString() || '1',
+        holidayRate: defaultRates.holiday_rate?.toString() || '0',
+        unit_of_time: defaultRates.unit_of_time || 'Per Visit',
+        additionalRates: defaultRates.additional_rates?.map(rate => ({
+          name: rate.title,
+          description: rate.description || '',
+          amount: rate.amount
+        })) || []
       };
-      
-      return initialState;
+      initialState.calculatedCost = defaultRates.calculated_cost?.toString() || '0';
     }
 
-    const defaultState = {
-      startDate: new Date().toISOString().split('T')[0],
-      endDate: new Date().toISOString().split('T')[0],
-      startTime: new Date(),
-      endTime: new Date(new Date().setHours(new Date().getHours() + 1)),
-      rates: {
-        baseRate: defaultRates?.baseRate || '0',
-        additionalAnimalRate: defaultRates?.additionalAnimalRate || '0',
-        appliesAfterAnimals: defaultRates?.appliesAfterAnimals || '1',
-        holidayRate: defaultRates?.holidayRate || '0',
-        timeUnit: defaultRates?.timeUnit || 'per visit',
-        additionalRates: defaultRates?.additionalRates || []
-      }
-    };
-    
-    return defaultState;
+    if (is_DEBUG) {
+      console.log('MBA565656 Initial state calculated:', initialState);
+    }
+
+    return initialState;
   });
 
-  // Reset occurrence when initialOccurrence changes or when modal visibility changes
+  const [unit_of_time, setUnitOfTime] = useState(
+    initialOccurrence?.rates?.unit_of_time || 
+    defaultRates?.unit_of_time || 
+    'Per Visit'
+  );
+
+  // Clear validation error and set initial values when modal becomes visible
   useEffect(() => {
-    if (!visible) {
-      // Reset to default state when modal closes
-      if (!initialOccurrence) {
-        setOccurrence({
-          startDate: new Date().toISOString().split('T')[0],
-          endDate: new Date().toISOString().split('T')[0],
-          startTime: new Date(),
-          endTime: new Date(new Date().setHours(new Date().getHours() + 1)),
-          rates: {
-            baseRate: defaultRates?.baseRate || '0',
-            additionalAnimalRate: defaultRates?.additionalAnimalRate || '0',
-            appliesAfterAnimals: defaultRates?.appliesAfterAnimals || '1',
-            holidayRate: defaultRates?.holidayRate || '0',
-            timeUnit: defaultRates?.timeUnit || 'per visit',
-            additionalRates: []
+    if (visible) {
+      setValidationError(null);
+      // Store initial values when modal opens, including dates
+      initialValues.current = {
+        baseRate: occurrence.rates.baseRate,
+        additionalAnimalRate: occurrence.rates.additionalAnimalRate,
+        holidayRate: occurrence.rates.holidayRate,
+        unit_of_time: occurrence.rates.unit_of_time,
+        additionalRates: [...occurrence.rates.additionalRates],
+        startDateTime: new Date(occurrence.startDateTime),
+        endDateTime: new Date(occurrence.endDateTime)
+      };
+      if (is_DEBUG) {
+        console.log('MBA565656 Setting initial values:', initialValues.current);
+      }
+    }
+  }, [visible]); // Only depend on visible prop
+
+  const handlePickerStateChange = (isActive) => {
+    setIsAnyPickerActive(isActive);
+    if (is_DEBUG) {
+      console.log('MBA5678 Picker state changed:', {
+        isActive,
+        isFromRequestBooking,
+        currentModalHeight: isActive && isFromRequestBooking ? '65vh' : '80%'
+      });
+    }
+
+    // Animate to new height
+    Animated.timing(heightAnim, {
+      toValue: isActive && isFromRequestBooking ? 1 : 0,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
+  };
+
+  useEffect(() => {
+    if (is_DEBUG) {
+      console.log('MBA5678 Modal state:', {
+        isFromRequestBooking,
+        isAnyPickerActive,
+        visible
+      });
+    }
+  }, [isFromRequestBooking, isAnyPickerActive, visible]);
+
+  // Add effect to update rates when defaultRates changes
+  useEffect(() => {
+    if (!initialOccurrence && defaultRates) {
+      if (is_DEBUG) {
+        console.log('MBA565656 Updating rates from defaultRates:', {
+          defaultRates,
+          currentRates: occurrence.rates
+        });
+      }
+
+      const newRates = {
+        baseRate: defaultRates.base_rate?.toString() || '0',
+        additionalAnimalRate: defaultRates.additional_animal_rate?.toString() || '0',
+        appliesAfterAnimals: defaultRates.applies_after?.toString() || '1',
+        holidayRate: defaultRates.holiday_rate?.toString() || '0',
+        unit_of_time: defaultRates.unit_of_time || 'Per Visit',
+        additionalRates: defaultRates.additional_rates?.map(rate => ({
+          name: rate.title,
+          description: rate.description || '',
+          amount: rate.amount
+        })) || []
+      };
+
+      if (is_DEBUG) {
+        console.log('MBA565656 Setting new rates:', newRates);
+        console.log('MBA565656 Setting calculated cost:', defaultRates.calculated_cost);
+      }
+
+      setOccurrence(prev => {
+        const updated = {
+          ...prev,
+          rates: newRates,
+          calculatedCost: defaultRates.calculated_cost?.toString() || '0'
+        };
+        if (is_DEBUG) {
+          console.log('MBA565656 Updated occurrence state:', updated);
+        }
+        return updated;
+      });
+      
+      setUnitOfTime(defaultRates.unit_of_time || 'Per Visit');
+    }
+  }, [defaultRates, initialOccurrence]);
+
+  // Replace the debounced API call with frontend calculation
+  const debouncedCalculateCosts = useCallback(
+    debounce((occurrenceData) => {
+      if (!booking?.booking_id) return;
+
+      try {
+        setIsCalculatingCost(true);
+        
+        // Calculate cost using frontend function
+        const result = calculateOccurrenceCost(occurrenceData, booking.pets?.length || 0);
+
+        if (is_DEBUG) {
+          console.log('MBA565656 Cost calculation result:', result);
+        }
+
+        setOccurrence(prev => ({
+          ...prev,
+          calculatedCost: result.total_cost.toFixed(2)
+        }));
+      } catch (error) {
+        if (is_DEBUG) {
+          console.error('MBA565656 Error calculating costs:', error);
+        }
+      } finally {
+        setIsCalculatingCost(false);
+      }
+    }, 500),
+    [booking?.booking_id, booking?.pets?.length]
+  );
+
+  // Update the cost calculation effect
+  useEffect(() => {
+    // Only calculate costs if:
+    // 1. Modal is visible
+    // 2. We have initial values set
+    // 3. Have a valid booking ID
+    // 4. User has made actual changes to the form
+    if (visible && initialValues.current && booking?.booking_id) {
+      if (is_DEBUG) {
+        console.log('MBA565656 Checking for changes:', {
+          current: {
+            rates: occurrence.rates,
+            startDateTime: occurrence.startDateTime.toISOString(),
+            endDateTime: occurrence.endDateTime.toISOString()
+          },
+          initial: {
+            rates: initialValues.current,
+            startDateTime: initialValues.current.startDateTime.toISOString(),
+            endDateTime: initialValues.current.endDateTime.toISOString()
           }
         });
-        setTimeUnit(defaultRates?.timeUnit || 'per visit');
       }
-    } else if (initialOccurrence) {
-      // Only set occurrence data if we're editing
-      setOccurrence({
-        startDate: initialOccurrence.startDate,
-        endDate: initialOccurrence.endDate,
-        startTime: createTimeDate(initialOccurrence.startTime),
-        endTime: createTimeDate(initialOccurrence.endTime),
+
+      // Track if any changes were made that require recalculation
+      const timeDiffs = {
+        start: Math.abs(occurrence.startDateTime.getTime() - initialValues.current.startDateTime.getTime()),
+        end: Math.abs(occurrence.endDateTime.getTime() - initialValues.current.endDateTime.getTime())
+      };
+
+      const rateChanges = {
+        baseRate: occurrence.rates.baseRate !== initialValues.current.baseRate,
+        additionalAnimalRate: occurrence.rates.additionalAnimalRate !== initialValues.current.additionalAnimalRate,
+        holidayRate: occurrence.rates.holidayRate !== initialValues.current.holidayRate,
+        unit_of_time: occurrence.rates.unit_of_time !== initialValues.current.unit_of_time,
+        additionalRatesLength: occurrence.rates.additionalRates.length !== initialValues.current.additionalRates.length
+      };
+
+      const hasChanges = 
+        rateChanges.baseRate ||
+        rateChanges.additionalAnimalRate ||
+        rateChanges.holidayRate ||
+        rateChanges.unit_of_time ||
+        rateChanges.additionalRatesLength ||
+        timeDiffs.start >= 1000 ||
+        timeDiffs.end >= 1000;
+
+      if (is_DEBUG) {
+        console.log('MBA565656 Change detection details:', {
+          timeDiffs,
+          rateChanges,
+          hasChanges
+        });
+      }
+
+      if (hasChanges) {
+        if (is_DEBUG) {
+          console.log('MBA565656 Changes detected, calculating costs:', {
+            current: {
+              rates: occurrence.rates,
+              startDateTime: occurrence.startDateTime.toISOString(),
+              endDateTime: occurrence.endDateTime.toISOString()
+            },
+            initial: {
+              rates: initialValues.current,
+              startDateTime: initialValues.current.startDateTime.toISOString(),
+              endDateTime: initialValues.current.endDateTime.toISOString()
+            },
+            timeDiffs,
+            rateChanges
+          });
+        }
+
+        const occurrenceData = {
+          start_date: format(occurrence.startDateTime, 'yyyy-MM-dd'),
+          end_date: format(occurrence.endDateTime, 'yyyy-MM-dd'),
+          start_time: format(occurrence.startDateTime, 'HH:mm'),
+          end_time: format(occurrence.endDateTime, 'HH:mm'),
+          rates: {
+            base_rate: occurrence.rates.baseRate,
+            additional_animal_rate: occurrence.rates.additionalAnimalRate,
+            applies_after: occurrence.rates.appliesAfterAnimals,
+            holiday_rate: occurrence.rates.holidayRate,
+            unit_of_time: occurrence.rates.unit_of_time,
+            additional_rates: occurrence.rates.additionalRates
+          }
+        };
+
+        if (is_DEBUG) {
+          console.log('MBA565656 Calling debouncedCalculateCosts with:', occurrenceData);
+        }
+
+        debouncedCalculateCosts(occurrenceData);
+      } else {
+        if (is_DEBUG) {
+          console.log('MBA565656 No changes detected, skipping calculation');
+        }
+      }
+    } else {
+      if (is_DEBUG) {
+        console.log('MBA565656 Skipping cost calculation:', {
+          visible,
+          hasInitialValues: !!initialValues.current,
+          hasBookingId: !!booking?.booking_id
+        });
+      }
+    }
+
+    // Cleanup function
+    return () => {
+      debouncedCalculateCosts.cancel();
+    };
+  }, [
+    visible,
+    occurrence.startDateTime,
+    occurrence.endDateTime,
+    occurrence.rates.baseRate,
+    occurrence.rates.additionalAnimalRate,
+    occurrence.rates.appliesAfterAnimals,
+    occurrence.rates.holidayRate,
+    occurrence.rates.unit_of_time,
+    occurrence.rates.additionalRates,
+    debouncedCalculateCosts,
+    booking?.booking_id
+  ]);
+
+  // Add effect to update unit_of_time when rates change
+  useEffect(() => {
+    if (is_DEBUG) {
+      console.log('MBA565656 Rates changed:', occurrence.rates);
+    }
+    setUnitOfTime(occurrence.rates.unit_of_time);
+  }, [occurrence.rates]);
+
+  // Add effect to log when modal becomes visible
+  useEffect(() => {
+    if (visible) {
+      if (is_DEBUG) {
+        console.log('MBA565656 Modal became visible:', {
+          defaultRates,
+          initialOccurrence,
+          currentRates: occurrence.rates
+        });
+      }
+    }
+  }, [visible]);
+
+  // Add effect to update military time preference when timeSettings changes
+  useEffect(() => {
+    if (is_DEBUG) {
+      console.log('MBA4321 Time settings changed:', timeSettings);
+    }
+    setOccurrence(prev => ({
+      ...prev,
+      isMilitary: timeSettings.use_military_time
+    }));
+  }, [timeSettings]);
+
+  // Add effect to update dates when initialOccurrence changes
+  useEffect(() => {
+    if (initialOccurrence) {
+      if (is_DEBUG) {
+        console.log('MBA4321 Initial occurrence rates:', initialOccurrence.rates);
+        console.log('MBA4321 Initial unit_of_time:', initialOccurrence.rates?.unit_of_time);
+      }
+      const dates = parseInitialDates(initialOccurrence);
+      // Use unit_of_time directly from the rates object without any transformation
+      const unit_of_time = initialOccurrence.rates?.unit_of_time;
+      if (is_DEBUG) {
+        console.log('MBA4321 Setting unit_of_time to:', unit_of_time);
+      }
+      setOccurrence(prev => ({
+        ...prev,
+        startDateTime: dates.startDateTime,
+        endDateTime: dates.endDateTime,
+        isMilitary: dates.isMilitary,
         rates: {
-          baseRate: initialOccurrence.rates.baseRate || '0',
-          additionalAnimalRate: initialOccurrence.rates.additionalAnimalRate || '0',
-          appliesAfterAnimals: initialOccurrence.rates.appliesAfterAnimals || '1',
-          holidayRate: initialOccurrence.rates.holidayRate || '0',
-          timeUnit: initialOccurrence.rates.timeUnit || 'per visit',
-          additionalRates: (initialOccurrence.rates.additionalRates || []).map(rate => ({
-            name: rate.name,
-            description: rate.description || '',
-            amount: rate.amount.toString()
-          }))
-        },
-        totalCost: initialOccurrence.totalCost || '0',
-        baseTotal: initialOccurrence.baseTotal || '0'
+          ...initialOccurrence.rates,
+          unit_of_time: unit_of_time
+        }
+      }));
+      setUnitOfTime(unit_of_time);
+    }
+  }, [initialOccurrence]);
+
+  const handleStartDateTimeChange = (date) => {
+    if (is_DEBUG) {
+      console.log('MBA1234 Start datetime changed:', {
+        newDate: date?.toISOString(),
+        currentInitialValues: initialValues.current,
+        currentOccurrence: {
+          startDateTime: occurrence.startDateTime.toISOString(),
+          endDateTime: occurrence.endDateTime.toISOString()
+        }
       });
-      setTimeUnit(initialOccurrence.rates.timeUnit || 'per visit');
     }
-  }, [visible, initialOccurrence, defaultRates]);
-
-  const [showAddRate, setShowAddRate] = useState(false);
-  const [newRate, setNewRate] = useState({ name: '', amount: '' });
-  const [timeUnit, setTimeUnit] = useState(initialOccurrence?.rates?.timeUnit || occurrence.rates.timeUnit);
-  const [isLoading, setIsLoading] = useState(false);
-  const [validationError, setValidationError] = useState(null);
-
-  const calculateTotal = () => {
-    // If we have a totalCost from the initialOccurrence, use that
-    if (initialOccurrence?.totalCost) {
-      return parseFloat(initialOccurrence.totalCost).toFixed(2);
+    if (date && !isNaN(date.getTime())) {
+      setOccurrence(prev => {
+        const updated = {
+          ...prev,
+          startDateTime: date
+        };
+        if (is_DEBUG) {
+          console.log('MBA1234 Updated occurrence:', {
+            startDateTime: updated.startDateTime.toISOString(),
+            endDateTime: updated.endDateTime.toISOString()
+          });
+        }
+        return updated;
+      });
     }
+  };
 
-    // Otherwise calculate it
-    const baseAmount = parseFloat(occurrence.rates.baseRate) || 0;
-    const additionalAnimalAmount = parseFloat(occurrence.rates.additionalAnimalRate) || 0;
-    const holidayAmount = parseFloat(occurrence.rates.holidayRate) || 0;
-    const customRatesAmount = occurrence.rates.additionalRates?.reduce((sum, rate) => 
-      sum + (parseFloat(rate.amount) || 0), 0) || 0;
-
-    const subtotal = baseAmount + additionalAnimalAmount + holidayAmount + customRatesAmount;
-    const platformFee = subtotal * 0.10; // 10% platform fee
-    const taxes = (subtotal + platformFee) * 0.09; // 9% tax
-    const totalClientCost = subtotal + platformFee + taxes;
-
-    return totalClientCost.toFixed(2);
+  const handleEndDateTimeChange = (date) => {
+    if (is_DEBUG) {
+      console.log('MBA1234 End datetime changed:', {
+        newDate: date?.toISOString(),
+        currentInitialValues: initialValues.current,
+        currentOccurrence: {
+          startDateTime: occurrence.startDateTime.toISOString(),
+          endDateTime: occurrence.endDateTime.toISOString()
+        }
+      });
+    }
+    if (date && !isNaN(date.getTime())) {
+      setOccurrence(prev => {
+        const updated = {
+          ...prev,
+          endDateTime: date
+        };
+        if (is_DEBUG) {
+          console.log('MBA1234 Updated occurrence:', {
+            startDateTime: updated.startDateTime.toISOString(),
+            endDateTime: updated.endDateTime.toISOString()
+          });
+        }
+        return updated;
+      });
+    }
   };
 
   const handleAdd = async () => {
     try {
-      setIsLoading(true);
-      
-      const occurrenceData = {
-        ...occurrence,
-        startTime: format(occurrence.startTime, 'HH:mm'),
-        endTime: format(occurrence.endTime, 'HH:mm'),
-        rates: {
-          ...occurrence.rates,
-          baseRate: parseFloat(occurrence.rates.baseRate) || 0,
-          additionalAnimalRate: parseFloat(occurrence.rates.additionalAnimalRate) || 0,
-          appliesAfterAnimals: occurrence.rates.appliesAfterAnimals,
-          holidayRate: parseFloat(occurrence.rates.holidayRate) || 0,
-          additionalRates: occurrence.rates.additionalRates.map(rate => ({
-            ...rate,
-            amount: parseFloat(rate.amount) || 0
-          })),
-          timeUnit,
-        },
-        totalCost: parseFloat(calculateTotal())
-      };
+      // Format dates in UTC for backend
+      const startDate = format(occurrence.startDateTime, 'yyyy-MM-dd');
+      const startTime = format(occurrence.startDateTime, 'HH:mm');
+      const endDate = format(occurrence.endDateTime, 'yyyy-MM-dd');
+      const endTime = format(occurrence.endDateTime, 'HH:mm');
 
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      await onAdd(occurrenceData);
+      if (is_DEBUG) {
+        console.log('MBA1234 Adding occurrence:', {
+          startDate,
+          startTime,
+          endDate,
+          endTime,
+          startDateTime: occurrence.startDateTime.toISOString(),
+          endDateTime: occurrence.endDateTime.toISOString()
+        });
+      }
 
-      setOccurrence({
-        startDate: new Date().toISOString().split('T')[0],
-        endDate: new Date().toISOString().split('T')[0],
-        startTime: new Date(),
-        endTime: new Date(new Date().setHours(new Date().getHours() + 1)),
-        rates: {
-          baseRate: defaultRates?.baseRate || 0,
-          additionalAnimalRate: defaultRates?.additionalAnimalRate || 0,
-          appliesAfterAnimals: defaultRates?.appliesAfterAnimals || '1',
-          holidayRate: defaultRates?.holidayRate || 0,
-          additionalRates: [],
-          timeUnit: 'per visit'
-        }
+      const response = await onAdd({
+        startDate,
+        startTime,
+        endDate,
+        endTime,
+        rates: occurrence.rates
       });
-      setShowAddRate(false);
-      setNewRate({ name: '', amount: '' });
-      
-      await new Promise(resolve => setTimeout(resolve, 500));
+
+      if (is_DEBUG) {
+        console.log('MBA1234 Response from onAdd:', response);
+      }
+
+      if (response?.status === 'success') {
+        if (is_DEBUG) {
+          console.log('MBA1234 Successfully added/updated occurrence');
+        }
+        resetForm();
+        onClose();
+        // Show success message using Alert
+        Alert.alert('Success', response.message);
+      } else {
+        // Show error message but don't close modal
+        setValidationError(response?.message || 'Failed to add event');
+      }
     } catch (error) {
-      console.error('Error adding occurrence:', error);
-    } finally {
-      setIsLoading(false);
-      onClose();
+      if (is_DEBUG) {
+        console.error('MBA1234 Error adding occurrence:', error);
+      }
+      setValidationError(error.message || 'An unexpected error occurred');
     }
   };
 
-  const handleAddRate = () => {
-    if (newRate.name && newRate.amount) {
-      setOccurrence(prev => ({
-        ...prev,
-        rates: {
-          ...prev.rates,
-          additionalRates: [...prev.rates.additionalRates, {
-            ...newRate,
-            amount: parseFloat(newRate.amount)
-          }]
-        }
-      }));
-      setNewRate({ name: '', amount: '' });
-      setShowAddRate(false);
+  const [showAddRate, setShowAddRate] = useState(false);
+  const [newRate, setNewRate] = useState({ name: '', amount: '' });
+  
+  useEffect(() => {
+    if (is_DEBUG) {
+      console.log('MBA1234 Initial occurrence:', initialOccurrence);
+      console.log('MBA1234 Unit of time set to:', unit_of_time);
     }
-  };
+  }, [unit_of_time, initialOccurrence]);
+
+  // Update occurrence when unit_of_time changes
+  useEffect(() => {
+    if (is_DEBUG) {
+      console.log('MBA4321 Unit of time changed:', {
+        newUnitOfTime: unit_of_time,
+        occurrenceRatesUnitOfTime: occurrence.rates.unit_of_time
+      });
+    }
+    setOccurrence(prev => ({
+      ...prev,
+      rates: {
+        ...prev.rates,
+        unit_of_time: unit_of_time
+      }
+    }));
+  }, [unit_of_time]);
 
   const handleDeleteRate = (index) => {
     setOccurrence(prev => ({
@@ -291,10 +691,10 @@ const AddOccurrenceModal = ({
   const handleSubmit = () => {
     // Validate the date/time range
     const validation = validateDateTimeRange(
-      occurrence.startDate,
-      occurrence.endDate,
-      format(occurrence.startTime, 'HH:mm'),
-      format(occurrence.endTime, 'HH:mm')
+      format(occurrence.startDateTime, 'yyyy-MM-dd'),
+      format(occurrence.endDateTime, 'yyyy-MM-dd'),
+      format(occurrence.startDateTime, 'HH:mm'),
+      format(occurrence.endDateTime, 'HH:mm')
     );
 
     if (!validation.isValid) {
@@ -302,28 +702,32 @@ const AddOccurrenceModal = ({
       return;
     }
 
+    setValidationError(null);
     handleAdd();
   };
 
   const resetForm = () => {
     setOccurrence({
-      startDate: new Date().toISOString().split('T')[0],
-      endDate: new Date().toISOString().split('T')[0],
-      startTime: new Date(),
-      endTime: new Date(new Date().setHours(new Date().getHours() + 1)),
+      startDateTime: new Date(),
+      endDateTime: new Date(new Date().setHours(new Date().getHours() + 1)),
+      isMilitary: timeSettings.use_military_time,
       rates: {
-        baseRate: defaultRates?.baseRate || '0',
-        additionalAnimalRate: defaultRates?.additionalAnimalRate || '0',
-        appliesAfterAnimals: defaultRates?.appliesAfterAnimals || '1',
-        holidayRate: defaultRates?.holidayRate || '0',
-        timeUnit: defaultRates?.timeUnit || 'per visit',
-        additionalRates: []
-      }
+        baseRate: defaultRates?.base_rate?.toString() || '0',
+        additionalAnimalRate: defaultRates?.additional_animal_rate?.toString() || '0',
+        appliesAfterAnimals: defaultRates?.applies_after?.toString() || '1',
+        holidayRate: defaultRates?.holiday_rate?.toString() || '0',
+        unit_of_time: defaultRates?.unit_of_time || 'Per Visit',
+        additionalRates: defaultRates?.additional_rates?.map(rate => ({
+          name: rate.title,
+          description: rate.description || '',
+          amount: rate.amount
+        })) || []
+      },
+      calculatedCost: '0'
     });
-    setTimeUnit(defaultRates?.timeUnit || 'per visit');
+    setUnitOfTime(defaultRates?.unit_of_time || 'Per Visit');
     setShowAddRate(false);
     setNewRate({ name: '', amount: '' });
-    setValidationError(null);
   };
 
   const renderPickerItems = (options) => {
@@ -337,270 +741,313 @@ const AddOccurrenceModal = ({
     ));
   };
 
+  const handleDeleteClick = () => {
+    setShowDeleteConfirmation(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    setShowDeleteConfirmation(false);
+    handleClose();
+  };
+
   return (
-    <Modal
-      visible={visible}
-      transparent={true}
-      animationType="fade"
-      onRequestClose={handleClose}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>
-              {modalTitle}
-            </Text>
-            <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
-              <MaterialCommunityIcons name="close" size={24} color={theme.colors.text} />
-            </TouchableOpacity>
-          </View>
-
-          <ScrollableContent>
-            <View style={styles.dateTimeSection}>
-              <Text style={styles.sectionTitle}>Date & Time</Text>
-              
-              <View style={styles.dateTimeContainer}>
-                <View style={styles.dateTimeColumn}>
-                  <Text style={styles.label}>Start Date</Text>
-                  <DatePicker
-                    value={occurrence.startDate}
-                    onChange={(date) => setOccurrence(prev => ({ ...prev, startDate: date }))}
-                  />
-                </View>
-                <View style={styles.dateTimeColumn}>
-                  <Text style={styles.label}>Start Time</Text>
-                  <TimePicker
-                    value={occurrence.startTime}
-                    onChange={(time) => setOccurrence(prev => ({ ...prev, startTime: time }))}
-                    fullWidth
-                  />
-                </View>
-              </View>
-            </View>
-            <View style={styles.dateTimeSection}>
-              <View style={[styles.dateTimeContainer, {marginTop: 15}]}>
-                <View style={styles.dateTimeColumn}>
-                  <Text style={styles.label}>End Date</Text>
-                  <DatePicker
-                    value={occurrence.endDate}
-                    onChange={(date) => setOccurrence(prev => ({ ...prev, endDate: date }))}
-                  />
-                </View>
-                <View style={styles.dateTimeColumn}>
-                  <Text style={styles.label}>End Time</Text>
-                  <TimePicker
-                    value={occurrence.endTime}
-                    onChange={(time) => setOccurrence(prev => ({ ...prev, endTime: time }))}
-                    fullWidth
-                  />
-                </View>
-              </View>
+    <>
+      <Modal
+        visible={visible}
+        onRequestClose={handleClose}
+        animationType="slide"
+        transparent={true}
+      >
+        <View style={styles.modalContainer}>
+          <Animated.View style={[
+            styles.modalContent,
+            isFromRequestBooking ? {
+              maxHeight: undefined,
+              height: heightAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: ['325px', '650px']
+              }),
+              transform: [{
+                translateY: heightAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, -40]
+                })
+              }]
+            } : {
+              maxHeight: '80%'
+            }
+          ]}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{modalTitle}</Text>
+              <TouchableOpacity onPress={handleClose}>
+                <MaterialCommunityIcons name="close" size={24} color={theme.colors.text} />
+              </TouchableOpacity>
             </View>
 
-            {validationError && (
-              <Text style={styles.errorText}>{validationError}</Text>
-            )}
+            <ScrollView 
+              style={styles.scrollView}
+              contentContainerStyle={[
+                styles.scrollViewContent,
+                isFromRequestBooking && isAnyPickerActive && { paddingBottom: 300 }
+              ]}
+            >
+              <View style={[styles.section, { zIndex: 10 }]}>
+                <Text style={styles.label}>Start Date & Time</Text>
+                <DateTimePicker
+                  value={occurrence.startDateTime}
+                  onChange={handleStartDateTimeChange}
+                  error={validationError?.startDateTime}
+                  isMilitary={occurrence.isMilitary}
+                  onPickerStateChange={handlePickerStateChange}
+                />
+              </View>
 
-            {!hideRates && (
-              <>
-                <View style={styles.rateSection}>
-                  <View style={[styles.rateContainer, {marginTop: 15}]}>
-                    <View style={styles.baseRateInput}>
-                      <Text style={styles.label}>Base Rate</Text>
-                      <TextInput
-                        style={styles.input}
-                        value={occurrence.rates.baseRate.toString()}
-                        onChangeText={(text) => setOccurrence(prev => ({
-                          ...prev,
-                          rates: {
-                            ...prev.rates,
-                            baseRate: text.replace(/[^0-9.]/g, '')
-                          }
-                        }))}
-                        keyboardType="decimal-pad"
-                        placeholder="0.00"
-                      />
-                    </View>
-                    <View style={styles.timeUnitInput}>
-                      <Text style={styles.label}>Per</Text>
-                      <Picker
-                        selectedValue={timeUnit}
-                        onValueChange={(itemValue) => setTimeUnit(itemValue)}
-                        style={styles.picker}
-                      >
-                        {renderPickerItems(TIME_OPTIONS)}
-                      </Picker>
-                    </View>
-                  </View>
+              <View style={[styles.section, { zIndex: 9 }]}>
+                <Text style={styles.label}>End Date & Time</Text>
+                <DateTimePicker
+                  value={occurrence.endDateTime}
+                  onChange={handleEndDateTimeChange}
+                  error={validationError?.endDateTime}
+                  isMilitary={occurrence.isMilitary}
+                  onPickerStateChange={handlePickerStateChange}
+                />
+              </View>
 
-                  <View style={[styles.rateContainer, styles.topSpacing]}>
-                    <View style={styles.baseRateInput}>
-                      <Text style={styles.label}>Additional Animal Rate</Text>
-                      <TextInput
-                        style={styles.input}
-                        value={occurrence.rates.additionalAnimalRate.toString()}
-                        onChangeText={(text) => setOccurrence(prev => ({
-                          ...prev,
-                          rates: {
-                            ...prev.rates,
-                            additionalAnimalRate: text.replace(/[^0-9.]/g, '')
-                          }
-                        }))}
-                        keyboardType="decimal-pad"
-                        placeholder="0.00"
-                      />
-                    </View>
-                    <View style={styles.timeUnitInput}>
-                      <Text style={styles.label}>Applies After</Text>
-                      <Picker
-                        selectedValue={occurrence.rates.appliesAfterAnimals}
-                        onValueChange={(itemValue) => setOccurrence(prev => ({
-                          ...prev,
-                          rates: {
-                            ...prev.rates,
-                            appliesAfterAnimals: itemValue
-                          }
-                        }))}
-                        style={styles.picker}
-                      >
-                        {ANIMAL_COUNT_OPTIONS.map((option) => (
-                          <Picker.Item key={option} label={`${option} animal${option === '1' ? '' : 's'}`} value={option} />
-                        ))}
-                      </Picker>
-                    </View>
-                  </View>
-
-                  <View style={[styles.rateContainer, styles.topSpacing]}>
-                    <View style={styles.baseRateInput}>
-                      <Text style={styles.label}>Holiday Rate</Text>
-                      <TextInput
-                        style={styles.input}
-                        value={occurrence.rates.holidayRate.toString()}
-                        onChangeText={(text) => setOccurrence(prev => ({
-                          ...prev,
-                          rates: {
-                            ...prev.rates,
-                            holidayRate: text.replace(/[^0-9.]/g, '')
-                          }
-                        }))}
-                        keyboardType="decimal-pad"
-                        placeholder="0.00"
-                      />
-                    </View>
-                  </View>
-                </View>
-
-                <View style={styles.rateSection}>
-                  <Text style={[styles.label, {marginTop: 10, marginBottom: 0}]}>Additional Rates</Text>
-                  {occurrence.rates.additionalRates.map((rate, index) => (
-                    <View key={index} style={[styles.rateRow, {marginTop: 10, marginBottom: 0}]}>
-                      <TextInput
-                        style={[styles.input, styles.rateInput]}
-                        value={rate.name}
-                        editable={false}
-                      />
-                      <View style={[styles.rateAmountContainer]}>
+              {!hideRates && (
+                <>
+                  <View style={[styles.section, { zIndex: 8 }]}>
+                    <Text style={styles.label}>Base Rate</Text>
+                    <View style={styles.rateContainer}>
+                      <View style={styles.baseRateInput}>
                         <TextInput
-                          style={[styles.input, styles.rateAmountInput]}
-                          value={rate.amount.toString()}
-                          editable={false}
+                          style={styles.input}
+                          value={occurrence.rates.baseRate.toString()}
+                          onChangeText={(text) => setOccurrence(prev => ({
+                            ...prev,
+                            rates: {
+                              ...prev.rates,
+                              baseRate: text.replace(/[^0-9.]/g, '')
+                            }
+                          }))}
+                          keyboardType="decimal-pad"
+                          placeholder="0.00"
                         />
                       </View>
-                      <TouchableOpacity onPress={() => handleDeleteRate(index)}>
-                        <MaterialCommunityIcons name="close" size={24} color={theme.colors.error} />
-                      </TouchableOpacity>
-                    </View>
-                  ))}
-
-                  {showAddRate ? (
-                    <>
-                      <View style={styles.rateLabelContainer}>
-                        <Text style={styles.rateTitleLabel}>Rate Title</Text>
-                        <Text style={styles.rateAmountLabel}>Rate Amount</Text>
+                      <View style={styles.timeUnitInput}>
+                        <Text style={styles.label}>Per</Text>
+                        <Picker
+                          selectedValue={unit_of_time}
+                          onValueChange={(itemValue) => {
+                            if (is_DEBUG) {
+                              console.log('MBA4321 Picker value changed to:', itemValue);
+                            }
+                            setUnitOfTime(itemValue);
+                            setOccurrence(prev => ({
+                              ...prev,
+                              rates: {
+                                ...prev.rates,
+                                unit_of_time: itemValue
+                              }
+                            }));
+                          }}
+                          style={styles.picker}
+                        >
+                          {renderPickerItems(TIME_OPTIONS)}
+                        </Picker>
                       </View>
-                      <View style={styles.rateRow}>
+                    </View>
+                  </View>
+
+                  <View style={[styles.section, { zIndex: 7 }]}>
+                    <Text style={styles.label}>
+                      {screenWidth < 375 
+                        ? `+${occurrence.rates.appliesAfterAnimals} Pet Rate`
+                        : 'Additional Pet Rate'
+                      }
+                    </Text>
+                    <View style={styles.rateContainer}>
+                      <View style={styles.baseRateInput}>
+                        <TextInput
+                          style={styles.input}
+                          value={occurrence.rates.additionalAnimalRate.toString()}
+                          onChangeText={(text) => setOccurrence(prev => ({
+                            ...prev,
+                            rates: {
+                              ...prev.rates,
+                              additionalAnimalRate: text.replace(/[^0-9.]/g, '')
+                            }
+                          }))}
+                          keyboardType="decimal-pad"
+                          placeholder="0.00"
+                        />
+                      </View>
+                      <View style={styles.timeUnitInput}>
+                        <Text style={styles.label}>Applies After</Text>
+                        <Picker
+                          selectedValue={occurrence.rates.appliesAfterAnimals}
+                          onValueChange={(itemValue) => setOccurrence(prev => ({
+                            ...prev,
+                            rates: {
+                              ...prev.rates,
+                              appliesAfterAnimals: itemValue
+                            }
+                          }))}
+                          style={styles.picker}
+                        >
+                          {ANIMAL_COUNT_OPTIONS.map((option) => (
+                            <Picker.Item key={option} label={`${option} animal${option === '1' ? '' : 's'}`} value={option} />
+                          ))}
+                        </Picker>
+                      </View>
+                    </View>
+                  </View>
+
+                  <View style={[styles.section, { zIndex: 6 }]}>
+                    <Text style={styles.label}>Holiday Rate</Text>
+                    <View style={styles.rateContainer}>
+                      <View style={styles.baseRateInput}>
+                        <TextInput
+                          style={styles.input}
+                          value={occurrence.rates.holidayRate.toString()}
+                          onChangeText={(text) => setOccurrence(prev => ({
+                            ...prev,
+                            rates: {
+                              ...prev.rates,
+                              holidayRate: text.replace(/[^0-9.]/g, '')
+                            }
+                          }))}
+                          keyboardType="decimal-pad"
+                          placeholder="0.00"
+                        />
+                      </View>
+                    </View>
+                  </View>
+
+                  <View style={[styles.section, { zIndex: 5 }]}>
+                    <Text style={styles.label}>Additional Rates</Text>
+                    {occurrence.rates.additionalRates.map((rate, index) => (
+                      <View key={index} style={[styles.rateRow, {marginBottom: 10}]}>
                         <TextInput
                           style={[styles.input, styles.rateInput]}
-                          value={newRate.name}
-                          onChangeText={(text) => setNewRate(prev => ({ ...prev, name: text }))}
-                          placeholder="Rate Title"
+                          value={rate.name}
+                          editable={false}
                         />
                         <View style={[styles.rateAmountContainer]}>
                           <TextInput
                             style={[styles.input, styles.rateAmountInput]}
-                            value={newRate.amount}
-                            onChangeText={(text) => setNewRate(prev => ({ 
-                              ...prev, 
-                              amount: text.replace(/[^0-9.]/g, '') 
-                            }))}
-                            keyboardType="decimal-pad"
-                            placeholder="0.00"
+                            value={rate.amount.toString()}
+                            editable={false}
                           />
                         </View>
-                        <TouchableOpacity onPress={handleAddRate}>
-                          <MaterialCommunityIcons name="plus" size={24} color={theme.colors.primary} />
+                        <TouchableOpacity onPress={() => handleDeleteRate(index)}>
+                          <MaterialCommunityIcons name="close" size={24} color={theme.colors.error} />
                         </TouchableOpacity>
                       </View>
-                    </>
-                  ) : (
-                    <TouchableOpacity 
-                      style={styles.addRateButton}
-                      onPress={() => setShowAddRate(true)}
-                    >
-                      <Text style={styles.addRateButtonText}>Add custom rate</Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-              
+                    ))}
 
-                <View style={styles.totalSection}>
-                  <Text style={styles.totalLabel}>Total:</Text>
-                  <Text style={styles.totalAmount}>${calculateTotal()}</Text>
-                </View>
+                    {showAddRate ? (
+                      <>
+                        <View style={styles.rateLabelContainer}>
+                          <Text style={styles.rateTitleLabel}>Rate Title</Text>
+                          <Text style={styles.rateAmountLabel}>Rate Amount</Text>
+                        </View>
+                        <View style={styles.rateRow}>
+                          <TextInput
+                            style={[styles.input, styles.rateInput]}
+                            value={newRate.name}
+                            onChangeText={(text) => setNewRate(prev => ({ ...prev, name: text }))}
+                            placeholder="Rate Title"
+                          />
+                          <View style={[styles.rateAmountContainer]}>
+                            <TextInput
+                              style={[styles.input, styles.rateAmountInput]}
+                              value={newRate.amount}
+                              onChangeText={(text) => setNewRate(prev => ({ 
+                                ...prev, 
+                                amount: text.replace(/[^0-9.]/g, '') 
+                              }))}
+                              keyboardType="decimal-pad"
+                              placeholder="0.00"
+                            />
+                          </View>
+                          <TouchableOpacity onPress={() => handleAddRate()}>
+                            <MaterialCommunityIcons name="plus" size={24} color={theme.colors.primary} />
+                          </TouchableOpacity>
+                        </View>
+                      </>
+                    ) : (
+                      <TouchableOpacity 
+                        style={styles.addRateButton}
+                        onPress={() => setShowAddRate(true)}
+                      >
+                        <Text style={styles.addRateButtonText}>Add custom rate</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                
 
-              </>
-            )}
+                  <View style={styles.totalSection}>
+                    <Text style={styles.totalLabel}>Total:</Text>
+                    {isCalculatingCost ? (
+                      <View style={styles.loadingContainer}>
+                        <ActivityIndicator size="small" color={theme.colors.primary} />
+                      </View>
+                    ) : (
+                      <Text style={styles.totalAmount}>${parseFloat(occurrence.calculatedCost).toFixed(2)}</Text>
+                    )}
+                  </View>
+
+                </>
+              )}
+            </ScrollView>
 
             <View style={styles.buttonContainer}>
-              <TouchableOpacity
-                style={[styles.button, styles.cancelButton]}
-                onPress={handleClose}
+              <Button 
+                mode="outlined" 
+                onPress={handleDeleteClick}
+                style={[styles.button, { borderColor: theme.colors.error }]}
+                textColor={theme.colors.error}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.button, styles.addButton]}
+                Delete
+              </Button>
+              <Button 
+                mode="contained" 
                 onPress={handleSubmit}
-                disabled={isLoading}
+                style={styles.button}
               >
-                {isLoading ? (
-                  <ActivityIndicator color={theme.colors.surface} />
-                ) : (
-                  <Text style={styles.addButtonText}>{isEditing ? 'Save' : 'Add'}</Text>
-                )}
-              </TouchableOpacity>
+                {isEditing ? 'Save Changes' : 'Add'}
+              </Button>
             </View>
-          </ScrollableContent>
+            {validationError && (
+              <Text style={styles.errorMessage}>{validationError}</Text>
+            )}
+          </Animated.View>
         </View>
-      </View>
-    </Modal>
+      </Modal>
+
+      <ConfirmationModal
+        visible={showDeleteConfirmation}
+        onClose={() => setShowDeleteConfirmation(false)}
+        onConfirm={handleDeleteConfirm}
+        actionText="delete this occurrence"
+      />
+    </>
   );
 };
 
 const styles = StyleSheet.create({
-  modalOverlay: {
+  modalContainer: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.colors.background,
     borderRadius: 8,
     padding: 20,
-    width: '90%',
+    width: '95%',
     maxWidth: 500,
-    maxHeight: '80%',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -613,77 +1060,20 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontFamily: theme.fonts.header.fontFamily,
   },
-  closeButton: {
-    padding: 5,
-  },
-  sectionTitle: {
-    fontSize: theme.fontSizes.large,
-    fontWeight: '500',
-    fontFamily: theme.fonts.header.fontFamily,
-  },
-  dateTimeSection: {
-    // marginBottom: 10,
-  },
-  dateTimeContainer: {
-    display: 'flex',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 15,
-    // marginBottom: 15,
-  },
-  dateTimeColumn: {
-    flex: 1,
-  },
-  topSpacing: {
-    marginTop: 15,
-  },
-  rateRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 10,
-  },
-  rateInput: {
-    flex: 2,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: 8,
-    padding: 12,
-    fontFamily: theme.fonts.regular.fontFamily,
-  },
-  rateAmountContainer: {
-    flex: 1,
-  },
-  rateAmountInput: {
-    flex: 1,
-    fontFamily: theme.fonts.regular.fontFamily,
-  },
-  addRateButton: {
-    padding: 10,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: 8,
-    alignItems: 'center',
-    // marginTop: ,
-  },
-  addRateButtonText: {
-    color: theme.colors.primary,
-    fontSize: theme.fontSizes.medium,
-    fontFamily: theme.fonts.regular.fontFamily,
+  section: {
+    position: 'relative',
+    marginBottom: 16,
   },
   label: {
     fontSize: theme.fontSizes.medium,
     color: theme.colors.text,
-    fontFamily: theme.fonts.regular.fontFamily,
+    marginBottom: 2,
+    fontFamily: theme.fonts.header.fontFamily,
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: 8,
-    paddingHorizontal: 12,
+    position: 'relative',
+    zIndex: 200, // Higher than modal content
+    marginBottom: 16,
   },
   dollarSign: {
     fontSize: theme.fontSizes.medium,
@@ -692,72 +1082,37 @@ const styles = StyleSheet.create({
     fontFamily: theme.fonts.regular.fontFamily,
   },
   input: {
-    backgroundColor: theme.colors.surface,
-    padding: 10,
-    borderRadius: 8,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    fontFamily: theme.fonts.regular.fontFamily,
+    borderRadius: 8,
+    padding: 8,
+    backgroundColor: theme.colors.background,
   },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 20,
-    gap: 15,
+    gap: 10,
+    marginTop: 16,
   },
   button: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
+    paddingVertical: 6,
   },
-  cancelButton: {
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  addButton: {
-    backgroundColor: theme.colors.primary,
-  },
-  cancelButtonText: {
-    color: theme.colors.text,
-    fontSize: theme.fontSizes.medium,
-    fontFamily: theme.fonts.regular.fontFamily,
-  },
-  addButtonText: {
-    fontSize: theme.fontSizes.medium,
-    color: theme.colors.surface,
-    fontWeight: 'bold',
-    fontFamily: theme.fonts.regular.fontFamily,
-  },
-  rateLabelContainer: {
-    flexDirection: 'row',
-    marginTop: 10,
-    marginBottom: 5,
-  },
-  rateTitleLabel: {
-    flex: 2,
-    fontSize: theme.fontSizes.medium,
-    color: theme.colors.text,
-    fontFamily: theme.fonts.regular.fontFamily,
-  },
-  rateAmountLabel: {
-    flex: 1,
-    fontSize: theme.fontSizes.medium,
-    color: theme.colors.text,
-    marginLeft: 10,
-    fontFamily: theme.fonts.regular.fontFamily,
+  rateSection: {
+    // marginBottom: 10,
   },
   rateContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    gap: 10,
+    justifyContent: 'space-between',
+    gap: 12,
   },
   baseRateInput: {
     flex: 1,
   },
   timeUnitInput: {
     flex: 1,
+    marginTop: -32,
   },
   picker: {
     backgroundColor: theme.colors.surface,
@@ -794,17 +1149,84 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontFamily: theme.fonts.regular.fontFamily,
   },
-  dropdownText: {
+  rateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 10,
+    width: '100%',
+    flexWrap: 'nowrap',
+  },
+  rateInput: {
+    flex: 2,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 8,
+    height: 39,
+    padding: 12,
+    fontFamily: theme.fonts.regular.fontFamily,
+    minWidth: 0,
+  },
+  rateAmountContainer: {
+    flex: 1,
+    minWidth: 0,
+  },
+  rateAmountInput: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 8,
+    height: 39,
+    padding: 12,
+    fontFamily: theme.fonts.regular.fontFamily,
+    width: '100%',
+  },
+  addRateButton: {
+    padding: 10,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  addRateButtonText: {
+    color: theme.colors.primary,
+    fontSize: theme.fontSizes.medium,
+    fontFamily: theme.fonts.regular.fontFamily,
+  },
+  rateLabelContainer: {
+    flexDirection: 'row',
+    marginTop: 10,
+    marginBottom: 5,
+  },
+  rateTitleLabel: {
+    flex: 2,
+    fontSize: theme.fontSizes.medium,
     color: theme.colors.text,
     fontFamily: theme.fonts.regular.fontFamily,
   },
-  selectedDropdownText: {
-    color: theme.colors.primary,
-    fontWeight: 'bold',
+  rateAmountLabel: {
+    flex: 1,
+    fontSize: theme.fontSizes.medium,
+    color: theme.colors.text,
+    marginLeft: 10,
     fontFamily: theme.fonts.regular.fontFamily,
   },
-  pickerItem: {
+  scrollView: {
+    flex: 1,
+  },
+  scrollViewContent: {
+    flexGrow: 1,
+  },
+  errorMessage: {
+    color: theme.colors.error,
+    fontSize: 14,
+    textAlign: 'center',
     fontFamily: theme.fonts.regular.fontFamily,
+    marginTop: 8,
+  },
+  loadingContainer: {
+    minWidth: 80,
+    alignItems: 'center',
+    justifyContent: 'center'
   },
 });
 

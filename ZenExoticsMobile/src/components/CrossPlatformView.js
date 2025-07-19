@@ -28,33 +28,34 @@ const CrossPlatformView = ({
   // For web platform
   if (Platform.OS === 'web') {
     // Split children into header and content if fullWidthHeader is true
-    const headerContent = fullWidthHeader ? children[0] : null;
-    const mainContent = fullWidthHeader ? children.slice(1) : children;
+    const childrenArray = React.Children.toArray(children);
+    const headerContent = fullWidthHeader && childrenArray.length > 0 ? childrenArray[0] : null;
+    const mainContent = fullWidthHeader && childrenArray.length > 1 ? childrenArray.slice(1) : children;
 
     return (
       <div style={{ 
-        backgroundColor, 
+        backgroundColor,
         width: '100%',
-        maxWidth: '100vw',
-        overflowX: 'hidden'
+        maxWidth: '100%',
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        ...style,
       }}>
-        {fullWidthHeader && (
+        {fullWidthHeader && headerContent && (
           <div style={{ 
             width: '100%', 
             backgroundColor,
-            maxWidth: '100vw',
-            overflowX: 'hidden'
           }}>
             {headerContent}
           </div>
         )}
         <div style={{
           ...styles.webContainer,
-          ...style,
           maxWidth: contentWidth,
-          margin: '0 auto',
           width: '100%',
-          overflowX: 'hidden'
+          flex: 1,
+          overflow: 'hidden',
         }}>
           {mainContent}
         </div>
@@ -101,7 +102,7 @@ const styles = StyleSheet.create({
     minHeight: '85vh',
     width: '100%',
     maxWidth: '100%',
-    overflowX: 'hidden',
+    overflow: 'hidden',
   },
 });
 

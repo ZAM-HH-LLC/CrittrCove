@@ -1,119 +1,221 @@
-import React, { useContext } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useContext, useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Switch } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
-import { SCREEN_WIDTH } from '../context/AuthContext';
 import { AuthContext } from '../context/AuthContext';
+import { debugLog } from '../context/AuthContext';
 
 const ProfessionalServiceCard = ({ 
   item, 
   index, 
-  isCollapsed, 
   onEdit, 
-  onDelete, 
-  onToggleCollapse 
+  onDelete 
 }) => {
   const { screenWidth } = useContext(AuthContext);
+  const [isActive, setIsActive] = useState(item.is_active !== false); // Default to true if not specified
+  
+  // Log the item data when it changes
+  useEffect(() => {
+    debugLog('MBA3377', 'ProfessionalServiceCard Item Data:', item);
+  }, [item]);
+
+  const handleToggleActive = () => {
+    setIsActive(!isActive);
+    // Here you would normally update this to the backend
+  };
+
+  // Determine background color for pricing section based on service type
+  const getPricingBackgroundColor = () => {
+    // This will cycle through different colors based on the index
+    const colors = [
+      // theme.colors.proDashboard.main, // Light green
+      // theme.colors.proDashboard.secondary, // Light blue
+      // theme.colors.proDashboard.tertiary, // Light orange
+    ];
+    return colors[index % colors.length];
+  };
+
+  // Format the display of unit of time in a user-friendly way
+  const formatUnitOfTime = (unitOfTime) => {
+    if (!unitOfTime) return 'visit';
+    
+    // If we receive a nicely formatted unit of time from the backend, use it
+    return unitOfTime;
+  };
 
   return (
     <View style={styles.serviceCard}>
-      <View style={styles.topRow}>
-        <Text style={styles.serviceName}>{item.serviceName}</Text>
-        <View style={styles.topRowIcons}>
-          <TouchableOpacity onPress={() => onDelete(index)} style={styles.iconButton}>
-            <MaterialCommunityIcons name="trash-can" size={24} color={theme.colors.error} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => onEdit(index)} style={styles.iconButton}>
-            <MaterialCommunityIcons name="pencil" size={24} color={theme.colors.primary} />
-          </TouchableOpacity>
+      <View style={styles.cardHeader}>
+        <Text style={styles.serviceName} numberOfLines={2} ellipsizeMode="tail">{item.serviceName}</Text>
+        {/* TODO: Add back in after MVP and make it the primary toggle instead of active. 
+        <View style={styles.activeToggleContainer}>
+          <Text style={isActive ? styles.activeText : styles.inactiveText}>
+            {isActive ? 'Active' : 'Inactive'}
+          </Text>
+          <Switch
+            value={isActive}
+            onValueChange={handleToggleActive}
+            trackColor={{
+              false: theme.colors.quaternary, 
+              true: theme.colors.primary
+            }}
+            thumbColor={theme.colors.surfaceContrast}
+            style={styles.switch}
+          />
+        </View> */}
+      </View>
+
+      <View style={[styles.ratesContainer, { backgroundColor: getPricingBackgroundColor() }]}>
+        <View style={styles.rateRow}>
+          <Text style={styles.rateLabel}>Base Rate</Text>
+          <Text style={styles.rateValue}>${item.rates.base_rate || 'N/A'}/{formatUnitOfTime(item.lengthOfService)}</Text>
         </View>
+        
+        {item.rates.additionalAnimalRate && (
+          <View style={styles.rateRow}>
+            <Text style={styles.rateLabel}>Additional Animal</Text>
+            <Text style={styles.rateValue}>${item.rates.additionalAnimalRate}</Text>
+          </View>
+        )}
+        {item.rates.holidayRate && (
+          <View style={styles.rateRow}>
+            <Text style={styles.rateLabel}>Holiday Rate</Text>
+            <Text style={styles.rateValue}>{item.rates.holidayRate}</Text>
+          </View>
+        )}
+        {item.additionalRates && item.additionalRates.map((rate, idx) => (
+          <View key={idx} style={styles.rateRow}>
+            <Text style={styles.rateLabel}>{rate.label}</Text>
+            <Text style={styles.rateValue}>${rate.value}</Text>
+          </View>
+        ))}
       </View>
       
-      {isCollapsed ? (
-        <View style={styles.collapsedContent}>
-          <Text style={styles.rateText}>Base Rate: ${item.rates.base_rate || 'N/A'}</Text>
-        </View>
-      ) : (
-        <View style={styles.contentRow}>
-          <Text style={[styles.rateText, { 
-            fontSize: screenWidth <= 600 ? theme.fontSizes.small : theme.fontSizes.medium 
-          }]}>Base Rate: ${item.rates.base_rate || 'N/A'}</Text>
-          <Text style={[styles.rateText, { 
-            fontSize: screenWidth <= 600 ? theme.fontSizes.small : theme.fontSizes.medium 
-          }]}>Additional Animal: ${item.rates.additionalAnimalRate || 'N/A'}</Text>
-          <Text style={[styles.rateText, { 
-            fontSize: screenWidth <= 600 ? theme.fontSizes.small : theme.fontSizes.medium 
-          }]}>Holiday Rate: ${item.rates.holidayRate || 'N/A'}</Text>
-          {item.additionalRates && item.additionalRates.map((rate, idx) => (
-            <Text key={idx} style={[styles.rateText, { 
-              fontSize: screenWidth <= 600 ? theme.fontSizes.small : theme.fontSizes.medium 
-            }]}>
-              {rate.label}: ${rate.value} {rate.description ? `(${rate.description})` : ''}
-            </Text>
-          ))}
-          <Text style={[styles.rateText, { 
-            fontSize: screenWidth <= 600 ? theme.fontSizes.small : theme.fontSizes.medium 
-          }]}>Duration: {item.lengthOfService || 'N/A'}</Text>
-        </View>
-      )}
-
-      <TouchableOpacity 
-        onPress={() => onToggleCollapse(index)} 
-        style={styles.collapseButton}
-      >
-        <MaterialCommunityIcons 
-          name={isCollapsed ? "chevron-down" : "chevron-up"} 
-          size={24} 
-          color={theme.colors.primary} 
-        />
-      </TouchableOpacity>
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity onPress={() => onDelete(index)} style={styles.deleteButton}>
+          <MaterialCommunityIcons name="trash-can" size={20} color={'#F26969'} />
+          <Text style={styles.deleteButtonText}>Delete</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => onEdit(index)} style={styles.editButton}>
+          <MaterialCommunityIcons name="pencil" size={20} color={theme.colors.surfaceContrast} />
+          <Text style={styles.buttonText}>Edit</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   serviceCard: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    marginVertical: 8,
-    padding: 12,
-    position: 'relative',
+    backgroundColor: theme.colors.surfaceContrast,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: "#000",
+    display: 'flex',
+    justifyContent: 'center',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
   },
-  topRow: {
+  cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
+    alignItems: 'flex-start',
+    marginBottom: 16,
   },
   serviceName: {
-    fontSize: theme.fontSizes.medium,
-    color: theme.colors.primary,
-    fontWeight: 'bold',
+    fontSize: theme.fontSizes.large,
+    fontWeight: '600',
+    color: theme.colors.text,
+    fontFamily: theme.fonts.header.fontFamily,
+    flex: 1,
+    flexWrap: 'wrap',
+    marginRight: 8,
   },
-  topRowIcons: {
+  activeToggleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-  iconButton: {
-    padding: 4,
+  activeText: {
+    fontSize: theme.fontSizes.smallMedium,
+    color: theme.colors.primary,
+    fontFamily: theme.fonts.regular.fontFamily,
+    fontWeight: '600',
   },
-  contentRow: {
-    gap: 4,
+  inactiveText: {
+    fontSize: theme.fontSizes.smallMedium,
+    color: theme.colors.textSecondary,
+    fontFamily: theme.fonts.regular.fontFamily,
   },
-  collapsedContent: {
-    marginTop: 4,
+  switch: {
+    transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }],
   },
-  rateText: {
+  ratesContainer: {
+    gap: 12,
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  rateRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  rateLabel: {
+    fontSize: theme.fontSizes.medium,
     color: theme.colors.text,
+    fontFamily: theme.fonts.regular.fontFamily,
+    fontWeight: '500',
   },
-  collapseButton: {
-    position: 'absolute',
-    bottom: 8,
-    right: 8,
-    padding: 4,
+  rateValue: {
+    fontSize: theme.fontSizes.medium,
+    color: theme.colors.text,
+    fontWeight: '500',
+    fontFamily: theme.fonts.regular.fontFamily,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  editButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.primary,
+    paddingVertical: 10,
+    borderRadius: 8,
+    gap: 8,
+  },
+  deleteButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderColor: '#F26969',
+    borderWidth: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    gap: 8,
+  },
+  buttonText: {
+    fontSize: theme.fontSizes.medium,
+    color: theme.colors.surfaceContrast,
+    fontFamily: theme.fonts.regular.fontFamily,
+  },
+  deleteButtonText: {
+    fontSize: theme.fontSizes.medium,
+    fontWeight: '600',
+    color: '#F26969',
+    fontFamily: theme.fonts.regular.fontFamily,
   },
 });
 

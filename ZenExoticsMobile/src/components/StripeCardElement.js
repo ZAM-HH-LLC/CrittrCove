@@ -12,8 +12,8 @@ let CardElement = null;
 let IbanElement = null;
 
 // Initialize Stripe conditionally
-const initializeStripe = async (is_prototype) => {
-  if (!is_prototype && Platform.OS === 'web') {
+const initializeStripe = async () => {
+  if (Platform.OS === 'web') {
     const stripe = await import('@stripe/stripe-js');
     const stripeReact = await import('@stripe/react-stripe-js');
     stripePromise = stripe.loadStripe(STRIPE_PUBLISHABLE_KEY);
@@ -92,62 +92,69 @@ const WebPaymentForm = ({ onChange, paymentType }) => {
   };
 
   return (
-    <div style={{ padding: '10px 0' }}>
-      {paymentType === 'card' ? (
-        <CardElement 
-          options={ELEMENT_OPTIONS}
-          onChange={(event) => onChange({
+    React.createElement('div', { style: { padding: '10px 0' } }, [
+      paymentType === 'card' ? 
+        React.createElement(CardElement, {
+          key: 'card',
+          options: ELEMENT_OPTIONS,
+          onChange: (event) => onChange({
             ...event,
             stripe,
             elements,
             paymentType
-          })}
-        />
-      ) : (
-        <div>
-          <div style={{ 
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            marginBottom: '10px' }}>
-            {/* <label>Account Number</label> */}
-            <input
-              className="stripe-input"
-              placeholder="Account Number"
-              value={bankFields.accountNumber}
-              onChange={(e) => handleBankFieldChange('accountNumber', e.target.value)}
-              style={{
+          })
+        }) :
+        React.createElement('div', { key: 'bank' }, [
+          React.createElement('div', {
+            key: 'account-container',
+            style: { 
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              marginBottom: '10px' 
+            }
+          }, [
+            React.createElement('input', {
+              key: 'account-input',
+              className: 'stripe-input',
+              placeholder: 'Account Number',
+              value: bankFields.accountNumber,
+              onChange: (e) => handleBankFieldChange('accountNumber', e.target.value),
+              style: {
                 padding: '10px',
                 border: '1px solid #ccc',
                 borderRadius: '4px',
                 width: '50%',
                 marginTop: '5px'
-              }}
-            />
-          </div>
-          <div style={{ 
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            marginBottom: '10px' }}>
-            {/* <label>Routing Number</label> */}
-            <input
-              className="stripe-input"
-              placeholder="Routing Number"
-              value={bankFields.routingNumber}
-              onChange={(e) => handleBankFieldChange('routingNumber', e.target.value)}
-              style={{
+              }
+            })
+          ]),
+          React.createElement('div', {
+            key: 'routing-container',
+            style: { 
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              marginBottom: '10px' 
+            }
+          }, [
+            React.createElement('input', {
+              key: 'routing-input',
+              className: 'stripe-input',
+              placeholder: 'Routing Number',
+              value: bankFields.routingNumber,
+              onChange: (e) => handleBankFieldChange('routingNumber', e.target.value),
+              style: {
                 padding: '10px',
                 border: '1px solid #ccc',
                 borderRadius: '4px',
                 width: '50%',
                 marginTop: '5px'
-              }}
-            />
-          </div>
-        </div>
-      )}
-    </div>
+              }
+            })
+          ])
+        ])
+    ])
   );
 };
 
@@ -196,52 +203,10 @@ const NativePaymentElement = ({ onChange, paymentType }) => {
 };
 
 export const StripePaymentElement = ({ onChange, paymentType }) => {
-  const { is_prototype } = useContext(AuthContext);
 
   useEffect(() => {
-    initializeStripe(is_prototype);
-  }, [is_prototype]);
-
-  if (is_prototype) {
-    // Return simplified input fields for prototype mode
-    return (
-      <View style={styles.container}>
-        {paymentType === 'card' ? (
-          <>
-            <TextInput
-              style={styles.input}
-              placeholder="Card Number"
-              keyboardType="numeric"
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="MM/YY"
-              keyboardType="numeric"
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="CVC"
-              keyboardType="numeric"
-              secureTextEntry
-            />
-          </>
-        ) : (
-          <>
-            <TextInput
-              style={styles.input}
-              placeholder="Account Number"
-              keyboardType="numeric"
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Routing Number"
-              keyboardType="numeric"
-            />
-          </>
-        )}
-      </View>
-    );
-  }
+    initializeStripe();
+  }, []);
 
   if (Platform.OS === 'web' && Elements && stripePromise) {
     return (
