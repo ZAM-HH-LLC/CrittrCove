@@ -4,7 +4,7 @@
  * @param {any} data - Optional data to log
  */
 
-let debugEnabled = true;
+let debugEnabled = false;
 export const debugLog = (message, data) => {
   if (debugEnabled) {
     if (process.env.NODE_ENV !== 'production') {

@@ -21,6 +21,7 @@ const ReviewModal = ({
   onClose, 
   isProfessional,
   bookingId,
+  conversationId,
   onSubmitReview
 }) => {
   const [rating, setRating] = useState(0);
@@ -53,6 +54,16 @@ const ReviewModal = ({
       return;
     }
 
+    if (!reviewText.trim()) {
+      // Show toast for review text required
+      setToast({
+        visible: true,
+        message: 'Please write a review',
+        type: 'error'
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       if (onSubmitReview) {
@@ -60,7 +71,8 @@ const ReviewModal = ({
           bookingId,
           rating,
           reviewText,
-          isProfessional
+          isProfessional,
+          conversationId
         });
       }
       
@@ -169,7 +181,7 @@ const ReviewModal = ({
               {/* Notice */}
               <View style={styles.noticeContainer}>
                 <Text style={styles.noticeText}>
-                  Note: Your review won't be visible until the other user posts their review or 14 days after the booking.
+                  Note: Your review won't be visible to the other user until the other user posts their review or 14 days after the booking.
                 </Text>
               </View>
               
@@ -186,10 +198,10 @@ const ReviewModal = ({
                 <TouchableOpacity 
                   style={[
                     styles.submitButton,
-                    (rating === 0 || isSubmitting) ? styles.disabledButton : {}
+                    (rating === 0 || !reviewText.trim() || isSubmitting) ? styles.disabledButton : {}
                   ]} 
                   onPress={handleSubmitReview}
-                  disabled={rating === 0 || isSubmitting}
+                  disabled={rating === 0 || !reviewText.trim() || isSubmitting}
                 >
                   <Text style={styles.submitButtonText}>
                     {isSubmitting ? 'Posting...' : 'Post Review'}
