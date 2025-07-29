@@ -96,6 +96,7 @@ import HorseSittingColorado from './src/screens/seo/HorseSittingColorado';
 import ReptileSitterColoradoSprings from './src/screens/seo/ReptileSitterColoradoSprings';
 import PetBoardingColoradoSprings from './src/screens/seo/PetBoardingColoradoSprings';
 import DogSittingColoradoSprings from './src/screens/seo/DogSittingColoradoSprings';
+import SiteMap from './src/screens/SiteMap';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -144,6 +145,7 @@ const screens = [
   { name: 'ReptileSitterColoradoSprings', component: ReptileSitterColoradoSprings },
   { name: 'PetBoardingColoradoSprings', component: PetBoardingColoradoSprings },
   { name: 'DogSittingColoradoSprings', component: DogSittingColoradoSprings },
+  { name: 'SiteMap', component: SiteMap },
 ];
 
 const createLinking = (authContext) => ({
@@ -287,6 +289,7 @@ const createLinking = (authContext) => ({
       ReptileSitterColoradoSprings: 'reptile-sitter-colorado-springs',
       PetBoardingColoradoSprings: 'pet-boarding-colorado-springs',
       DogSittingColoradoSprings: 'dog-sitting-colorado-springs',
+      SiteMap: 'site-map',
     }
   }
 });
@@ -458,13 +461,55 @@ function AppContent() {
               '/Connections', '/connections'
             ];
             
+            // SEO pages that should not redirect to Home
+            // NOTE: Removed all SEO pages as they are now proper React components
+            // and should use normal React Navigation routing
+            const seoPages = [
+              // No longer treating landing pages as special SEO pages
+              // since they have proper React components
+            ];
+            
+            // Known SEO paths that have React components and should be handled by React Navigation
+            const knownSEOPaths = [
+              '/dog-boarding-colorado-springs',
+              '/dog-boarding-colorado-springs/',
+              '/dog-walker-colorado-springs', 
+              '/dog-walker-colorado-springs/',
+              '/dog-sitting-colorado-springs',
+              '/dog-sitting-colorado-springs/',
+              '/cat-sitting-colorado-springs',
+              '/cat-sitting-colorado-springs/',
+              '/pet-boarding-colorado-springs',
+              '/pet-boarding-colorado-springs/',
+              '/exotic-pet-care-colorado-springs',
+              '/exotic-pet-care-colorado-springs/',
+              '/ferret-sitter-colorado-springs',
+              '/ferret-sitter-colorado-springs/',
+              '/reptile-sitter-colorado-springs',
+              '/reptile-sitter-colorado-springs/',
+              '/bird-boarding-colorado-springs',
+              '/bird-boarding-colorado-springs/',
+              '/horse-sitting-colorado',
+              '/horse-sitting-colorado/'
+            ];
+            
             const isOnProtectedPath = protectedPaths.some(path => 
+              currentPath.startsWith(path) || currentPath === path
+            );
+            
+            const isOnSEOPage = seoPages.some(path => 
+              currentPath.startsWith(path) || currentPath === path
+            );
+            
+            const isOnKnownSEOPath = knownSEOPaths.some(path => 
               currentPath.startsWith(path) || currentPath === path
             );
             
             debugLog('MBAo34invid3w App initialization: Web route check:', {
               currentPath,
               isOnProtectedPath,
+              isOnSEOPage,
+              isOnKnownSEOPath,
               isSignedIn,
               platform: Platform.OS
             });
@@ -472,6 +517,14 @@ function AppContent() {
             if (isOnProtectedPath) {
               debugLog('MBAo34invid3w Web: User not authenticated but on protected path, redirecting to SignIn');
               route = 'SignIn';
+            } else if (isOnSEOPage) {
+              debugLog('MBAo34invid3w Web: User on SEO page, letting React Navigation handle routing');
+              // Don't set a route - let React Navigation handle it based on the URL
+              route = null;
+            } else if (isOnKnownSEOPath) {
+              debugLog('MBAo34invid3w Web: User on known SEO page, letting React Navigation handle routing');
+              // Don't set a route - let React Navigation handle it based on the URL
+              route = null;
             } else {
               route = 'Home';
               if (authContext.debugLog) {
@@ -486,8 +539,12 @@ function AppContent() {
           }
         }
 
-        setInitialRoute(route);
-        debugLog('MBAo34invid3w Final initial route set to:', route);
+        if (route !== null) {
+          setInitialRoute(route);
+          debugLog('MBAo34invid3w Final initial route set to:', route);
+        } else {
+          debugLog('MBAo34invid3w No initial route set - letting React Navigation handle URL routing');
+        }
       } catch (error) {
         console.error('Error initializing app:', error);
         setInitialRoute(inviteToken ? 'SignUp' : 'Home');
@@ -564,7 +621,32 @@ function AppContent() {
     }
   }, [initialRoute, isLoading]);
 
-  if (!isInitialized || isLoading || !initialRoute) {
+  // Check if we're on a known SEO path where initialRoute is intentionally null
+  const isOnKnownSEOPath = Platform.OS === 'web' && typeof window !== 'undefined' && 
+    [
+      '/dog-boarding-colorado-springs',
+      '/dog-boarding-colorado-springs/',
+      '/dog-walker-colorado-springs', 
+      '/dog-walker-colorado-springs/',
+      '/dog-sitting-colorado-springs',
+      '/dog-sitting-colorado-springs/',
+      '/cat-sitting-colorado-springs',
+      '/cat-sitting-colorado-springs/',
+      '/pet-boarding-colorado-springs',
+      '/pet-boarding-colorado-springs/',
+      '/exotic-pet-care-colorado-springs',
+      '/exotic-pet-care-colorado-springs/',
+      '/ferret-sitter-colorado-springs',
+      '/ferret-sitter-colorado-springs/',
+      '/reptile-sitter-colorado-springs',
+      '/reptile-sitter-colorado-springs/',
+      '/bird-boarding-colorado-springs',
+      '/bird-boarding-colorado-springs/',
+      '/horse-sitting-colorado',
+      '/horse-sitting-colorado/'
+    ].some(path => window.location.pathname.startsWith(path) || window.location.pathname === path);
+
+  if (!isInitialized || isLoading || (!initialRoute && !isOnKnownSEOPath)) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background }}>
         <ActivityIndicator size="large" color={theme.colors.primary} />

@@ -66,7 +66,9 @@ module.exports = async function (env, argv) {
         { from: /^\/privacy-policy/, to: '/index.html' },
         { from: /^\/terms-of-service/, to: '/index.html' },
         { from: /^\/help-faq/, to: '/index.html' },
-        { from: /^\/waitlist/, to: '/index.html' }
+        { from: /^\/waitlist/, to: '/index.html' },
+        { from: /^\/site-map/, to: '/index.html' },
+        { from: /^\/site-map\.html/, to: '/site-map.html' }
       ]
     };
   }
