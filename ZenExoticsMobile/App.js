@@ -44,6 +44,7 @@ import { ToastProvider } from './src/components/ToastProvider';
 import platformNavigation from './src/utils/platformNavigation';
 import { loadFonts } from './src/styles/fonts';
 import { ActivityIndicator } from 'react-native-paper';
+import { initializePreRendering } from './src/utils/preRenderUtils';
 
 // Import CSS fixes for mobile browsers
 if (Platform.OS === 'web') {
@@ -368,6 +369,14 @@ function AppContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [isVisible, setIsVisible] = useState(true);
   const [inviteToken, setInviteToken] = useState(null);
+
+  // Initialize pre-rendering utilities
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      const preRenderInfo = initializePreRendering();
+      debugLog('MBA9999: Pre-rendering initialized', preRenderInfo);
+    }
+  }, []);
 
   // Check for invitation in the URL
   useEffect(() => {
