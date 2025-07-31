@@ -37,13 +37,34 @@ def send_new_user_notification(user):
     try:
         subject = f"New User Signup: {user.email}"
         
+        # Get how_did_you_hear information
+        how_did_you_hear = getattr(user, 'how_did_you_hear', 'Not specified')
+        how_did_you_hear_other = getattr(user, 'how_did_you_hear_other', '')
+        
+        # Format the how_did_you_hear display
+        if how_did_you_hear == 'other' and how_did_you_hear_other:
+            how_did_you_hear_display = f"Other: {how_did_you_hear_other}"
+        elif how_did_you_hear:
+            # Convert the choice to a readable format
+            choice_map = {
+                'instagram': 'Instagram',
+                'google': 'Google',
+                'reddit': 'Reddit',
+                'nextdoor': 'Nextdoor',
+                'other': 'Other'
+            }
+            how_did_you_hear_display = choice_map.get(how_did_you_hear, how_did_you_hear)
+        else:
+            how_did_you_hear_display = 'Not specified'
+        
         # Context for the email template
         context = {
             'user_email': user.email,
             'user_name': user.name,
             'signup_date': user.created_at.strftime('%Y-%m-%d %H:%M:%S UTC'),
             'user_id': user.user_id,
-            'location': getattr(user, 'location', 'Not specified')
+            'location': getattr(user, 'location', 'Not specified'),
+            'how_did_you_hear': how_did_you_hear_display
         }
         
         # Create HTML message
@@ -91,6 +112,10 @@ def send_new_user_notification(user):
                     <tr>
                         <td>Location</td>
                         <td>{context['location']}</td>
+                    </tr>
+                    <tr>
+                        <td>How did they hear about us?</td>
+                        <td>{context['how_did_you_hear']}</td>
                     </tr>
                 </table>
                 
@@ -213,7 +238,7 @@ def send_welcome_email(user, invitation=None):
                             </ul>
                             <div style="text-align: center; margin: 20px 0;">
                                 <a href="{settings.FRONTEND_BASE_URL}/become-professional" 
-                                style="display: inline-block; background-color: #ffa500; color: white; padding: 12px 25px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 16px;">
+                                style="display: inline-block; background-color: #ffa500; color: #e67e00; padding: 12px 25px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 16px;">
                                 Learn About Becoming a Professional
                                 </a>
                             </div>
@@ -234,7 +259,7 @@ def send_welcome_email(user, invitation=None):
                     <td style="padding: 20px; text-align: center; background-color: #f5f5f5; font-size: 12px;">
                         <p>You're receiving this email because you just created an account on CrittrCove.</p>
                         <p><a href="{settings.FRONTEND_BASE_URL}/settings/notifications" style="color: #008080; text-decoration: underline;">Manage your notification preferences</a> | <a href="{settings.FRONTEND_BASE_URL}" style="color: #008080; text-decoration: underline;">Visit CrittrCove</a></p>
-                        <p>CrittrCove, Inc. • 123 Pet Street • San Francisco, CA 94103</p>
+                        <p>CrittrCove LLC. • Colorado Springs, CO</p>
                         <p>&copy; 2025 CrittrCove. All rights reserved.</p>
                     </td>
                 </tr>
