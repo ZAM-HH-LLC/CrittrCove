@@ -36,11 +36,26 @@ export default function SignUp() {
   const [locations, setLocations] = useState([]);
   const [loadingLocations, setLoadingLocations] = useState(true);
   
+  // How did you hear about us state
+  const [howDidYouHear, setHowDidYouHear] = useState('');
+  const [showHowDidYouHearDropdown, setShowHowDidYouHearDropdown] = useState(false);
+  const [howDidYouHearOther, setHowDidYouHearOther] = useState('');
+  const [howDidYouHearError, setHowDidYouHearError] = useState('');
+  
   // Fallback locations in case API fails
   const fallbackLocations = [
     { name: 'Colorado Springs', supported: true },
     { name: 'Denver', supported: false },
     { name: 'Other', supported: false }
+  ];
+  
+  // How did you hear about us options
+  const howDidYouHearOptions = [
+    { value: 'instagram', label: 'Instagram' },
+    { value: 'google', label: 'Google' },
+    { value: 'reddit', label: 'Reddit' },
+    { value: 'nextdoor', label: 'Nextdoor' },
+    { value: 'other', label: 'Other' }
   ];
   
   // Validation states
@@ -179,6 +194,17 @@ export default function SignUp() {
       isValid = false;
     }
     
+    // Validate how did you hear about us
+    if (!howDidYouHear) {
+      setHowDidYouHearError('Please select how you heard about us');
+      isValid = false;
+    } else if (howDidYouHear === 'other' && !howDidYouHearOther.trim()) {
+      setHowDidYouHearError('Please specify how you heard about us');
+      isValid = false;
+    } else {
+      setHowDidYouHearError('');
+    }
+    
     // Validate first name with sanitization
     const firstNameValidation = validateName(firstName);
     setFirstNameError(firstNameValidation.message);
@@ -223,6 +249,7 @@ export default function SignUp() {
       const sanitizedEmail = sanitizeInput(email, 'email');
       const sanitizedPassword = sanitizeInput(password, 'password');
       const sanitizedLocation = sanitizeInput(location, 'general');
+      const sanitizedHowDidYouHearOther = sanitizeInput(howDidYouHearOther, 'general');
       
       debugLog('MBA12345 Input sanitization completed', {
         originalFirstName: firstName,
@@ -233,6 +260,8 @@ export default function SignUp() {
         sanitizedEmail,
         originalLocation: location,
         sanitizedLocation,
+        originalHowDidYouHearOther: howDidYouHearOther,
+        sanitizedHowDidYouHearOther,
         passwordChanged: password !== sanitizedPassword
       });
       
@@ -260,6 +289,8 @@ export default function SignUp() {
         password2: confirmPassword, // Note: We don't sanitize confirm password as it needs to match exactly
         phone_number: '', // Add empty phone number for now
         location: inviteVerified ? 'Colorado Springs' : sanitizedLocation, // Use default location for invited users
+        how_did_you_hear: howDidYouHear,
+        how_did_you_hear_other: howDidYouHear === 'other' ? sanitizedHowDidYouHearOther.trim() : '',
         ...(inviteToken && { invitation_token: inviteToken }) // Only include invitation_token if it exists
       };
       
@@ -350,6 +381,8 @@ export default function SignUp() {
 
   // Enhanced input handlers with real-time sanitization
   const handleFirstNameChange = (text) => {
+    debugLog('MBA7777: First name input change:', text);
+    
     // Apply real-time sanitization for names
     const sanitizedText = sanitizeInput(text, 'name');
     
@@ -357,19 +390,22 @@ export default function SignUp() {
     const removalPercentage = text.length > 0 ? ((text.length - sanitizedText.length) / text.length) * 100 : 0;
     
     if (removalPercentage > 30 && text.length > 3) {
-      debugLog('MBA1234: Potentially malicious first name input detected:', {
+      debugLog('MBA7777: Potentially malicious first name input detected:', {
         original: text,
         sanitized: sanitizedText,
         removalPercentage
       });
-      return; // Don't update if too much was removed
+      // Still update with sanitized version, don't block completely
     }
     
+    // Always update with sanitized version to ensure UI reflects sanitization
     setFirstName(sanitizedText);
     setFirstNameError('');
   };
 
   const handleLastNameChange = (text) => {
+    debugLog('MBA7777: Last name input change:', text);
+    
     // Apply real-time sanitization for names
     const sanitizedText = sanitizeInput(text, 'name');
     
@@ -377,19 +413,22 @@ export default function SignUp() {
     const removalPercentage = text.length > 0 ? ((text.length - sanitizedText.length) / text.length) * 100 : 0;
     
     if (removalPercentage > 30 && text.length > 3) {
-      debugLog('MBA1234: Potentially malicious last name input detected:', {
+      debugLog('MBA7777: Potentially malicious last name input detected:', {
         original: text,
         sanitized: sanitizedText,
         removalPercentage
       });
-      return; // Don't update if too much was removed
+      // Still update with sanitized version, don't block completely
     }
     
+    // Always update with sanitized version to ensure UI reflects sanitization
     setLastName(sanitizedText);
     setLastNameError('');
   };
 
   const handleEmailChange = (text) => {
+    debugLog('MBA7777: Email input change:', text);
+    
     // Apply real-time sanitization for emails
     const sanitizedText = sanitizeInput(text, 'email');
     
@@ -397,19 +436,22 @@ export default function SignUp() {
     const removalPercentage = text.length > 0 ? ((text.length - sanitizedText.length) / text.length) * 100 : 0;
     
     if (removalPercentage > 20 && text.length > 5) {
-      debugLog('MBA1234: Potentially malicious email input detected:', {
+      debugLog('MBA7777: Potentially malicious email input detected:', {
         original: text,
         sanitized: sanitizedText,
         removalPercentage
       });
-      return; // Don't update if too much was removed
+      // Still update with sanitized version, don't block completely
     }
     
+    // Always update with sanitized version to ensure UI reflects sanitization
     setEmail(sanitizedText);
     setEmailError('');
   };
 
   const handlePasswordChange = (text) => {
+    debugLog('MBA7777: Password input change:', text);
+    
     // For passwords, we're more lenient with sanitization during typing
     // Full validation happens on form submission
     const sanitizedText = sanitizeInput(text, 'password');
@@ -418,19 +460,22 @@ export default function SignUp() {
     const removalPercentage = text.length > 0 ? ((text.length - sanitizedText.length) / text.length) * 100 : 0;
     
     if (removalPercentage > 50 && text.length > 8) {
-      debugLog('MBA1234: Potentially malicious password input detected:', {
+      debugLog('MBA7777: Potentially malicious password input detected:', {
         original: text,
         sanitized: sanitizedText,
         removalPercentage
       });
-      return; // Don't update if too much was removed
+      // Still update with sanitized version, don't block completely
     }
     
+    // Always update with sanitized version to ensure UI reflects sanitization
     setPassword(sanitizedText);
     setPasswordError('');
   };
 
   const handleConfirmPasswordChange = (text) => {
+    debugLog('MBA7777: Confirm password input change:', text);
+    
     // For confirm password, we don't sanitize as much since it needs to match exactly
     // But we still prevent obvious XSS attempts
     const sanitizedText = sanitizeInput(text, 'password');
@@ -438,14 +483,15 @@ export default function SignUp() {
     const removalPercentage = text.length > 0 ? ((text.length - sanitizedText.length) / text.length) * 100 : 0;
     
     if (removalPercentage > 50 && text.length > 8) {
-      debugLog('MBA1234: Potentially malicious confirm password input detected:', {
+      debugLog('MBA7777: Potentially malicious confirm password input detected:', {
         original: text,
         sanitized: sanitizedText,
         removalPercentage
       });
-      return; // Don't update if too much was removed
+      // Still update with sanitized version, don't block completely
     }
     
+    // Always update with sanitized version to ensure UI reflects sanitization
     setConfirmPassword(sanitizedText);
     setConfirmPasswordError('');
   };
@@ -467,6 +513,42 @@ export default function SignUp() {
     setLocation(selectedLocation);
     setShowLocationDropdown(false);
     setLocationError('');
+  };
+
+  // Handle how did you hear selection
+  const selectHowDidYouHear = (selectedOption) => {
+    debugLog('MBA9999: How did you hear selected', selectedOption);
+    setHowDidYouHear(selectedOption);
+    setShowHowDidYouHearDropdown(false);
+    setHowDidYouHearError('');
+    
+    // Clear other input if not "other" is selected
+    if (selectedOption !== 'other') {
+      setHowDidYouHearOther('');
+    }
+  };
+
+  // Handle how did you hear other input change
+  const handleHowDidYouHearOtherChange = (text) => {
+    debugLog('MBA9999: How did you hear other input change:', text);
+    
+    // Apply real-time sanitization
+    const sanitizedText = sanitizeInput(text, 'general');
+    
+    // Check if sanitization removed too much content (potential attack)
+    const removalPercentage = text.length > 0 ? ((text.length - sanitizedText.length) / text.length) * 100 : 0;
+    
+    if (removalPercentage > 30 && text.length > 3) {
+      debugLog('MBA9999: Potentially malicious how did you hear other input detected:', {
+        original: text,
+        sanitized: sanitizedText,
+        removalPercentage
+      });
+    }
+    
+    // Always update with sanitized version
+    setHowDidYouHearOther(sanitizedText);
+    setHowDidYouHearError('');
   };
 
   return (
@@ -526,22 +608,88 @@ export default function SignUp() {
                   
                   {showLocationDropdown && (
                     <View style={styles.dropdownMenu}>
-                      {locations.map((loc) => (
-                        <TouchableOpacity
-                          key={loc.name}
-                          style={styles.dropdownItem}
-                          onPress={() => selectLocation(loc.name)}
-                        >
-                          <Text style={styles.dropdownItemText}>
-                            {loc.name} {!loc.supported && "(Coming Soon)"}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
+                      <ScrollView 
+                        style={styles.dropdownScrollView}
+                        showsVerticalScrollIndicator={false}
+                        nestedScrollEnabled={true}
+                      >
+                        {locations.map((loc) => (
+                          <TouchableOpacity
+                            key={loc.name}
+                            style={styles.dropdownItem}
+                            onPress={() => selectLocation(loc.name)}
+                          >
+                            <Text style={styles.dropdownItemText}>
+                              {loc.name} {!loc.supported && "(Coming Soon)"}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
                     </View>
                   )}
                 </View>
               )}
               {locationError ? <Text style={styles.errorText}>{locationError}</Text> : null}
+            </View>
+          )}
+          
+          {/* How did you hear about us dropdown - Always show */}
+          <View style={styles.howDidYouHearContainer}>
+            <Text style={styles.label}>How did you hear about us?</Text>
+            <View style={styles.howDidYouHearDropdownWrapper}>
+              <TouchableOpacity
+                style={[
+                  styles.input,
+                  styles.dropdown,
+                  howDidYouHearError ? styles.errorInput : null
+                ]}
+                onPress={() => setShowHowDidYouHearDropdown(!showHowDidYouHearDropdown)}
+              >
+                <Text style={howDidYouHear ? styles.inputText : styles.placeholderText}>
+                  {howDidYouHear ? howDidYouHearOptions.find(opt => opt.value === howDidYouHear)?.label : 'Select an option'}
+                </Text>
+                <MaterialCommunityIcons
+                  name={showHowDidYouHearDropdown ? "chevron-up" : "chevron-down"}
+                  size={24}
+                  color={theme.colors.text}
+                />
+              </TouchableOpacity>
+              
+              {showHowDidYouHearDropdown && (
+                <View style={styles.dropdownMenu}>
+                  <ScrollView 
+                    style={styles.dropdownScrollView}
+                    showsVerticalScrollIndicator={false}
+                    nestedScrollEnabled={true}
+                  >
+                    {howDidYouHearOptions.map((option) => (
+                      <TouchableOpacity
+                        key={option.value}
+                        style={styles.dropdownItem}
+                        onPress={() => selectHowDidYouHear(option.value)}
+                      >
+                        <Text style={styles.dropdownItemText}>
+                          {option.label}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
+            </View>
+            {howDidYouHearError ? <Text style={styles.errorText}>{howDidYouHearError}</Text> : null}
+          </View>
+
+          {/* Other input field - only show if "other" is selected */}
+          {howDidYouHear === 'other' && (
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={[styles.input, howDidYouHearError ? styles.errorInput : null]}
+                placeholder="Please specify how you heard about us"
+                value={howDidYouHearOther}
+                onChangeText={handleHowDidYouHearOtherChange}
+              />
+              {howDidYouHearError ? <Text style={styles.errorText}>{howDidYouHearError}</Text> : null}
             </View>
           )}
           
@@ -602,6 +750,7 @@ export default function SignUp() {
                 />
                 {confirmPasswordError ? <Text style={styles.errorText}>{confirmPasswordError}</Text> : null}
               </View>
+              
               
               <CustomButton title="Sign Up" onPress={handleSignUp} style={styles.signupButton} />
             </>
@@ -801,14 +950,26 @@ const styles = StyleSheet.create({
     width: '100%',
     marginBottom: 16,
     position: 'relative',
-    zIndex: 1000,
+    zIndex: 1002,
   },
   dropdownWrapper: {
     position: 'relative',
-    zIndex: 1001,
+    zIndex: 1003,
   },
   loadingContainer: {
     justifyContent: 'center',
+  },
+  // How did you hear container with lower z-index than location
+  howDidYouHearContainer: {
+    width: '100%',
+    marginBottom: 16,
+    position: 'relative',
+    zIndex: 1000,
+  },
+  // How did you hear dropdown wrapper with lower z-index than location
+  howDidYouHearDropdownWrapper: {
+    position: 'relative',
+    zIndex: 1001,
   },
   waitlistContainer: {
     marginTop: 20,
