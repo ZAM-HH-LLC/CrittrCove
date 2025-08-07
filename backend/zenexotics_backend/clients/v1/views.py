@@ -37,8 +37,12 @@ class ClientListView(generics.ListAPIView):
         try:
             professional_status = ProfessionalStatus.objects.get(user=user)
             if professional_status.is_approved:
-                logger.info(f"User {user.email} is an approved professional - returning all clients")
-                return Client.objects.all()
+                logger.info(f"User {user.email} is an approved professional - returning all active clients")
+                # Exclude deleted and inactive users
+                return Client.objects.filter(
+                    user__is_deleted=False,
+                    user__is_active=True
+                )
             else:
                 logger.warning(f"User {user.email} is not an approved professional - returning empty list")
                 return Client.objects.none()
@@ -101,9 +105,15 @@ def get_client_dashboard(request):
             ).order_by('start_date', 'start_time').first()
             
             if next_occurrence:
+                # Get professional's profile picture URL
+                professional_profile_picture = None
+                if booking.professional.user.profile_picture:
+                    professional_profile_picture = booking.professional.user.profile_picture.url
+                
                 booking_data = {
                     'booking_id': booking.booking_id,
                     'professional_name': booking.professional.user.name,
+                    'professional_profile_picture': professional_profile_picture,
                     'start_date': next_occurrence.start_date,
                     'start_time': next_occurrence.start_time,
                     'service_type': booking.service_id.service_name if booking.service_id else None,

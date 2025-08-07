@@ -1095,6 +1095,14 @@ class UpdateBookingView(APIView):
                     participant2=booking.client.user
                 )
 
+            # Check if either user is deleted - prevent messaging to deleted users
+            from users.account_deletion import validate_user_not_deleted
+            
+            recipient = booking.client.user if request.user == booking.professional.user else booking.professional.user
+            deleted_user_response = validate_user_not_deleted(recipient)
+            if deleted_user_response:
+                return deleted_user_response
+
             message = UserMessage.objects.create(
                 conversation=conversation,
                 sender=request.user,
@@ -1912,13 +1920,24 @@ class ConnectionsView(APIView):
                 logger.info(f"MBA9452: Current date in user timezone: {current_date}")
                 
                 # Get all clients for this professional (both invited and with bookings)
+                # Exclude deleted users
                 clients = Client.objects.filter(
                     Q(booking__professional=professional) |  # Clients who have bookings with this professional
                     Q(invited_by=professional)  # Clients who were invited by this professional
+                ).filter(
+                    user__is_deleted=False,  # Exclude deleted users
+                    user__is_active=True  # Exclude inactive users
                 ).distinct().select_related('user')
+                
+                logger.info(f"MBA9452: Found {clients.count()} active clients for professional {professional.professional_id}")
                 
                 connections = []
                 for client in clients:
+                    # Skip if client user is deleted (double-check)
+                    if client.user.is_deleted or not client.user.is_active:
+                        logger.info(f"MBA9452: Skipping deleted/inactive client user: {client.user.id}")
+                        continue
+                        
                     # Find all conversations between these users
                     conversations = Conversation.objects.filter(
                         (Q(participant1=request.user) & Q(participant2=client.user)) |

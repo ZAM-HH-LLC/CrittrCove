@@ -134,9 +134,15 @@ def get_professional_dashboard(request):
             ).order_by('start_date', 'start_time').first()
             
             if next_occurrence:
+                # Get client's profile picture URL
+                client_profile_picture = None
+                if booking.client.user.profile_picture:
+                    client_profile_picture = booking.client.user.profile_picture.url
+                
                 booking_data = {
                     'booking_id': booking.booking_id,
                     'client_name': booking.client.user.name,
+                    'client_profile_picture': client_profile_picture,
                     'start_date': next_occurrence.start_date,
                     'start_time': next_occurrence.start_time,
                     'service_type': booking.service_id.service_name,
@@ -261,13 +267,17 @@ def search_professionals(request):
         original_service_query = service_query  # Store original for fallback messaging
         
         # Start with all professionals who have approved services - optimized with select_related
+        # Exclude deleted and inactive users
         professionals_query = Professional.objects.select_related('user').prefetch_related(
             'service_set'
         ).filter(
             service__moderation_status='APPROVED',
             service__is_active=True,
             service__searchable=True,
-            service__is_archived=False
+            service__is_archived=False,
+            user__is_deleted=False,  # Exclude deleted users
+            user__is_active=True,  # Exclude inactive users
+            user__is_profile_visible=True  # Exclude users with profile visibility off
         ).distinct()
         
         # Apply badge filters
@@ -402,13 +412,51 @@ def search_professionals(request):
             
             # Filter by animal types if specified
             if animal_types:
+                # Expand animal types to include related species
+                expanded_animal_types = []
+                for animal in animal_types:
+                    expanded_animal_types.append(animal)
+                    # If searching for lizards (singular or plural), also include bearded dragons and leopard geckos
+                    if animal.lower() in ['lizard', 'lizards']:
+                        expanded_animal_types.extend(['bearded dragons', 'leopard geckos'])
+                
+                logger.debug(f"Original animal_types: {animal_types}")
+                logger.debug(f"Expanded animal_types: {expanded_animal_types}")
+                
                 animal_filtered_services = []
                 for service in services:
                     if service.animal_types and isinstance(service.animal_types, dict):
                         # Check if any of the requested animal types are in the service's animal_types
                         service_animals = list(service.animal_types.keys())
-                        if any(animal.lower() in [sa.lower() for sa in service_animals] for animal in animal_types):
+                        logger.debug(f"Service {service.service_id} animals: {service_animals}")
+                        
+                        # More flexible matching logic
+                        service_matched = False
+                        for requested_animal in expanded_animal_types:
+                            for service_animal in service_animals:
+                                # Check for partial matches (ignoring case and plural/singular differences)
+                                requested_lower = requested_animal.lower().strip()
+                                service_lower = service_animal.lower().strip()
+                                
+                                # Direct substring match (both ways)
+                                if requested_lower in service_lower or service_lower in requested_lower:
+                                    service_matched = True
+                                    break
+                                
+                                # Handle plurals by removing 's' for comparison
+                                requested_singular = requested_lower.rstrip('s')
+                                service_singular = service_lower.rstrip('s')
+                                if requested_singular in service_singular or service_singular in requested_singular:
+                                    service_matched = True
+                                    break
+                            
+                            if service_matched:
+                                break
+                        
+                        if service_matched:
+                            logger.debug(f"Service {service.service_id} matched!")
                             animal_filtered_services.append(service)
+                        
                 services = animal_filtered_services
             
             # Filter by price range
@@ -610,12 +658,45 @@ def search_professionals(request):
                 
                 # Filter by animal types if specified
                 if animal_types:
+                    # Expand animal types to include related species
+                    expanded_animal_types = []
+                    for animal in animal_types:
+                        expanded_animal_types.append(animal)
+                        # If searching for lizards (singular or plural), also include bearded dragons and leopard geckos
+                        if animal.lower() in ['lizard', 'lizards']:
+                            expanded_animal_types.extend(['bearded dragons', 'leopard geckos'])
+                    
                     animal_filtered_services = []
                     for service in services:
                         if service.animal_types and isinstance(service.animal_types, dict):
                             service_animals = list(service.animal_types.keys())
-                            if any(animal.lower() in [sa.lower() for sa in service_animals] for animal in animal_types):
+                            
+                            # More flexible matching logic
+                            service_matched = False
+                            for requested_animal in expanded_animal_types:
+                                for service_animal in service_animals:
+                                    # Check for partial matches (ignoring case and plural/singular differences)
+                                    requested_lower = requested_animal.lower().strip()
+                                    service_lower = service_animal.lower().strip()
+                                    
+                                    # Direct substring match (both ways)
+                                    if requested_lower in service_lower or service_lower in requested_lower:
+                                        service_matched = True
+                                        break
+                                    
+                                    # Handle plurals by removing 's' for comparison
+                                    requested_singular = requested_lower.rstrip('s')
+                                    service_singular = service_lower.rstrip('s')
+                                    if requested_singular in service_singular or service_singular in requested_singular:
+                                        service_matched = True
+                                        break
+                                
+                                if service_matched:
+                                    break
+                            
+                            if service_matched:
                                 animal_filtered_services.append(service)
+                    
                     services = animal_filtered_services
                 
                 # Filter by price range
