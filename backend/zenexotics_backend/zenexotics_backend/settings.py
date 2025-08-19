@@ -172,11 +172,12 @@ INSTALLED_APPS = [
     
     # Other apps
     'contracts',
-    'search_logs',
+    'logs',  # Comprehensive logging app (includes search_logs, get_matched_logs)
     'interaction_logs',
     'error_logs',
     'engagement_logs',
     'locations',  # New app for managing city-by-city rollout
+    'blog_analytics',  # New app for blog visitor tracking
 ]
 
 MIDDLEWARE = [
