@@ -1170,16 +1170,55 @@ export const createDraftFromBooking = async (bookingId) => {
  * @param {number} searchParams.page_size - Number of results per page (default 20)
  * @returns {Promise<Object>} - Search results with professionals array and pagination info
  */
-export const searchProfessionals = async (searchParams = {}) => {
+export const searchProfessionals = async (searchParams = {}, source = 'unknown', skipLogging = false) => {
   try {
-    debugLog('MBA9999', 'Searching professionals with params:', searchParams);
+    // Get stack trace to identify caller
+    const stack = new Error().stack;
+    const callerLine = stack.split('\n')[2]; // Get the calling function
     
-    const response = await axios.post(`${API_BASE_URL}/api/professionals/v1/search/`, searchParams);
+    debugLog('MBA9999', 'SEARCH_API_CALL - Searching professionals:', {
+      source,
+      searchParams,
+      skipLogging,
+      callerInfo: callerLine,
+      fullStack: stack
+    });
+    
+    // Add skip_logging parameter to request if specified
+    const requestParams = skipLogging 
+      ? { ...searchParams, skip_logging: true }
+      : searchParams;
+    
+    const response = await axios.post(`${API_BASE_URL}/api/professionals/v1/search/`, requestParams);
     
     debugLog('MBA9999', 'Professional search completed successfully');
     return response.data;
   } catch (error) {
     debugLog('MBA9999', 'Error searching professionals:', error.response?.data || error.message);
+    
+    throw error;
+  }
+};
+
+/**
+ * Submit a "get matched" request when no professionals are found for search criteria
+ * @param {string} email - User's email address
+ * @param {string} searchQuery - The search query that produced no results
+ * @returns {Promise<Object>} - Success response
+ */
+export const submitGetMatchedRequest = async (email, searchQuery) => {
+  try {
+    debugLog('MBA8001', 'Submitting get matched request:', { email, searchQuery });
+    
+    const response = await axios.post(`${API_BASE_URL}/api/professionals/v1/get-matched/`, {
+      email,
+      search_query: searchQuery
+    });
+    
+    debugLog('MBA8001', 'Get matched request submitted successfully');
+    return response.data;
+  } catch (error) {
+    debugLog('MBA8001', 'Error submitting get matched request:', error.response?.data || error.message);
     
     throw error;
   }
@@ -1951,6 +1990,32 @@ export const getUserReviews = async (conversationId = null, professionalId = nul
   } catch (error) {
     debugLog('MBA387c439h', 'Error fetching user reviews:', error.response?.data || error.message);
     throw error;
+  }
+};
+
+/**
+ * Track anonymous blog visitors for marketing analytics
+ * @param {Object} visitorData - Visitor location and page data
+ * @returns {Promise<Object>} - Response from the API
+ */
+export const trackBlogVisitor = async (visitorData) => {
+  try {
+    debugLog('MBA9999', 'Tracking blog visitor:', {
+      page: visitorData.page,
+      hasLocation: !!(visitorData.latitude && visitorData.longitude)
+    });
+
+    const response = await axios.post(
+      `${API_BASE_URL}/api/blog-analytics/v1/track/`,
+      visitorData
+    );
+    
+    debugLog('MBA9999', 'Blog visitor tracked successfully');
+    return response.data;
+  } catch (error) {
+    debugLog('MBA9999', 'Error tracking blog visitor (non-critical):', error.response?.data || error.message);
+    // Don't throw the error since this is non-critical tracking
+    return { status: 'error', message: 'Tracking failed' };
   }
 };
 
